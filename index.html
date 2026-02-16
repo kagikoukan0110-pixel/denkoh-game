@@ -3,19 +3,21 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>電工パズル</title>
+
 <style>
 body {
-  touch-action: none;
-  overflow: hidden;
   text-align: center;
   font-family: sans-serif;
   background: #f0f0f0;
+  margin: 0;
+  touch-action: none;
+  overflow: hidden;
 }
 
 #game {
-  width: 300px;
-  height: 300px;
-  margin: auto;
+  width: 320px;
+  height: 320px;
+  margin: 20px auto;
   background: white;
   border: 2px solid black;
   position: relative;
@@ -24,7 +26,6 @@ body {
 .point {
   width: 20px;
   height: 20px;
-  background: blue;
   border-radius: 50%;
   position: absolute;
 }
@@ -39,6 +40,7 @@ body {
 }
 </style>
 </head>
+
 <body>
 
 <h2>⚡ 電工パズル - ステージ1</h2>
@@ -52,13 +54,15 @@ body {
 <button onclick="clearLines()">やり直す</button>
 
 <script>
-  document.body.addEventListener("touchmove", function(e){
+document.body.addEventListener("touchmove", function(e){
   e.preventDefault();
 }, { passive: false });
+
 let game = document.getElementById("game");
+let goal = document.getElementById("goal");
+
 let drawing = false;
 let lastX, lastY;
-  let goal = document.getElementById("goal");
 let cleared = false;
 
 game.addEventListener("touchstart", startDraw);
@@ -100,27 +104,32 @@ function draw(e) {
   line.style.top = lastY + "px";
   line.style.width = Math.hypot(pos.x - lastX, pos.y - lastY) + "px";
   line.style.transformOrigin = "0 0";
-  line.style.transform = "rotate(" +
-    Math.atan2(pos.y - lastY, pos.x - lastX) +
-    "rad)";
+  line.style.transform =
+    "rotate(" + Math.atan2(pos.y - lastY, pos.x - lastX) + "rad)";
   game.appendChild(line);
+
+  // ゴール判定
+  let goalRect = goal.getBoundingClientRect();
+  let gameRect = game.getBoundingClientRect();
+
+  let goalX = goalRect.left - gameRect.left + 10;
+  let goalY = goalRect.top - gameRect.top + 10;
+
+  if (Math.hypot(pos.x - goalX, pos.y - goalY) < 15 && !cleared) {
+    cleared = true;
+    setTimeout(() => {
+      alert("⚡ 施工完了！");
+    }, 100);
+  }
 
   lastX = pos.x;
   lastY = pos.y;
 }
 
-function stopDraw(
-let goalX = goal.offsetLeft + 10;
-let goalY = goal.offsetTop + 10;
-
-if (Math.hypot(pos.x - goalX, pos.y - goalY) < 20 && !cleared) {
-  cleared = true;
-  setTimeout(() => {
-    alert("⚡ 施工完了！");
-  }, 100);
-}) {
+function stopDraw() {
   drawing = false;
 }
+
 function clearLines() {
   document.querySelectorAll(".line").forEach(l => l.remove());
   cleared = false;
