@@ -133,24 +133,26 @@ function draw(e) {
     "rotate(" + Math.atan2(pos.y - lastY, pos.x - lastX) + "rad)";
   game.appendChild(line);
 
-  // ゴール判定
-  let goalX = goal.offsetLeft + 10;
-  let goalY = goal.offsetTop + 10;
-
-  if (Math.hypot(pos.x - goalX, pos.y - goalY) < 20 && !cleared) {
-    cleared = true;
-
-    let score = Math.max(0, Math.floor(BASE_SCORE - totalLength * 5));
-    scoreDisplay.innerText = "スコア: " + score;
-    clearMessage.innerText = "⚡ 施工完了！";
-  }
-
   lastX = pos.x;
   lastY = pos.y;
 }
 
 function stopDraw() {
   drawing = false;
+
+  let goalX = goal.offsetLeft + 10;
+  let goalY = goal.offsetTop + 10;
+
+  let dx = lastX - goalX;
+  let dy = lastY - goalY;
+
+  if (Math.hypot(dx, dy) < 20 && !cleared) {
+    cleared = true;
+
+    let score = Math.max(0, Math.floor(BASE_SCORE - totalLength * 5));
+    scoreDisplay.innerText = "スコア: " + score;
+    clearMessage.innerText = "⚡ 施工完了！";
+  }
 }
 
 function clearLines() {
