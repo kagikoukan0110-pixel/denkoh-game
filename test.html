@@ -2,66 +2,91 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>電工技能試験シミュレーター MVP</title>
+<title>三路複線図シミュレーター</title>
 <style>
-  body { font-family: sans-serif; }
-  svg { border:1px solid #ccc; }
+body { font-family:sans-serif; }
+svg { border:1px solid #ccc; }
 
-  .wire { stroke:black; stroke-width:3; }
-  .energized { stroke:red !important; stroke-width:4; }
+.wire {
+  stroke:black;
+  stroke-width:4;
+  fill:none;
+}
 
-  .hole { fill:white; stroke:black; stroke-width:2; cursor:pointer; }
-  .violation-major { stroke:red !important; stroke-width:4; }
+.energized {
+  stroke:red !important;
+}
 
-  #panel { margin-top:20px; padding:10px; border:1px solid #aaa; }
+.hole {
+  fill:white;
+  stroke:black;
+  stroke-width:2;
+}
+
+.violation {
+  stroke:red !important;
+  stroke-width:4;
+}
+
+button { margin:5px; }
 </style>
 </head>
 <body>
 
-<h2>三路回路テスト</h2>
+<h2>三路複線図テスト</h2>
 
-<svg width="600" height="300">
+<svg width="800" height="400">
 
   <!-- 電源 -->
-  <circle cx="50" cy="150" r="15" class="hole" data-id="live"></circle>
-  <text x="35" y="190">L</text>
+  <circle cx="80" cy="120" r="15" class="hole" data-id="L"></circle>
+  <text x="70" y="100">L</text>
+
+  <circle cx="80" cy="280" r="15" class="hole" data-id="N"></circle>
+  <text x="70" y="260">N</text>
+
+  <!-- 縦幹線（N） -->
+  <path id="wire_N_trunk" class="wire"
+    d="M80 280 V280 H650 V200" />
 
   <!-- SW1 -->
-  <circle cx="200" cy="100" r="10" class="hole" data-id="sw1_common"></circle>
-  <circle cx="200" cy="150" r="10" class="hole" data-id="sw1_A"></circle>
-  <circle cx="200" cy="200" r="10" class="hole" data-id="sw1_B"></circle>
-  <text x="170" y="70">SW1</text>
+  <text x="250" y="70">SW1</text>
+  <circle cx="250" cy="120" r="10" class="hole" data-id="SW1_C"></circle>
+  <circle cx="250" cy="170" r="10" class="hole" data-id="SW1_A"></circle>
+  <circle cx="250" cy="220" r="10" class="hole" data-id="SW1_B"></circle>
 
   <!-- SW2 -->
-  <circle cx="350" cy="100" r="10" class="hole" data-id="sw2_common"></circle>
-  <circle cx="350" cy="150" r="10" class="hole" data-id="sw2_A"></circle>
-  <circle cx="350" cy="200" r="10" class="hole" data-id="sw2_B"></circle>
-  <text x="320" y="70">SW2</text>
+  <text x="450" y="70">SW2</text>
+  <circle cx="450" cy="120" r="10" class="hole" data-id="SW2_C"></circle>
+  <circle cx="450" cy="170" r="10" class="hole" data-id="SW2_A"></circle>
+  <circle cx="450" cy="220" r="10" class="hole" data-id="SW2_B"></circle>
 
   <!-- Lamp -->
-  <circle cx="500" cy="150" r="15" class="hole" data-id="lamp"></circle>
-  <text x="470" y="190">Lamp</text>
+  <text x="650" y="150">Lamp</text>
+  <circle cx="650" cy="200" r="15" class="hole" data-id="LAMP"></circle>
 
-  <!-- Neutral -->
-  <circle cx="550" cy="150" r="15" class="hole" data-id="neutral"></circle>
-  <text x="535" y="190">N</text>
+  <!-- 配線 -->
+  <path id="w1" class="wire" d="M80 120 H250 120" />
+  <path id="w2" class="wire" d="M250 170 H450 170" />
+  <path id="w3" class="wire" d="M250 220 H450 220" />
+  <path id="w4" class="wire" d="M450 120 H650 200" />
+  <path id="w5" class="wire" d="M650 200 V280 H80" />
 
 </svg>
 
 <div>
 <button onclick="toggleSW1()">SW1切替</button>
 <button onclick="toggleSW2()">SW2切替</button>
-<button onclick="makeViolation()">1穴1線違反発生</button>
+<button onclick="violate()">1穴1線違反</button>
 </div>
 
 <div id="panel"></div>
 
 <script>
 
-// ================= ENGINE =================
+// ======= 簡易エンジン =======
 
 class Hole {
-  constructor(id, capacity=1){
+  constructor(id,capacity=1){
     this.id=id
     this.capacity=capacity
     this.wires=[]
@@ -77,30 +102,12 @@ class Wire {
   other(h){ return h===this.a?this.b:this.a }
 }
 
-class ThreeWay {
-  constructor(common,A,B){
-    this.common=common
-    this.A=A
-    this.B=B
-    this.state=false
-  }
-  toggle(){ this.state=!this.state }
-  getPairs(){
-    return this.state?[[this.common,this.B]]:[[this.common,this.A]]
-  }
-}
-
 const holes={}
 document.querySelectorAll(".hole").forEach(el=>{
   holes[el.dataset.id]=new Hole(el.dataset.id)
 })
 
-let wires={}
-let violations=[]
-let energized=new Set()
-
-const sw1=new ThreeWay(holes.sw1_common,holes.sw1_A,holes.sw1_B)
-const sw2=new ThreeWay(holes.sw2_common,holes.sw2_A,holes.sw2_B)
+const wires={}
 
 function connect(id,a,b){
   const w=new Wire(id,a,b)
@@ -109,29 +116,21 @@ function connect(id,a,b){
   b.wires.push(w)
 }
 
-function setup(){
-  connect("w1",holes.live,holes.sw1_common)
-  connect("w2",holes.sw1_A,holes.sw2_A)
-  connect("w3",holes.sw1_B,holes.sw2_B)
-  connect("w4",holes.sw2_common,holes.lamp)
-  connect("w5",holes.lamp,holes.neutral)
-}
+connect("w1",holes.L,holes.SW1_C)
+connect("w2",holes.SW1_A,holes.SW2_A)
+connect("w3",holes.SW1_B,holes.SW2_B)
+connect("w4",holes.SW2_C,holes.LAMP)
+connect("w5",holes.LAMP,holes.N)
 
-setup()
-
-function checkOneHole(){
-  violations=[]
-  Object.values(holes).forEach(h=>{
-    if(h.wires.length>h.capacity){
-      violations.push("1穴1線違反: "+h.id)
-    }
-  })
-}
+let sw1=false
+let sw2=false
+let violations=[]
+let energized=new Set()
 
 function solve(){
   energized.clear()
   const visited=new Set()
-  const stack=[holes.live]
+  const stack=[holes.L]
 
   while(stack.length){
     const h=stack.pop()
@@ -143,58 +142,64 @@ function solve(){
       stack.push(w.other(h))
     })
 
-    ;[sw1,sw2].forEach(sw=>{
-      sw.getPairs().forEach(([a,b])=>{
-        if(h===a)stack.push(b)
-        if(h===b)stack.push(a)
-      })
-    })
+    // SW1
+    if(h===holes.SW1_C){
+      stack.push(sw1?holes.SW1_B:holes.SW1_A)
+    }
+    if(h===holes.SW1_A && !sw1) stack.push(holes.SW1_C)
+    if(h===holes.SW1_B && sw1) stack.push(holes.SW1_C)
+
+    // SW2
+    if(h===holes.SW2_C){
+      stack.push(sw2?holes.SW2_B:holes.SW2_A)
+    }
+    if(h===holes.SW2_A && !sw2) stack.push(holes.SW2_C)
+    if(h===holes.SW2_B && sw2) stack.push(holes.SW2_C)
   }
 }
 
-function render(){
-  document.querySelectorAll(".energized").forEach(e=>e.classList.remove("energized"))
-  document.querySelectorAll(".violation-major").forEach(e=>e.classList.remove("violation-major"))
+function checkViolation(){
+  violations=[]
+  Object.values(holes).forEach(h=>{
+    if(h.wires.length>h.capacity){
+      violations.push(h.id)
+    }
+  })
+}
 
-  energized.forEach(id=>{
-    const w=wires[id]
-    drawLine(w.a.id,w.b.id,true)
+function render(){
+  document.querySelectorAll(".wire").forEach(w=>{
+    w.classList.remove("energized")
   })
 
-  violations.forEach(v=>{
-    const id=v.split(": ")[1]
+  energized.forEach(id=>{
+    document.getElementById(id)?.classList.add("energized")
+  })
+
+  document.querySelectorAll(".hole").forEach(h=>{
+    h.classList.remove("violation")
+  })
+
+  violations.forEach(id=>{
     document.querySelector(`[data-id="${id}"]`)
-      ?.classList.add("violation-major")
+      ?.classList.add("violation")
   })
 
   document.getElementById("panel").innerHTML=
-    "違反:<br>"+(violations.join("<br>")||"なし")
-}
-
-function drawLine(idA,idB,on){
-  const elA=document.querySelector(`[data-id="${idA}"]`)
-  const elB=document.querySelector(`[data-id="${idB}"]`)
-  const line=document.createElementNS("http://www.w3.org/2000/svg","line")
-  line.setAttribute("x1",elA.getAttribute("cx"))
-  line.setAttribute("y1",elA.getAttribute("cy"))
-  line.setAttribute("x2",elB.getAttribute("cx"))
-  line.setAttribute("y2",elB.getAttribute("cy"))
-  line.setAttribute("class","wire"+(on?" energized":""))
-  document.querySelector("svg").appendChild(line)
+    "違反: "+(violations.join(", ")||"なし")
 }
 
 function reevaluate(){
-  document.querySelectorAll("line").forEach(l=>l.remove())
-  checkOneHole()
+  checkViolation()
   solve()
   render()
 }
 
-function toggleSW1(){ sw1.toggle(); reevaluate() }
-function toggleSW2(){ sw2.toggle(); reevaluate() }
+function toggleSW1(){ sw1=!sw1; reevaluate() }
+function toggleSW2(){ sw2=!sw2; reevaluate() }
 
-function makeViolation(){
-  connect("bad",holes.sw1_common,holes.sw1_A)
+function violate(){
+  connect("bad",holes.SW1_C,holes.SW1_A)
   reevaluate()
 }
 
