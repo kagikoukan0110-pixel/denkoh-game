@@ -1,269 +1,233 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>電工技能試験シミュレーター</title>
-
+<meta charset="UTF-8">
+<title>電工二種 技能試験シミュレーター</title>
 <style>
-body {
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:#f8f8f8;
-}
-
-header {
-  display:flex;
-  justify-content:space-between;
-  padding:12px 16px;
-  background:white;
-  box-shadow:0 2px 4px rgba(0,0,0,0.08);
-}
-
-button {
-  background:#111;
-  color:white;
-  border:none;
-  padding:8px 14px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-svg {
-  background:white;
-  display:block;
-  margin:20px auto;
-  box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-
-.device {
-  fill:white;
-  stroke:black;
-  stroke-width:2;
-}
-
-.terminal {
-  fill:white;
-  stroke:black;
-  stroke-width:2;
-  cursor:pointer;
-}
-
-.wire {
-  stroke:black;
-  stroke-width:3;
-}
-
-.live {
-  stroke:#e60000 !important;
-}
+body { font-family: sans-serif; background:#f4f6f8; padding:20px; }
+.panel { background:white; padding:15px; border-radius:8px; margin-bottom:15px; }
+button { padding:8px 12px; margin:5px; }
+.correct { color:green; font-weight:bold; }
+.error { color:red; font-weight:bold; }
+#lamp { width:40px; height:40px; border-radius:50%; background:#ccc; display:inline-block; }
+#lamp.on { background:red; box-shadow:0 0 15px red; transition:0.3s; }
+.timer { font-size:20px; font-weight:bold; }
 </style>
 </head>
 <body>
 
-<header>
-  <div>三路＋四路テスト回路</div>
-  <div id="timer">00:00</div>
-</header>
+<h2>電工二種 技能試験シミュレーター</h2>
 
-<svg id="board" width="800" height="400"></svg>
+<div class="panel">
+問題:
+<select id="problemSelect"></select>
+<button onclick="loadProblem()">読み込み</button>
+</div>
 
-<div style="text-align:center;margin-bottom:20px;">
-  <button onclick="check()">採点</button>
-  <button onclick="resetBoard()">リセット</button>
+<div class="panel">
+接続入力（端子A,B形式で入力）
+<input id="a">
+<input id="b">
+<button onclick="addConnection()">接続追加</button>
+<button onclick="resetConnections()">リセット</button>
+</div>
+
+<div class="panel">
+<button onclick="checkAnswer()">採点</button>
+<button onclick="startExam()">本番モード開始</button>
+<span class="timer" id="timer"></span>
+</div>
+
+<div class="panel">
+<div>ランプ: <span id="lamp"></span></div>
+<div id="result"></div>
 </div>
 
 <script>
-/* ===============================
-   Graph
-================================*/
+// =========================
+// Graph クラス
+// =========================
 class Graph {
-  constructor(){ this.edges = {}; }
-  connect(a,b){
-    if(!this.edges[a]) this.edges[a]=[];
-    if(!this.edges[b]) this.edges[b]=[];
-    if(!this.edges[a].includes(b)) this.edges[a].push(b);
-    if(!this.edges[b].includes(a)) this.edges[b].push(a);
-  }
+    constructor() {
+        this.adj = {};
+    }
+
+    addEdge(a,b){
+        if(!this.adj[a]) this.adj[a]=[];
+        if(!this.adj[b]) this.adj[b]=[];
+        this.adj[a].push(b);
+        this.adj[b].push(a);
+    }
+
+    dfs(start, visited = new Set()){
+        visited.add(start);
+        for(const next of this.adj[start] || []){
+            if(!visited.has(next)){
+                this.dfs(next, visited);
+            }
+        }
+        return visited;
+    }
+
+    isConnected(a,b){
+        if(!this.adj[a]) return false;
+        return this.dfs(a).has(b);
+    }
 }
 
-/* ===============================
-   Problem
-================================*/
-const problem = {
-  power:{
-    L:"breaker.L_out",
-    N:"lamp.N"
-  },
-  devices:[
-    {id:"breaker",type:"breaker",terminals:["L_in","L_out"]},
-    {id:"sw1",type:"3way",terminals:["common","traveler1","traveler2"],state:0},
-    {id:"sw2",type:"4way",terminals:["in1","in2","out1","out2"],state:0},
-    {id:"sw3",type:"3way",terminals:["common","traveler1","traveler2"],state:0},
-    {id:"lamp",type:"lamp",terminals:["L","N"]}
-  ],
-  rules:{ oneHoleOneWire:true, detectShort:true }
+// =========================
+// 問題データ
+// =========================
+const problems = {
+    1:{
+        name:"No1 三路2台",
+        solution:[["L","S1"],["S1","S2"],["S2","Lamp"],["Lamp","N"]],
+        internal:[]
+    },
+    2:{
+        name:"No2 三路＋四路",
+        solution:[["L","S1"],["S1","S2"],["S2","S3"],["S3","Lamp"],["Lamp","N"]],
+        internal:[]
+    },
+    3:{
+        name:"No3 片切＋コンセント送り",
+        solution:[["L","SW"],["SW","Lamp"],["Lamp","N"],["L","Outlet"]],
+        internal:[]
+    },
+    4:{
+        name:"No4 ジョイント分岐",
+        solution:[["L","J1"],["J1","Lamp1"],["J1","Lamp2"],["Lamp1","N"],["Lamp2","N"]],
+        internal:[]
+    },
+    5:{
+        name:"No5 複数灯回路",
+        solution:[["L","SW"],["SW","Lamp1"],["SW","Lamp2"],["Lamp1","N"],["Lamp2","N"]],
+        internal:[]
+    }
 };
 
-/* ===============================
-   Engine
-================================*/
-class Engine{
-  constructor(problem){
-    this.problem=problem;
-    this.graph=new Graph();
-    this.userConnections=[];
-  }
+let currentProblem = null;
+let userConnections = [];
+let timerInterval = null;
+let timeLeft = 0;
 
-  rebuild(){
-    this.graph=new Graph();
-    for(const [a,b] of this.userConnections){
-      this.graph.connect(a,b);
+// =========================
+// 初期化
+// =========================
+function init(){
+    const select = document.getElementById("problemSelect");
+    Object.keys(problems).forEach(k=>{
+        const opt=document.createElement("option");
+        opt.value=k;
+        opt.textContent=problems[k].name;
+        select.appendChild(opt);
+    });
+}
+init();
+
+// =========================
+// 問題読み込み
+// =========================
+function loadProblem(){
+    const id=document.getElementById("problemSelect").value;
+    currentProblem=problems[id];
+    userConnections=[];
+    document.getElementById("result").innerHTML="";
+    document.getElementById("lamp").classList.remove("on");
+}
+
+// =========================
+// 接続操作
+// =========================
+function addConnection(){
+    const a=document.getElementById("a").value.trim();
+    const b=document.getElementById("b").value.trim();
+    if(!a || !b) return;
+
+    // 1穴1線チェック
+    if(userConnections.some(e=>e[0]===a || e[1]===a) ||
+       userConnections.some(e=>e[0]===b || e[1]===b)){
+        alert("1穴1線違反");
+        return;
     }
-    this.applyInternal();
-  }
 
-  applyInternal(){
-    for(const d of this.problem.devices){
+    userConnections.push([a,b]);
+    document.getElementById("a").value="";
+    document.getElementById("b").value="";
+}
 
-      if(d.type==="3way"){
-        const c=`${d.id}.common`;
-        const t1=`${d.id}.traveler1`;
-        const t2=`${d.id}.traveler2`;
-        this.graph.connect(c, d.state===0?t1:t2);
-      }
+function resetConnections(){
+    userConnections=[];
+    document.getElementById("lamp").classList.remove("on");
+}
 
-      if(d.type==="4way"){
-        const i1=`${d.id}.in1`;
-        const i2=`${d.id}.in2`;
-        const o1=`${d.id}.out1`;
-        const o2=`${d.id}.out2`;
-        if(d.state===0){
-          this.graph.connect(i1,o1);
-          this.graph.connect(i2,o2);
-        }else{
-          this.graph.connect(i1,o2);
-          this.graph.connect(i2,o1);
+// =========================
+// 判定ロジック
+// =========================
+function normalize(arr){
+    return arr.map(e=>e.slice().sort().join("-")).sort();
+}
+
+function checkAnswer(){
+    if(!currentProblem) return;
+
+    const sol = normalize(currentProblem.solution);
+    const usr = normalize(userConnections);
+
+    const missing = sol.filter(x=>!usr.includes(x));
+    const extra = usr.filter(x=>!sol.includes(x));
+
+    // 短絡チェック
+    const graph=new Graph();
+    userConnections.forEach(e=>graph.addEdge(e[0],e[1]));
+    if(graph.isConnected("L","N")){
+        document.getElementById("result").innerHTML="<div class='error'>短絡発生</div>";
+        return;
+    }
+
+    if(missing.length===0 && extra.length===0){
+        document.getElementById("result").innerHTML="<div class='correct'>合格</div>";
+        document.getElementById("lamp").classList.add("on");
+    }else{
+        document.getElementById("result").innerHTML=
+            "<div class='error'>不正解<br>不足:"+missing+"<br>余分:"+extra+"</div>";
+    }
+}
+
+// =========================
+// 本番モード
+// =========================
+function startExam(){
+    timeLeft=60;
+    document.getElementById("timer").textContent=timeLeft;
+
+    timerInterval=setInterval(()=>{
+        timeLeft--;
+        document.getElementById("timer").textContent=timeLeft;
+
+        if(timeLeft<=10){
+            document.getElementById("timer").style.color="red";
         }
-      }
-    }
-  }
 
-  dfs(a,target,visited=new Set()){
-    if(a===target) return true;
-    visited.add(a);
-    const neighbors=this.graph.edges[a]||[];
-    for(const n of neighbors){
-      if(!visited.has(n)){
-        if(this.dfs(n,target,visited)) return true;
-      }
-    }
-    return false;
-  }
-
-  isLampOn(){
-    return this.dfs(problem.power.L,"lamp.L") &&
-           !this.dfs(problem.power.L,problem.power.N);
-  }
+        if(timeLeft<=0){
+            clearInterval(timerInterval);
+            checkAnswer();
+            alert("終了");
+        }
+    },1000);
 }
 
-const engine=new Engine(problem);
-
-/* ===============================
-   Storage
-================================*/
-class StorageManager{
-  constructor(){ this.key="denko_data"; }
-  save(data){ localStorage.setItem(this.key,JSON.stringify(data)); }
-  load(){ return JSON.parse(localStorage.getItem(this.key)||"{}"); }
-}
-const storage=new StorageManager();
-
-/* ===============================
-   UI
-================================*/
-const svg=document.getElementById("board");
-let selected=null;
-
-function addTerminal(x,y,id){
-  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  c.setAttribute("cx",x);
-  c.setAttribute("cy",y);
-  c.setAttribute("r",6);
-  c.setAttribute("class","terminal");
-  c.dataset.terminal=id;
-  c.onclick=terminalClick;
-  svg.appendChild(c);
+// =========================
+// 保存基盤
+// =========================
+function saveStats(problemId, result){
+    const data=JSON.parse(localStorage.getItem("stats")||"{}");
+    if(!data[problemId]) data[problemId]={correct:0,total:0};
+    data[problemId].total++;
+    if(result) data[problemId].correct++;
+    localStorage.setItem("stats",JSON.stringify(data));
 }
 
-function terminalClick(e){
-  const id=e.target.dataset.terminal;
-  if(!selected){
-    selected=id;
-  }else{
-    engine.userConnections.push([selected,id]);
-    selected=null;
-    engine.rebuild();
-    render();
-  }
-}
-
-function drawWire(a,b,live){
-  const A=document.querySelector(`[data-terminal="${a}"]`);
-  const B=document.querySelector(`[data-terminal="${b}"]`);
-  if(!A||!B)return;
-  const x1=A.getAttribute("cx");
-  const y1=A.getAttribute("cy");
-  const x2=B.getAttribute("cx");
-  const y2=B.getAttribute("cy");
-
-  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1);
-  line.setAttribute("y1",y1);
-  line.setAttribute("x2",x2);
-  line.setAttribute("y2",y2);
-  line.setAttribute("class","wire"+(live?" live":""));
-  svg.appendChild(line);
-}
-
-function render(){
-  document.querySelectorAll(".wire").forEach(e=>e.remove());
-  for(const [a,b] of engine.userConnections){
-    drawWire(a,b,false);
-  }
-  if(engine.isLampOn()){
-    document.querySelectorAll(".wire").forEach(w=>w.classList.add("live"));
-  }
-}
-
-function resetBoard(){
-  engine.userConnections=[];
-  engine.rebuild();
-  render();
-}
-
-/* ===============================
-   初期配置
-================================*/
-addTerminal(100,200,"breaker.L_out");
-addTerminal(200,150,"sw1.common");
-addTerminal(200,250,"sw1.traveler1");
-addTerminal(200,300,"sw1.traveler2");
-
-addTerminal(350,200,"sw2.in1");
-addTerminal(350,250,"sw2.in2");
-addTerminal(450,200,"sw2.out1");
-addTerminal(450,250,"sw2.out2");
-
-addTerminal(600,150,"sw3.common");
-addTerminal(600,250,"sw3.traveler1");
-addTerminal(600,300,"sw3.traveler2");
-
-addTerminal(750,200,"lamp.L");
-addTerminal(750,250,"lamp.N");
-
-engine.rebuild();
 </script>
-
 </body>
 </html>
