@@ -58,6 +58,8 @@ body {
 let game = document.getElementById("game");
 let drawing = false;
 let lastX, lastY;
+  let goal = document.getElementById("goal");
+let cleared = false;
 
 game.addEventListener("touchstart", startDraw);
 game.addEventListener("mousedown", startDraw);
@@ -102,7 +104,19 @@ function draw(e) {
     Math.atan2(pos.y - lastY, pos.x - lastX) +
     "rad)";
   game.appendChild(line);
+// ゴール判定
+let goalRect = goal.getBoundingClientRect();
+let gameRect = game.getBoundingClientRect();
 
+let goalX = goalRect.left - gameRect.left + 10;
+let goalY = goalRect.top - gameRect.top + 10;
+
+if (Math.hypot(pos.x - goalX, pos.y - goalY) < 15 && !cleared) {
+  cleared = true;
+  setTimeout(() => {
+    alert("⚡ 施工完了！");
+  }, 100);
+}
   lastX = pos.x;
   lastY = pos.y;
 }
