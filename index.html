@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - ジョイントボックス</title>
+<title>複線図モード - 模範表示</title>
 
 <style>
 body{
@@ -69,6 +69,11 @@ body{
   font-size:20px;
   font-weight:bold;
 }
+
+#answerImage{
+  display:none;
+  margin-top:15px;
+}
 </style>
 </head>
 
@@ -78,38 +83,42 @@ body{
 
 <div id="board">
 
-  <!-- 電源 -->
   <div class="node" style="top:40px; left:20px;">電源</div>
   <div class="terminal" data-id="L" style="top:90px; left:50px;"></div>
   <div class="terminal" data-id="N" style="top:120px; left:50px;"></div>
 
-  <!-- スイッチ -->
   <div class="node" style="top:40px; left:250px;">SW</div>
   <div class="terminal" data-id="SW1" style="top:90px; left:280px;"></div>
   <div class="terminal" data-id="SW2" style="top:120px; left:280px;"></div>
 
-  <!-- ランプ -->
   <div class="node" style="top:400px; left:140px;">ランプ</div>
   <div class="terminal" data-id="Lamp1" style="top:360px; left:165px;"></div>
   <div class="terminal" data-id="Lamp2" style="top:360px; left:195px;"></div>
 
-  <!-- ジョイントボックス -->
   <div class="jb"></div>
 
-  <!-- JB端子 -->
   <div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
   <div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
   <div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
-
-  <div class="terminal" data-id="JB4" style="top:260px; left:140px;"></div>
-  <div class="terminal" data-id="JB5" style="top:260px; left:190px;"></div>
-  <div class="terminal" data-id="JB6" style="top:260px; left:240px;"></div>
 
 </div>
 
 <div id="score">スコア: 10000</div>
 <div id="message"></div>
 <button onclick="resetGame()">リセット</button>
+
+<!-- 正解画像（簡易SVG） -->
+<div id="answerImage">
+  <h3>模範複線図</h3>
+  <svg width="300" height="200">
+    <line x1="20" y1="50" x2="120" y2="100" stroke="black" stroke-width="3"/>
+    <line x1="280" y1="50" x2="170" y2="100" stroke="black" stroke-width="3"/>
+    <line x1="150" y1="180" x2="150" y2="120" stroke="black" stroke-width="3"/>
+    <text x="10" y="45">L</text>
+    <text x="280" y="45">SW</text>
+    <text x="145" y="195">Lamp</text>
+  </svg>
+</div>
 
 <script>
 
@@ -120,6 +129,7 @@ let connections=[];
 const board=document.getElementById("board");
 const scoreDisplay=document.getElementById("score");
 const message=document.getElementById("message");
+const answerImage=document.getElementById("answerImage");
 
 const correctPairs=[
   ["L","JB1"],
@@ -183,6 +193,7 @@ function check(a,b){
 
   if(connections.length===correctPairs.length){
     message.innerText="💡 正解！ランプ点灯！";
+    answerImage.style.display="block";
   }
 }
 
@@ -192,6 +203,7 @@ function resetGame(){
   score=10000;
   scoreDisplay.innerText="スコア: 10000";
   message.innerText="";
+  answerImage.style.display="none";
 }
 
 </script>
