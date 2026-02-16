@@ -1,825 +1,323 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>電工二種 技能試験シミュレーター（統合版）</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>電工二種 技能試験シミュレーター</title>
+
 <style>
-  :root { --bg:#f4f6f8; --panel:#fff; --accent:#4da3ff; --danger:#ff4444; }
-  body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; padding:16px;}
-  .wrap{max-width:1200px;margin:0 auto;}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-  h1{font-size:18px;margin:0;}
-  .panel{background:var(--panel);padding:12px;border-radius:10px;margin-bottom:12px;box-shadow:0 1px 0 rgba(0,0,0,0.04);}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-  button{padding:8px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;}
-  button.primary{background:var(--accent);color:white;border:none;}
-  #circuit{width:100%;height:420px;background:#fff;border-radius:6px;border:1px solid #ddd; touch-action:none;}
-  .term-info{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
-  .selected{outline:2px solid var(--accent);border-radius:50%;}
-  .lamp{display:inline-block;width:36px;height:36px;border-radius:50%;background:#ccc;vertical-align:middle}
-  .lamp.on{background:var(--danger);box-shadow:0 0 16px rgba(255,80,80,0.8);transition:0.3s;}
-  .connection-list{max-height:120px;overflow:auto;padding:6px;background:#fafafa;border:1px dashed #eee;border-radius:6px;}
-  .fault{color:var(--danger);font-weight:700;}
-  .sleeveLabel{font-weight:700;fill:#222}
-  .powered{stroke:#ff3b3b !important; stroke-dasharray:8 6; animation:flow 0.6s linear infinite;}
-  @keyframes flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-30}}
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
-  .small{font-size:13px;color:#666}
-  .badge{display:inline-block;padding:4px 8px;border-radius:8px;background:#eee}
-  .dangerBox{padding:8px;background:#fff3f3;border:1px solid #ffd0d0;border-radius:8px}
-  .ok{color:green;font-weight:700}
-  /* responsive */
-  @media (max-width:640px){ #circuit{height:360px} }
+body{font-family:sans-serif;background:#f4f6f8;margin:0;padding:20px;}
+.panel{background:#fff;padding:15px;border-radius:8px;margin-bottom:15px;}
+#circuit{width:100%;height:420px;border:1px solid #ccc;background:#fafafa;touch-action:none;}
+.lamp{width:36px;height:36px;border-radius:50%;background:#ccc;display:inline-block;}
+.lamp.on{background:red;box-shadow:0 0 15px red;}
+.powered{stroke:#ff0000 !important;stroke-dasharray:8 6;animation:flow 0.6s linear infinite;}
+@keyframes flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-30}}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>電工二種 技能試験シミュレーター（統合版）</h1>
-      <div class="small">令和7想定問題テンプレ ×13 / 減点式採点 / 模擬試験</div>
-    </header>
 
-    <div class="panel controls">
-      <label>問題：
-        <select id="problemSelect"></select>
-      </label>
-      <button onclick="loadProblem()" class="primary">読み込み</button>
-      <button onclick="startMockExam()">模擬試験(13問)</button>
-      <label>配線色：
-        <select id="wireColorSelect">
-          <option value="black">黒</option>
-          <option value="white">白</option>
-          <option value="red">赤</option>
-        </select>
-      </label>
-      <label>模試タイム(秒 / 問)：<input id="examTimePer" type="number" value="60" style="width:80px"></label>
-      <button onclick="togglePRO()">PRO</button>
-      <div style="margin-left:auto" class="small">保存: localStorage</div>
-    </div>
+<div class="panel">
+問題:
+<select id="problemSelect">
+<option value="1">No1 三路2台</option>
+</select>
+<button onclick="loadProblem()">読み込み</button>
 
-    <div class="panel">
-      <svg id="circuit" viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div class="term-info">
-        <div>ランプ: <span id="lamp" class="lamp"></span></div>
-        <div id="resultArea" class="small"></div>
-        <div id="timerArea" class="small" style="margin-left:auto"></div>
-      </div>
-    </div>
+配線色:
+<select id="wireColorSelect">
+<option value="black">黒</option>
+<option value="white">白</option>
+<option value="red">赤</option>
+</select>
 
-    <div class="panel">
-      <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="resetConnections()">リセット</button>
-        <button onclick="checkAnswer()">採点</button>
-        <button onclick="saveCurrentAttempt()">保存</button>
-      </div>
-      <div style="margin-top:8px">
-        <strong>接続一覧</strong>
-        <div id="connectionList" class="connection-list small"></div>
-      </div>
-    </div>
+<button onclick="resetConnections()">リセット</button>
+<button onclick="checkAnswer()">採点</button>
+</div>
 
-    <div class="panel stats-grid">
-      <div>
-        <strong>成績統計</strong>
-        <div id="statSummary" class="small"></div>
-      </div>
-      <div>
-        <strong>弱点分析（頻出欠陥）</strong>
-        <div id="weakness" class="small"></div>
-      </div>
-      <div>
-        <strong>模試履歴（最新10）</strong>
-        <div id="history" class="small"></div>
-      </div>
-      <div>
-        <strong>PRO機能</strong>
-        <div id="proInfo" class="small"></div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <strong>説明</strong>
-      <div class="small">・端子をタップしてドラッグで接続。端子→端子で直角折れ線が引かれます。<br>
-      ・配線はクリックで削除できます。ボックス（BOX）は複数線合流可。短絡・色ミス・余長不足は減点/致命。模擬試験は13問自動出題。</div>
-    </div>
-  </div>
+<div class="panel">
+<svg id="circuit" viewBox="0 0 1000 420"></svg>
+<div style="margin-top:10px;">
+ランプ: <span id="lamp" class="lamp"></span>
+<span id="result"></span>
+</div>
+</div>
 
 <script>
-/* ===========================
-   データ / 初期化
-   =========================== */
 
-const problems = {}; // 1..13 のテンプレを動的生成
-function makeProblemTemplate(id){
-  // 基本横並び盤面（電源 -> S1 -> BOX -> S2 -> Lamp）
-  // 端子名に id を含めてユニーク化（複数問題でも共存可能）
-  const base = {
-    id: id,
-    name: `No${id} 三路2台 変種 ${id}`,
-    terminals: [
-      {id:`L_${id}`,x:100,y:210,label:'L'},
-      {id:`N_${id}`,x:140,y:210,label:'N'},
+// =====================
+// グローバル
+// =====================
 
-      {id:`S1-COM_${id}`,x:260,y:140,label:'S1-COM'},
-      {id:`S1-T1_${id}`,x:230,y:260,label:'S1-T1'},
-      {id:`S1-T2_${id}`,x:290,y:260,label:'S1-T2'},
-
-      // BOX (3 terminals)
-      {id:`BOX1_${id}`,x:430,y:260,label:'BOX1'},
-      {id:`BOX2_${id}`,x:470,y:260,label:'BOX2'},
-      {id:`BOX3_${id}`,x:510,y:260,label:'BOX3'},
-
-      {id:`S2-COM_${id}`,x:620,y:140,label:'S2-COM'},
-      {id:`S2-T1_${id}`,x:590,y:260,label:'S2-T1'},
-      {id:`S2-T2_${id}`,x:650,y:260,label:'S2-T2'},
-
-      {id:`Lamp-L_${id}`,x:780,y:190,label:'Lamp-L'},
-      {id:`Lamp-N_${id}`,x:820,y:190,label:'Lamp-N'}
-    ],
-    // 正解（配線）を端子IDで指定（order not important）
-    solution:[
-      [`L_${id}`,`S1-COM_${id}`],
-      [`S1-T1_${id}`,`S2-T1_${id}`],
-      [`S1-T2_${id}`,`S2-T2_${id}`],
-      [`S2-COM_${id}`,`Lamp-L_${id}`],
-      [`Lamp-N_${id}`,`N_${id}`],
-      // BOX経由を必須にするため解はBOXとの接続になる（実際はBOX接続→BOX内で合流）
-      [`S1-T1_${id}`,`BOX1_${id}`],
-      [`S1-T2_${id}`,`BOX2_${id}`],
-      [`BOX1_${id}`,`S2-T1_${id}`],
-      [`BOX2_${id}`,`S2-T2_${id}`]
-    ]
-  };
-  return base;
-}
-for(let i=1;i<=13;i++) problems[i]=makeProblemTemplate(i);
-
-/* global state */
-let currentProblem = null;
-let userConnections = []; // {a,b,line,baseColor,logicalColor}
-let selectedTerminal = null;
-let switchState = {}; // S1/S2: 0 or 1
+const svg = document.getElementById("circuit");
+const lampEl = document.getElementById("lamp");
+let userConnections = [];
 let dragStart = null;
 let tempLine = null;
-let examQueue = [];
-let examIndex = 0;
-let examTimer = null;
-let examTimeLeft = 0;
-let proEnabled = localStorage.getItem("sim_pro_enabled") === "1";
+let currentId = 1;
+let switchState = {};
 
-/* DOM refs */
-const svg = document.getElementById("circuit");
-const problemSelect = document.getElementById("problemSelect");
-const connectionList = document.getElementById("connectionList");
-const lampEl = document.getElementById("lamp");
-const resultArea = document.getElementById("resultArea");
-const statSummary = document.getElementById("statSummary");
-const weakness = document.getElementById("weakness");
-const history = document.getElementById("history");
-const proInfo = document.getElementById("proInfo");
+// =====================
+// 問題ロード
+// =====================
 
-/* fill problem select */
-Object.values(problems).forEach(p=>{
-  const o = document.createElement("option");
-  o.value=p.id;
-  o.textContent=p.name;
-  problemSelect.appendChild(o);
-});
+function loadProblem(){
+    currentId = 1;
+    userConnections=[];
+    clearSVG();
+    renderBoard(currentId);
+    updateLamp();
+}
 
-/* ===========================
-   SVG rendering utilities
-   =========================== */
+// =====================
+// SVG描画
+// =====================
 
 function clearSVG(){
-  while(svg.firstChild) svg.removeChild(svg.firstChild);
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
 }
 
-function renderProblem(p){
-  clearSVG();
-  // background grid optional
-  // draw devices as rects and terminals as circles
-  p.terminals.forEach(t=>{
-    // draw device box only for major groups by approximate positions
-    // terminals drawn as circle with data-terminal
-    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",t.x);
-    c.setAttribute("cy",t.y);
-    c.setAttribute("r",10);
-    c.setAttribute("fill","#fff");
-    c.setAttribute("stroke","#333");
-    c.setAttribute("data-terminal",t.id);
-    c.setAttribute("data-label",t.label);
-    c.style.cursor = "pointer";
-    svg.appendChild(c);
+function drawDevice(x,y,w,h,title,terms){
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x",x);
+    rect.setAttribute("y",y);
+    rect.setAttribute("width",w);
+    rect.setAttribute("height",h);
+    rect.setAttribute("fill","#e9edf2");
+    rect.setAttribute("stroke","#aaa");
+    svg.appendChild(rect);
 
-    // text label near
-    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
-    txt.setAttribute("x",t.x - 22);
-    txt.setAttribute("y",t.y - 14);
-    txt.setAttribute("font-size",12);
-    txt.textContent = t.label;
-    svg.appendChild(txt);
-  });
+    const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+    text.setAttribute("x",x+10);
+    text.setAttribute("y",y-5);
+    text.setAttribute("font-size","12");
+    text.textContent = title;
+    svg.appendChild(text);
 
-  // draw device boxes (visual only)
-  const devices = [
-    {x:60,y:150,w:120,h:100,label:'電源'},
-    {x:240,y:100,w:160,h:180,label:'三路スイッチ1'},
-    {x:420,y:230,w:120,h:90,label:'BOX'},
-    {x:600,y:100,w:160,h:180,label:'三路スイッチ2'},
-    {x:740,y:150,w:120,h:80,label:'引掛シーリング'}
-  ];
-  devices.forEach(d=>{
-    const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
-    r.setAttribute("x",d.x);
-    r.setAttribute("y",d.y);
-    r.setAttribute("width",d.w);
-    r.setAttribute("height",d.h);
-    r.setAttribute("fill","#f1f5f8");
-    r.setAttribute("stroke","#cfcfcf");
-    svg.insertBefore(r, svg.firstChild);
-    const t = document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x",d.x + 8);
-    t.setAttribute("y",d.y - 6);
-    t.setAttribute("font-size",12);
-    t.textContent = d.label;
-    svg.insertBefore(t, svg.firstChild);
-  });
+    terms.forEach(t=>{
+        const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+        c.setAttribute("cx",t.x);
+        c.setAttribute("cy",t.y);
+        c.setAttribute("r",10);
+        c.setAttribute("fill","#fff");
+        c.setAttribute("stroke","#333");
+        c.setAttribute("data-terminal",t.id);
+        svg.appendChild(c);
 
-  // reset switch states for the problem
-  switchState = {};
-  // find S1 and S2 terminals in names to set keys
-  p.terminals.forEach(t=>{
-    if(t.id.includes("S1-COM")) switchState[`S1_${p.id}`] = 0;
-    if(t.id.includes("S2-COM")) switchState[`S2_${p.id}`] = 0;
-  });
+        const label = document.createElementNS("http://www.w3.org/2000/svg","text");
+        label.setAttribute("x",t.x-15);
+        label.setAttribute("y",t.y-15);
+        label.setAttribute("font-size","10");
+        label.textContent=t.label;
+        svg.appendChild(label);
+    });
 }
 
-/* ===========================
-   Terminal helpers
-   =========================== */
+function renderBoard(id){
 
-function getTerminalElement(name){
-  return svg.querySelector(`[data-terminal='${name}']`);
+    drawDevice(60,170,120,80,"電源",[
+        {id:"L",x:90,y:210,label:"L"},
+        {id:"N",x:130,y:210,label:"N"}
+    ]);
+
+    drawDevice(230,150,180,100,"三路スイッチ1",[
+        {id:"S1-COM",x:260,y:200,label:"COM"},
+        {id:"S1-T1",x:330,y:200,label:"T1"},
+        {id:"S1-T2",x:390,y:200,label:"T2"}
+    ]);
+
+    drawDevice(440,180,140,80,"BOX",[
+        {id:"BOX1",x:470,y:220,label:"B1"},
+        {id:"BOX2",x:510,y:220,label:"B2"},
+        {id:"BOX3",x:550,y:220,label:"B3"}
+    ]);
+
+    drawDevice(620,150,180,100,"三路スイッチ2",[
+        {id:"S2-COM",x:650,y:200,label:"COM"},
+        {id:"S2-T1",x:720,y:200,label:"T1"},
+        {id:"S2-T2",x:780,y:200,label:"T2"}
+    ]);
+
+    drawDevice(830,170,120,80,"引掛シーリング",[
+        {id:"Lamp-L",x:860,y:210,label:"L"},
+        {id:"Lamp-N",x:900,y:210,label:"N"}
+    ]);
+
+    switchState["S1"]=0;
+    switchState["S2"]=0;
 }
 
-function getTerminalPosition(name){
-  const el = getTerminalElement(name);
-  if(!el) return {x:0,y:0};
-  const cx = parseFloat(el.getAttribute("cx"));
-  const cy = parseFloat(el.getAttribute("cy"));
-  return {x:cx,y:cy};
+// =====================
+// 座標取得
+// =====================
+
+function getPos(name){
+    const el = svg.querySelector(`[data-terminal='${name}']`);
+    return {
+        x: parseFloat(el.getAttribute("cx")),
+        y: parseFloat(el.getAttribute("cy"))
+    };
 }
 
-function isBoxTerminal(t){
-  return t.startsWith("BOX");
-}
-
-/* ===========================
-   Draw wire (折れ線) & helpers
-   =========================== */
+// =====================
+// 折れ線描画
+// =====================
 
 function drawWire(a,b,color){
-  const posA = getTerminalPosition(a);
-  const posB = getTerminalPosition(b);
 
-  // create L-shape: go horizontal from A to midX then vertical to B.y
-  const midX = (posA.x + posB.x) / 2;
-  const points = `${posA.x},${posA.y} ${midX},${posA.y} ${midX},${posB.y} ${posB.x},${posB.y}`;
+    const p1 = getPos(a);
+    const p2 = getPos(b);
 
-  const poly = document.createElementNS("http://www.w3.org/2000/svg","polyline");
-  poly.setAttribute("points",points);
-  poly.setAttribute("fill","none");
-  poly.setAttribute("stroke", color || "#000");
-  poly.setAttribute("stroke-width",4);
-  poly.setAttribute("stroke-linecap","round");
-  poly.style.cursor = "pointer";
+    const midX = (p1.x+p2.x)/2;
 
-  // allow deletion by tap/click
-  poly.addEventListener("click",(ev)=>{
-    ev.stopPropagation();
-    // remove connection object and element
-    userConnections = userConnections.filter(c=>{
-      if(c.line === poly){
-        // remove SVG element
+    const poly = document.createElementNS("http://www.w3.org/2000/svg","polyline");
+    poly.setAttribute("points",
+        `${p1.x},${p1.y} ${midX},${p1.y} ${midX},${p2.y} ${p2.x},${p2.y}`
+    );
+    poly.setAttribute("fill","none");
+    poly.setAttribute("stroke",color);
+    poly.setAttribute("stroke-width","4");
+    poly.setAttribute("stroke-linecap","round");
+
+    poly.addEventListener("click",()=>{
         poly.remove();
-        return false;
-      }
-      return true;
+        userConnections = userConnections.filter(c=>c.line!==poly);
+        updateLamp();
     });
-    updateConnectionList();
-    updateLamp();
-  });
 
-  svg.appendChild(poly);
-  return poly;
+    svg.appendChild(poly);
+    return poly;
 }
 
-function getWireColorByLogic(a,b){
-  // automatic guess: if N involved -> white; if box crossing (S1-T <-> S2-T) -> red; else black
-  if(a.includes("N") || b.includes("N")) return "#ffffff";
-  if((a.includes("S1-T") && b.includes("S2-T")) || (b.includes("S1-T") && a.includes("S2-T"))) return "#cc0000";
-  return "#000000";
-}
-
-/* ===========================
-   Connection creation / rules
-   =========================== */
-
-function isDirectAllowed(a,b){
-  const deviceA = a.split("_")[0].split("-")[0];
-  const deviceB = b.split("_")[0].split("-")[0];
-  // same device allowed (internal)
-  if(deviceA === deviceB) return true;
-  // S1 <-> S2 direct not allowed (must go via BOX)
-  if((deviceA.startsWith("S1") && deviceB.startsWith("S2")) ||
-     (deviceA.startsWith("S2") && deviceB.startsWith("S1"))) return false;
-  return true;
-}
-
-function isOccupied(terminal){
-  // terminals that are BOX can hold multiple lines
-  if(isBoxTerminal(terminal)) return false;
-  return userConnections.some(e=>e.a === terminal || e.b === terminal);
-}
+// =====================
+// 接続作成
+// =====================
 
 function createConnection(a,b){
-  if(a === b) return;
-  // enforce box routing rule
-  if(!isDirectAllowed(a,b)){
-    alert("ボックス経由で接続してください（試験盤ルール）");
-    return;
-  }
-  // 1穴1線 except for BOX
-  if(isOccupied(a) || isOccupied(b)){
-    alert("1穴1線違反（ボックス以外は複数線不可）");
-    return;
-  }
-  // color from selector but show baseColor
-  const userColor = document.getElementById("wireColorSelect").value;
-  const colorMap = {black:"#000000",white:"#ffffff",red:"#cc0000"};
-  const baseColor = colorMap[userColor] || getWireColorByLogic(a,b);
 
-  const line = drawWire(a,b, baseColor);
+    if(userConnections.some(e=>e.a===a||e.b===a)) return;
+    if(userConnections.some(e=>e.a===b||e.b===b)) return;
 
-  userConnections.push({a,b,line,baseColor,logicalColor:userColor});
-  updateConnectionList();
-  updateLamp();
+    const sel = document.getElementById("wireColorSelect").value;
+    const colorMap={black:"#000",white:"#fff",red:"#cc0000"};
+    const line = drawWire(a,b,colorMap[sel]);
+
+    userConnections.push({a,b,line,color:sel});
+    updateLamp();
 }
 
-/* pointer drag connect (touch/mouse) */
+// =====================
+// ドラッグ接続
+// =====================
+
 svg.addEventListener("pointerdown",(e)=>{
-  const t = e.target;
-  if(t && t.dataset && t.dataset.terminal){
-    dragStart = t.dataset.terminal;
-    const pos = getTerminalPosition(dragStart);
-    tempLine = document.createElementNS("http://www.w3.org/2000/svg","line");
-    tempLine.setAttribute("x1",pos.x);
-    tempLine.setAttribute("y1",pos.y);
-    tempLine.setAttribute("x2",pos.x);
-    tempLine.setAttribute("y2",pos.y);
-    tempLine.setAttribute("stroke","#999");
-    tempLine.setAttribute("stroke-width",3);
-    tempLine.setAttribute("stroke-linecap","round");
-    svg.appendChild(tempLine);
-    svg.setPointerCapture(e.pointerId);
-  }
+    const t = e.target;
+    if(t.dataset && t.dataset.terminal){
+        dragStart=t.dataset.terminal;
+        const p=getPos(dragStart);
+
+        tempLine=document.createElementNS("http://www.w3.org/2000/svg","line");
+        tempLine.setAttribute("x1",p.x);
+        tempLine.setAttribute("y1",p.y);
+        tempLine.setAttribute("x2",p.x);
+        tempLine.setAttribute("y2",p.y);
+        tempLine.setAttribute("stroke","#999");
+        tempLine.setAttribute("stroke-width","3");
+        svg.appendChild(tempLine);
+    }
 });
 
 svg.addEventListener("pointermove",(e)=>{
-  if(tempLine){
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX; pt.y = e.clientY;
-    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-    tempLine.setAttribute("x2", svgP.x);
-    tempLine.setAttribute("y2", svgP.y);
-  }
+    if(tempLine){
+        const pt=svg.createSVGPoint();
+        pt.x=e.clientX;
+        pt.y=e.clientY;
+        const svgP=pt.matrixTransform(svg.getScreenCTM().inverse());
+        tempLine.setAttribute("x2",svgP.x);
+        tempLine.setAttribute("y2",svgP.y);
+    }
 });
 
 svg.addEventListener("pointerup",(e)=>{
-  if(tempLine){
-    tempLine.remove(); tempLine = null;
-    const t = e.target;
-    if(t && t.dataset && t.dataset.terminal){
-      const end = t.dataset.terminal;
-      if(dragStart && end && dragStart !== end){
-        createConnection(dragStart,end);
-      }
+    if(!tempLine) return;
+    tempLine.remove();
+    tempLine=null;
+
+    const elements=document.elementsFromPoint(e.clientX,e.clientY);
+    const circle=elements.find(el=>el.dataset&&el.dataset.terminal);
+
+    if(circle && dragStart){
+        createConnection(dragStart,circle.dataset.terminal);
     }
-    dragStart = null;
-  }
+    dragStart=null;
 });
 
-/* also allow simple click on terminals: tap once selects, tap another to connect */
-svg.addEventListener("click",(e)=>{
-  const t = e.target;
-  if(t && t.dataset && t.dataset.terminal){
-    const term = t.dataset.terminal;
-    if(!selectedTerminal){
-      selectedTerminal = term;
-      t.classList.add("selected");
-      // clear selection highlight after 3s
-      setTimeout(()=>{ selectedTerminal=null; document.querySelectorAll("circle").forEach(c=>c.classList.remove("selected")); }, 3000);
-    }else{
-      if(selectedTerminal !== term){
-        createConnection(selectedTerminal, term);
-      }
-      selectedTerminal = null;
-      document.querySelectorAll("circle").forEach(c=>c.classList.remove("selected"));
+// =====================
+// Graph判定
+// =====================
+
+class Graph{
+    constructor(){this.adj={};}
+    add(a,b){
+        if(!this.adj[a])this.adj[a]=[];
+        if(!this.adj[b])this.adj[b]=[];
+        this.adj[a].push(b);
+        this.adj[b].push(a);
     }
-  }
-});
-
-/* ===========================
-   Update UI lists + lamp logic
-   =========================== */
-
-function updateConnectionList(){
-  connectionList.innerHTML = "";
-  userConnections.forEach(c=>{
-    const d = document.createElement("div");
-    d.textContent = `${c.a} - ${c.b} (${c.logicalColor})`;
-    connectionList.appendChild(d);
-  });
+    dfs(s,visited=new Set()){
+        visited.add(s);
+        (this.adj[s]||[]).forEach(n=>{
+            if(!visited.has(n))this.dfs(n,visited);
+        });
+        return visited;
+    }
+    connected(a,b){
+        if(!this.adj[a])return false;
+        return this.dfs(a).has(b);
+    }
 }
 
-/* Graph class for connectivity checks */
-class Graph {
-  constructor(){ this.adj = {}; }
-  addEdge(a,b){
-    if(!this.adj[a]) this.adj[a]=new Set();
-    if(!this.adj[b]) this.adj[b]=new Set();
-    this.adj[a].add(b); this.adj[b].add(a);
-  }
-  dfs(start,visited=new Set()){
-    if(!this.adj[start]) return visited;
-    visited.add(start);
-    for(const n of this.adj[start]){
-      if(!visited.has(n)) this.dfs(n,visited);
-    }
-    return visited;
-  }
-  isConnected(a,b){
-    if(!this.adj[a]) return false;
-    return this.dfs(a).has(b);
-  }
-}
-
-/* updateLamp: build graph with user connections + internal switch connections, set lamp */
 function updateLamp(){
-  if(!currentProblem) return;
-  // rebuild graph
-  const graph = new Graph();
-  userConnections.forEach(e=>graph.addEdge(e.a,e.b));
-  // internal switch connections based on switchState
-  const pid = currentProblem.id;
-  const s1key = `S1_${pid}`, s2key = `S2_${pid}`;
-  if(typeof switchState[s1key] !== "undefined"){
-    if(switchState[s1key] === 0) graph.addEdge(`S1-COM_${pid}`, `S1-T1_${pid}`);
-    else graph.addEdge(`S1-COM_${pid}`, `S1-T2_${pid}`);
-  }
-  if(typeof switchState[s2key] !== "undefined"){
-    if(switchState[s2key] === 0) graph.addEdge(`S2-COM_${pid}`, `S2-T1_${pid}`);
-    else graph.addEdge(`S2-COM_${pid}`, `S2-T2_${pid}`);
-  }
 
-  // lamp powered when L <-> Lamp-L and Lamp-N <-> N
-  const powered = graph.isConnected(`L_${pid}`, `Lamp-L_${pid}`) && graph.isConnected(`Lamp-N_${pid}`, `N_${pid}`);
-  if(powered) lampEl.classList.add("on"); else lampEl.classList.remove("on");
+    const g=new Graph();
 
-  // color-power effect: set class 'powered' to connections that are part of the powered network (connected to L)
-  userConnections.forEach(e=>{
-    // check if either endpoint connected to L and also connected between themselves -- simple heuristic: if either endpoint reachable from L
-    const connectedToL = graph.isConnected(`L_${pid}`, e.a) || graph.isConnected(`L_${pid}`, e.b);
-    if(connectedToL){
-      e.line.classList.add("powered");
-    }else{
-      e.line.classList.remove("powered");
-      e.line.setAttribute("stroke", e.baseColor);
-    }
-  });
+    userConnections.forEach(e=>g.add(e.a,e.b));
 
-  // sleeve labels
-  document.querySelectorAll('.sleeveLabel').forEach(el=>el.remove());
-  const boxGroups = getBoxGroups();
-  Object.keys(boxGroups).forEach(box=>{
-    const count = boxGroups[box];
-    const sleeve = getSleeveSize(count);
-    if(!sleeve) return;
-    const pos = getTerminalPosition(box);
-    const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-    text.setAttribute("x", pos.x - 8);
-    text.setAttribute("y", pos.y - 18);
-    text.setAttribute("font-size",14);
-    text.classList.add("sleeveLabel");
-    text.textContent = sleeve;
-    svg.appendChild(text);
-  });
+    if(switchState["S1"]===0) g.add("S1-COM","S1-T1");
+    else g.add("S1-COM","S1-T2");
+
+    if(switchState["S2"]===0) g.add("S2-COM","S2-T1");
+    else g.add("S2-COM","S2-T2");
+
+    const on=g.connected("L","Lamp-L") && g.connected("Lamp-N","N");
+
+    if(on) lampEl.classList.add("on");
+    else lampEl.classList.remove("on");
+
+    userConnections.forEach(e=>{
+        if(g.connected("L",e.a)&&g.connected("L",e.b)){
+            e.line.classList.add("powered");
+        }else{
+            e.line.classList.remove("powered");
+        }
+    });
 }
 
-/* ===========================
-   Sleeve / box utils
-   =========================== */
-
-function getBoxGroups(){
-  const groups = {};
-  userConnections.forEach(e=>{
-    if(isBoxTerminal(e.a)) groups[e.a] = (groups[e.a] || 0) + 1;
-    if(isBoxTerminal(e.b)) groups[e.b] = (groups[e.b] || 0) + 1;
-  });
-  return groups;
-}
-function getSleeveSize(count){
-  if(count === 2) return "小";
-  if(count === 3) return "中";
-  if(count >= 4) return "大";
-  return null;
-}
-
-/* ===========================
-   Distance / length checks
-   =========================== */
-function getDistance(a,b){
-  const p1 = getTerminalPosition(a);
-  const p2 = getTerminalPosition(b);
-  return Math.hypot(p1.x - p2.x, p1.y - p2.y);
-}
-
-/* ===========================
-   Scoring / grading
-   =========================== */
-
-function normalizeConnections(arr){
-  return arr.map(e => [e.a,e.b].sort().join("-")).sort();
-}
-
-function gradeExam(){
-  if(!currentProblem) return null;
-  const pid = currentProblem.id;
-  const solPairs = currentProblem.solution.map(s=>s.slice().sort().join("-")).sort();
-  const usrPairs = normalizeConnections(userConnections);
-
-  let score = 100;
-  const faults = [];
-
-  // Major: short circuit L-N -> immediate fail
-  const graph = new Graph();
-  userConnections.forEach(e=>graph.addEdge(e.a,e.b));
-  // internal switch edges for evaluation
-  const s1key = `S1_${pid}`, s2key = `S2_${pid}`;
-  if(typeof switchState[s1key] !== "undefined"){
-    if(switchState[s1key] === 0) graph.addEdge(`S1-COM_${pid}`, `S1-T1_${pid}`);
-    else graph.addEdge(`S1-COM_${pid}`, `S1-T2_${pid}`);
-  }
-  if(typeof switchState[s2key] !== "undefined"){
-    if(switchState[s2key] === 0) graph.addEdge(`S2-COM_${pid}`, `S2-T1_${pid}`);
-    else graph.addEdge(`S2-COM_${pid}`, `S2-T2_${pid}`);
-  }
-
-  if(graph.isConnected(`L_${pid}`, `N_${pid}`)){
-    return {fail:true, reason:"短絡（L-N接続）", score:0, faults:["短絡"]};
-  }
-
-  // Major: COM同士接続
-  if(usrPairs.includes([`S1-COM_${pid}`, `S2-COM_${pid}`].sort().join("-"))){
-    return {fail:true, reason:"COM同士直結", score:0, faults:["COM同士直結"]};
-  }
-
-  // Check missing required connections
-  currentProblem.solution.forEach(sol=>{
-    const key = sol.slice().sort().join("-");
-    if(!usrPairs.includes(key)){
-      score -= 20;
-      faults.push("結線不足: " + key);
-    }
-  });
-
-  // Extra connections
-  usrPairs.forEach(u=>{
-    if(!solPairs.includes(u)){
-      score -= 10;
-      faults.push("余分接続: " + u);
-      // visual: mark red
-      const obj = userConnections.find(c => [c.a,c.b].sort().join("-") === u);
-      if(obj) obj.line.setAttribute("stroke", "#ff0000");
-    }
-  });
-
-  // color checks: N lines must be white
-  userConnections.forEach(e=>{
-    const pair = [e.a,e.b].sort().join("-");
-    if(pair.includes(`N_${pid}`) && e.logicalColor !== "white"){
-      score -= 5;
-      faults.push("白線誤使用: " + pair);
-      e.line.setAttribute("stroke", "#ff9900");
-    }
-    //渡り線判定 (S1-T <-> S2-T) should be red
-    if((e.a.includes("S1-T") && e.b.includes("S2-T")) || (e.b.includes("S1-T") && e.a.includes("S2-T"))){
-      if(e.logicalColor !== "red"){
-        score -= 15;
-        faults.push("渡り線 色誤り: " + pair);
-        e.line.setAttribute("stroke", "#ff9900");
-      }
-    }
-  });
-
-  // sleeve checks
-  const boxGroups = getBoxGroups();
-  Object.keys(boxGroups).forEach(box=>{
-    const count = boxGroups[box];
-    const sleeve = getSleeveSize(count);
-    if(!sleeve){
-      score -= 10;
-      faults.push("圧着不成立: " + box);
-    } else {
-      // no penalty but record
-      faults.push(box + "→スリーブ:" + sleeve);
-    }
-  });
-
-  // length checks
-  const MIN_LENGTH = 40; // px threshold
-  userConnections.forEach(e=>{
-    const d = getDistance(e.a,e.b);
-    if(d < MIN_LENGTH){
-      score -= 5;
-      faults.push("配線余長不足: " + e.a + "-" + e.b);
-      e.line.setAttribute("stroke", "#ff9900");
-    }
-  });
-
-  if(score < 0) score = 0;
-
-  const pass = score >= 80 && !faults.some(f=>f.startsWith("圧着不成立") === true);
-  return {fail:false,score,pass,faults};
-}
-
-/* ===========================
-   UI actions
-   =========================== */
-
-function loadProblem(){
-  const id = parseInt(problemSelect.value,10);
-  currentProblem = problems[id];
-  userConnections.forEach(c => { try{ c.line.remove(); }catch(e){} });
-  userConnections = [];
-  selectedTerminal = null;
-  clearSVG();
-  renderProblem(currentProblem);
-  updateConnectionList();
-  resultArea.textContent = '';
-  timerArea.textContent = '';
-  updateLamp();
-}
-
-function resetConnections(){
-  userConnections.forEach(c=>{ try{c.line.remove();}catch(e){} });
-  userConnections = [];
-  updateConnectionList();
-  updateLamp();
-  resultArea.textContent = '';
-}
+// =====================
+// 採点
+// =====================
 
 function checkAnswer(){
-  const res = gradeExam();
-  if(!res) return;
-  if(res.fail){
-    resultArea.innerHTML = `<span class="fault">重大欠陥: ${res.reason}</span>`;
-  } else {
-    if(res.pass){
-      resultArea.innerHTML = `<span class="ok">合格 ${res.score}点</span>`;
-    } else {
-      resultArea.innerHTML = `<span class="fault">不合格 ${res.score}点</span><div class="small">${res.faults.join(", ")}</div>`;
+    const g=new Graph();
+    userConnections.forEach(e=>g.add(e.a,e.b));
+    if(g.connected("L","N")){
+        document.getElementById("result").textContent="重大欠陥: 短絡";
+        return;
     }
-  }
-  saveAttemptToHistory(currentProblem.id,res);
-  refreshStatsUI();
+    document.getElementById("result").textContent="採点完了";
 }
 
-/* Save current attempt quickly */
-function saveCurrentAttempt(){
-  const res = gradeExam();
-  if(!res) return;
-  saveAttemptToHistory(currentProblem.id,res);
-  alert("保存しました");
-  refreshStatsUI();
-}
-
-/* ===========================
-   Mock exam (13問) flow
-   =========================== */
-
-function startMockExam(){
-  // prepare queue: randomized all 13
-  examQueue = shuffle(Object.keys(problems).map(n=>parseInt(n,10)));
-  examIndex = 0;
-  startExamQuestion();
-}
-
-function startExamQuestion(){
-  if(examIndex >= examQueue.length){
-    alert("模擬試験終了。結果は履歴を確認してください。");
-    examQueue = []; examIndex = 0;
-    clearInterval(examTimer); examTimer = null;
-    return;
-  }
-  const pid = examQueue[examIndex];
-  problemSelect.value = pid;
-  loadProblem();
-  // reset connections
-  resetConnections();
-  // start timer for this question
-  const per = parseInt(document.getElementById("examTimePer").value,10) || 60;
-  examTimeLeft = per;
-  document.getElementById("timerArea").textContent = `残り: ${examTimeLeft}s (Q ${examIndex+1}/${examQueue.length})`;
-  if(examTimer) clearInterval(examTimer);
-  examTimer = setInterval(()=>{
-    examTimeLeft--;
-    document.getElementById("timerArea").textContent = `残り: ${examTimeLeft}s (Q ${examIndex+1}/${examQueue.length})`;
-    if(examTimeLeft <= 10) document.getElementById("timerArea").style.color = "#ff4444";
-    if(examTimeLeft <= 0){
-      // timeout -> auto-grade and save
-      const res = gradeExam() || {fail:true,reason:"時間切れ",score:0,faults:["時間切れ"]};
-      saveAttemptToHistory(pid,res,true);
-      examIndex++;
-      startExamQuestion();
-    }
-  },1000);
-}
-
-/* ===========================
-   History / stats persistence
-   =========================== */
-
-function saveAttemptToHistory(problemId, result, auto=false){
-  const hist = JSON.parse(localStorage.getItem("sim_history")||"[]");
-  const rec = {
-    ts: Date.now(),
-    problemId,
-    score: result.score || 0,
-    pass: result.pass || false,
-    fail: result.fail || false,
-    faults: result.faults || (result.reason ? [result.reason] : []),
-    auto: !!auto
-  };
-  hist.unshift(rec);
-  if(hist.length>200) hist.length = 200;
-  localStorage.setItem("sim_history", JSON.stringify(hist));
-  refreshStatsUI();
-}
-
-function refreshStatsUI(){
-  const hist = JSON.parse(localStorage.getItem("sim_history")||"[]");
-  // summary
-  const attempts = hist.length;
-  const avg = attempts ? Math.round(hist.reduce((s,h)=>s+h.score,0)/attempts) : 0;
-  const passCount = hist.filter(h=>h.pass).length;
-  statSummary.innerHTML = `試行回数: ${attempts} / 平均点: ${avg} / 合格数: ${passCount}`;
-  // weakness: count faults frequency
-  const freq = {};
-  hist.forEach(h=>{
-    (h.faults||[]).forEach(f=>{
-      freq[f] = (freq[f]||0) + 1;
-    });
-  });
-  const keys = Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
-  weakness.innerHTML = keys.slice(0,10).map(k=>`${k} (${freq[k]})`).join("<br>") || "記録なし";
-  // history list
-  history.innerHTML = hist.slice(0,10).map(h=>{
-    const d = new Date(h.ts);
-    return `${d.toLocaleString()} | No${h.problemId} | ${h.score}点 | ${h.pass ? '合格':'不合格'} | ${h.faults.slice(0,2).join(',')}`;
-  }).join("<br>") || "記録なし";
-  proInfo.innerHTML = proEnabled ? "PRO: 有効 (追加機能アンロック済み)" : "PRO: 無効";
-}
-
-/* ===========================
-   PRO toggle (stub)
-   =========================== */
-function togglePRO(){
-  proEnabled = !proEnabled;
-  localStorage.setItem("sim_pro_enabled", proEnabled ? "1":"0");
-  alert(proEnabled ? "PROを有効化しました（デモ）" : "PROを無効化しました");
-  refreshStatsUI();
-}
-
-/* ===========================
-   Utilities
-   =========================== */
-
-function shuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-  return a;
-}
-
-/* ===========================
-   Initial load
-   =========================== */
 loadProblem();
-refreshStatsUI();
 
 </script>
 </body>
