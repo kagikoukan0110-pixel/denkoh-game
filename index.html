@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電工パズル</title>
+<style>
+body {
+  text-align: center;
+  font-family: sans-serif;
+  background: #f0f0f0;
+}
+
+#game {
+  width: 300px;
+  height: 300px;
+  margin: auto;
+  background: white;
+  border: 2px solid black;
+  position: relative;
+}
+
+.point {
+  width: 20px;
+  height: 20px;
+  background: blue;
+  border-radius: 50%;
+  position: absolute;
+}
+
+#start { top: 20px; left: 20px; background: green; }
+#goal { bottom: 20px; right: 20px; background: red; }
+
+.line {
+  position: absolute;
+  background: black;
+  height: 4px;
+}
+</style>
+</head>
+<body>
+
+<h2>⚡ 電工パズル - ステージ1</h2>
+<p>分電盤からエアコン位置まで配線せよ</p>
+
+<div id="game">
+  <div id="start" class="point"></div>
+  <div id="goal" class="point"></div>
+</div>
+
+<button onclick="clearLines()">やり直す</button>
+
+<script>
+let game = document.getElementById("game");
+let drawing = false;
+let lastX, lastY;
+
+game.addEventListener("touchstart", startDraw);
+game.addEventListener("mousedown", startDraw);
+
+game.addEventListener("touchmove", draw);
+game.addEventListener("mousemove", draw);
+
+game.addEventListener("touchend", stopDraw);
+game.addEventListener("mouseup", stopDraw);
+
+function getPos(e) {
+  if (e.touches) {
+    return {
+      x: e.touches[0].clientX - game.getBoundingClientRect().left,
+      y: e.touches[0].clientY - game.getBoundingClientRect().top
+    };
+  }
+  return {
+    x: e.offsetX,
+    y: e.offsetY
+  };
+}
+
+function startDraw(e) {
+  drawing = true;
+  let pos = getPos(e);
+  lastX = pos.x;
+  lastY = pos.y;
+}
+
+function draw(e) {
+  if (!drawing) return;
+  let pos = getPos(e);
+
+  let line = document.createElement("div");
+  line.className = "line";
+  line.style.left = lastX + "px";
+  line.style.top = lastY + "px";
+  line.style.width = Math.hypot(pos.x - lastX, pos.y - lastY) + "px";
+  line.style.transformOrigin = "0 0";
+  line.style.transform = "rotate(" +
+    Math.atan2(pos.y - lastY, pos.x - lastX) +
+    "rad)";
+  game.appendChild(line);
+
+  lastX = pos.x;
+  lastY = pos.y;
+}
+
+function stopDraw() {
+  drawing = false;
+}
+
+function clearLines() {
+  document.querySelectorAll(".line").forEach(l => l.remove());
+}
+</script>
+
+</body>
+</html>
