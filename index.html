@@ -5,6 +5,8 @@
 <title>電工パズル</title>
 <style>
 body {
+  touch-action: none;
+  overflow: hidden;
   text-align: center;
   font-family: sans-serif;
   background: #f0f0f0;
@@ -50,6 +52,9 @@ body {
 <button onclick="clearLines()">やり直す</button>
 
 <script>
+  document.body.addEventListener("touchmove", function(e){
+  e.preventDefault();
+}, { passive: false });
 let game = document.getElementById("game");
 let drawing = false;
 let lastX, lastY;
