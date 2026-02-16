@@ -1,228 +1,231 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路 汎用エンジン統合版</title>
-<style>
-body{font-family:sans-serif;text-align:center;background:#f2f2f2;margin:0;}
-#field{width:360px;height:520px;margin:20px auto;border:3px solid black;position:relative;background:white;}
-.node{width:22px;height:22px;border-radius:50%;background:black;position:absolute;cursor:pointer;z-index:10;}
-.white{background:white;border:2px solid black;}
-.selected{outline:3px solid red;}
-.label{position:absolute;font-size:14px;font-weight:bold;z-index:10;}
-svg{position:absolute;top:0;left:0;z-index:1;pointer-events:none;}
-button{margin:6px;padding:8px 14px;}
-</style>
-</head>
-<body>
+// =============================
+// Skill Wiring Engine MVP
+// =============================
 
-<h2>⚡ 三路 汎用エンジン統合テスト</h2>
+class Violation {
+  constructor(type, targetType, targetId, severity, message) {
+    this.id = crypto.randomUUID()
+    this.type = type
+    this.targetType = targetType
+    this.targetId = targetId
+    this.severity = severity
+    this.message = message
+  }
+}
 
-<div id="field">
-<svg id="svgLayer" width="360" height="520" viewBox="0 0 360 520"></svg>
+class Hole {
+  constructor(id, capacity = 1) {
+    this.id = id
+    this.capacity = capacity
+    this.connectedWires = []
+  }
+}
 
-<div class="label" style="left:30px;top:20px;">電源</div>
-<div class="node" id="power_L" style="left:60px;top:50px;"></div>
-<div class="node white" id="power_N" style="left:60px;top:90px;"></div>
-
-<div class="label" style="left:220px;top:20px;">三路SW1</div>
-<div class="node" id="S1_C" style="left:250px;top:50px;"></div>
-<div class="node" id="S1_T1" style="left:220px;top:90px;"></div>
-<div class="node" id="S1_T2" style="left:280px;top:90px;"></div>
-
-<div class="label" style="left:220px;top:180px;">三路SW2</div>
-<div class="node" id="S2_C" style="left:250px;top:210px;"></div>
-<div class="node" id="S2_T1" style="left:220px;top:250px;"></div>
-<div class="node" id="S2_T2" style="left:280px;top:250px;"></div>
-
-<div class="label" style="left:140px;top:380px;">ランプ</div>
-<div class="node white" id="lamp_N" style="left:150px;top:410px;"></div>
-<div class="node" id="lamp_L" style="left:200px;top:410px;"></div>
-</div>
-
-<button onclick="toggle('S1')">SW1切替</button>
-<button onclick="toggle('S2')">SW2切替</button>
-<button onclick="analyze()">解析</button>
-<button onclick="resetAll()">リセット</button>
-
-<div id="msg"></div>
-
-<script>
-
-// ===== 汎用回路エンジン =====
-
-class CircuitEngine {
-  constructor(){
-    this.nodes=new Map();
-    this.connections=new Map();
-    this.devices=new Map();
+class Wire {
+  constructor(id, holeA, holeB, color = "black") {
+    this.id = id
+    this.holeA = holeA
+    this.holeB = holeB
+    this.color = color
   }
 
-  addNode(id){
-    this.nodes.set(id,{});
-    this.connections.set(id,new Set());
+  otherSide(hole) {
+    return hole === this.holeA ? this.holeB : this.holeA
+  }
+}
+
+class Device {
+  constructor(id) {
+    this.id = id
+    this.holes = {}
   }
 
-  addDevice(id,type,state=0){
-    this.devices.set(id,{type,state});
+  addHole(id, capacity = 1) {
+    this.holes[id] = new Hole(id, capacity)
+  }
+}
+
+// =============================
+// Switch Devices
+// =============================
+
+class ThreeWaySwitch extends Device {
+  constructor(id) {
+    super(id)
+    this.state = false
+    this.addHole(id + "_common")
+    this.addHole(id + "_travA")
+    this.addHole(id + "_travB")
   }
 
-  connect(a,b){
-    this.connections.get(a).add(b);
-    this.connections.get(b).add(a);
+  toggle() {
+    this.state = !this.state
   }
 
-  cloneConnections(){
-    const clone=new Map();
-    for(let [k,v] of this.connections){
-      clone.set(k,new Set(v));
+  getConnections() {
+    if (!this.state) {
+      return [[this.holes[this.id + "_common"], this.holes[this.id + "_travA"]]]
+    } else {
+      return [[this.holes[this.id + "_common"], this.holes[this.id + "_travB"]]]
     }
-    return clone;
+  }
+}
+
+class FourWaySwitch extends Device {
+  constructor(id) {
+    super(id)
+    this.state = false
+    this.addHole(id + "_inA")
+    this.addHole(id + "_inB")
+    this.addHole(id + "_outA")
+    this.addHole(id + "_outB")
   }
 
-  applyDeviceLogic(temp){
-    for(let [id,dev] of this.devices){
+  toggle() {
+    this.state = !this.state
+  }
 
-      if(dev.type==="3way"){
-        const C=id+"_C";
-        const T1=id+"_T1";
-        const T2=id+"_T2";
+  getConnections() {
+    if (!this.state) {
+      return [
+        [this.holes[this.id + "_inA"], this.holes[this.id + "_outA"]],
+        [this.holes[this.id + "_inB"], this.holes[this.id + "_outB"]],
+      ]
+    } else {
+      return [
+        [this.holes[this.id + "_inA"], this.holes[this.id + "_outB"]],
+        [this.holes[this.id + "_inB"], this.holes[this.id + "_outA"]],
+      ]
+    }
+  }
+}
 
-        if(dev.state===0){
-          temp.get(C).add(T1);
-          temp.get(T1).add(C);
-        }else{
-          temp.get(C).add(T2);
-          temp.get(T2).add(C);
+// =============================
+// Engine
+// =============================
+
+class SkillWiringEngine {
+  constructor() {
+    this.devices = {}
+    this.wires = {}
+    this.violations = []
+    this.energizedWires = new Set()
+
+    this.liveHole = null
+    this.neutralHole = null
+  }
+
+  addDevice(device) {
+    this.devices[device.id] = device
+  }
+
+  setPower(liveHole, neutralHole) {
+    this.liveHole = liveHole
+    this.neutralHole = neutralHole
+  }
+
+  connectWire(id, holeA, holeB, color = "black") {
+    const wire = new Wire(id, holeA, holeB, color)
+    this.wires[id] = wire
+
+    holeA.connectedWires.push(wire)
+    holeB.connectedWires.push(wire)
+  }
+
+  clearViolations() {
+    this.violations = []
+  }
+
+  addViolation(v) {
+    this.violations.push(v)
+  }
+
+  checkOneHoleRule() {
+    Object.values(this.devices).forEach(device => {
+      Object.values(device.holes).forEach(hole => {
+        if (hole.connectedWires.length > hole.capacity) {
+          this.addViolation(
+            new Violation(
+              "ONE_HOLE_ONE_WIRE",
+              "hole",
+              hole.id,
+              "major",
+              "1穴1線違反"
+            )
+          )
         }
-      }
+      })
+    })
+  }
+
+  solveElectrical() {
+    this.energizedWires.clear()
+    const visited = new Set()
+    const stack = [this.liveHole]
+
+    while (stack.length) {
+      const hole = stack.pop()
+      if (!hole || visited.has(hole)) continue
+      visited.add(hole)
+
+      hole.connectedWires.forEach(wire => {
+        this.energizedWires.add(wire.id)
+        const nextHole = wire.otherSide(hole)
+        stack.push(nextHole)
+      })
+
+      Object.values(this.devices).forEach(device => {
+        if (typeof device.getConnections === "function") {
+          device.getConnections().forEach(([a, b]) => {
+            if (hole === a) stack.push(b)
+            if (hole === b) stack.push(a)
+          })
+        }
+      })
     }
   }
 
-  dfs(start,temp){
-    const visited=new Set();
-    const stack=[start];
-    while(stack.length){
-      const n=stack.pop();
-      if(!visited.has(n)){
-        visited.add(n);
-        temp.get(n)?.forEach(x=>stack.push(x));
-      }
+  isLampOn(lampHole) {
+    const visited = new Set()
+    const stack = [this.liveHole]
+
+    while (stack.length) {
+      const hole = stack.pop()
+      if (!hole || visited.has(hole)) continue
+      visited.add(hole)
+
+      if (hole === lampHole) return true
+
+      hole.connectedWires.forEach(wire => {
+        stack.push(wire.otherSide(hole))
+      })
+
+      Object.values(this.devices).forEach(device => {
+        if (typeof device.getConnections === "function") {
+          device.getConnections().forEach(([a, b]) => {
+            if (hole === a) stack.push(b)
+            if (hole === b) stack.push(a)
+          })
+        }
+      })
     }
-    return visited;
+    return false
   }
 
-  analyze(powerL,powerN,lampL,lampN){
-
-    const temp=this.cloneConnections();
-    this.applyDeviceLogic(temp);
-
-    const fromL=this.dfs(powerL,temp);
-
-    if(fromL.has(powerN)){
-      return "短絡発生";
-    }
-
-    if(!fromL.has(lampL)){
-      return "L側開放";
-    }
-
-    const fromLampN=this.dfs(lampN,temp);
-
-    if(!fromLampN.has(powerN)){
-      return "N側開放";
-    }
-
-    return "点灯";
+  reevaluate() {
+    this.clearViolations()
+    this.checkOneHoleRule()
+    this.solveElectrical()
   }
 }
 
-// ===== エンジン初期化 =====
+// =============================
+// EXPORT
+// =============================
 
-const engine=new CircuitEngine();
-
-[
-"power_L","power_N",
-"S1_C","S1_T1","S1_T2",
-"S2_C","S2_T1","S2_T2",
-"lamp_L","lamp_N"
-].forEach(n=>engine.addNode(n));
-
-engine.addDevice("S1","3way",0);
-engine.addDevice("S2","3way",0);
-
-// ===== SVG UI =====
-
-const svg=document.getElementById("svgLayer");
-let selected=null;
-let wires=[];
-
-document.querySelectorAll(".node").forEach(n=>{
-  n.addEventListener("click",()=>nodeClick(n));
-});
-
-function nodeClick(node){
-
-  if(!selected){
-    selected=node;
-    node.classList.add("selected");
-    return;
-  }
-
-  if(selected===node){
-    node.classList.remove("selected");
-    selected=null;
-    return;
-  }
-
-  wires.push([selected.id,node.id]);
-  engine.connect(selected.id,node.id);
-
-  selected.classList.remove("selected");
-  selected=null;
-  draw();
+export {
+  SkillWiringEngine,
+  Device,
+  ThreeWaySwitch,
+  FourWaySwitch
 }
-
-function draw(){
-  svg.innerHTML="";
-  wires.forEach(pair=>{
-    let a=document.getElementById(pair[0]);
-    let b=document.getElementById(pair[1]);
-
-    let x1=a.offsetLeft+a.offsetWidth/2;
-    let y1=a.offsetTop+a.offsetHeight/2;
-    let x2=b.offsetLeft+b.offsetWidth/2;
-    let y2=b.offsetTop+b.offsetHeight/2;
-
-    let line=document.createElementNS("http://www.w3.org/2000/svg","line");
-    line.setAttribute("x1",x1);
-    line.setAttribute("y1",y1);
-    line.setAttribute("x2",x2);
-    line.setAttribute("y2",y2);
-    line.setAttribute("stroke","black");
-    line.setAttribute("stroke-width","3");
-
-    svg.appendChild(line);
-  });
-}
-
-function toggle(id){
-  const dev=engine.devices.get(id);
-  dev.state=1-dev.state;
-}
-
-function analyze(){
-  const result=engine.analyze("power_L","power_N","lamp_L","lamp_N");
-  document.getElementById("msg").innerText=result;
-}
-
-function resetAll(){
-  wires=[];
-  svg.innerHTML="";
-  engine.connections.forEach(set=>set.clear());
-  document.getElementById("msg").innerText="リセット";
-}
-
-</script>
-</body>
-</html>
