@@ -1,231 +1,206 @@
-// =============================
-// Skill Wiring Engine MVP
-// =============================
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>電工技能試験シミュレーター MVP</title>
+<style>
+  body { font-family: sans-serif; }
+  svg { border:1px solid #ccc; }
 
-class Violation {
-  constructor(type, targetType, targetId, severity, message) {
-    this.id = crypto.randomUUID()
-    this.type = type
-    this.targetType = targetType
-    this.targetId = targetId
-    this.severity = severity
-    this.message = message
-  }
-}
+  .wire { stroke:black; stroke-width:3; }
+  .energized { stroke:red !important; stroke-width:4; }
+
+  .hole { fill:white; stroke:black; stroke-width:2; cursor:pointer; }
+  .violation-major { stroke:red !important; stroke-width:4; }
+
+  #panel { margin-top:20px; padding:10px; border:1px solid #aaa; }
+</style>
+</head>
+<body>
+
+<h2>三路回路テスト</h2>
+
+<svg width="600" height="300">
+
+  <!-- 電源 -->
+  <circle cx="50" cy="150" r="15" class="hole" data-id="live"></circle>
+  <text x="35" y="190">L</text>
+
+  <!-- SW1 -->
+  <circle cx="200" cy="100" r="10" class="hole" data-id="sw1_common"></circle>
+  <circle cx="200" cy="150" r="10" class="hole" data-id="sw1_A"></circle>
+  <circle cx="200" cy="200" r="10" class="hole" data-id="sw1_B"></circle>
+  <text x="170" y="70">SW1</text>
+
+  <!-- SW2 -->
+  <circle cx="350" cy="100" r="10" class="hole" data-id="sw2_common"></circle>
+  <circle cx="350" cy="150" r="10" class="hole" data-id="sw2_A"></circle>
+  <circle cx="350" cy="200" r="10" class="hole" data-id="sw2_B"></circle>
+  <text x="320" y="70">SW2</text>
+
+  <!-- Lamp -->
+  <circle cx="500" cy="150" r="15" class="hole" data-id="lamp"></circle>
+  <text x="470" y="190">Lamp</text>
+
+  <!-- Neutral -->
+  <circle cx="550" cy="150" r="15" class="hole" data-id="neutral"></circle>
+  <text x="535" y="190">N</text>
+
+</svg>
+
+<div>
+<button onclick="toggleSW1()">SW1切替</button>
+<button onclick="toggleSW2()">SW2切替</button>
+<button onclick="makeViolation()">1穴1線違反発生</button>
+</div>
+
+<div id="panel"></div>
+
+<script>
+
+// ================= ENGINE =================
 
 class Hole {
-  constructor(id, capacity = 1) {
-    this.id = id
-    this.capacity = capacity
-    this.connectedWires = []
+  constructor(id, capacity=1){
+    this.id=id
+    this.capacity=capacity
+    this.wires=[]
   }
 }
 
 class Wire {
-  constructor(id, holeA, holeB, color = "black") {
-    this.id = id
-    this.holeA = holeA
-    this.holeB = holeB
-    this.color = color
+  constructor(id,a,b){
+    this.id=id
+    this.a=a
+    this.b=b
   }
+  other(h){ return h===this.a?this.b:this.a }
+}
 
-  otherSide(hole) {
-    return hole === this.holeA ? this.holeB : this.holeA
+class ThreeWay {
+  constructor(common,A,B){
+    this.common=common
+    this.A=A
+    this.B=B
+    this.state=false
+  }
+  toggle(){ this.state=!this.state }
+  getPairs(){
+    return this.state?[[this.common,this.B]]:[[this.common,this.A]]
   }
 }
 
-class Device {
-  constructor(id) {
-    this.id = id
-    this.holes = {}
-  }
+const holes={}
+document.querySelectorAll(".hole").forEach(el=>{
+  holes[el.dataset.id]=new Hole(el.dataset.id)
+})
 
-  addHole(id, capacity = 1) {
-    this.holes[id] = new Hole(id, capacity)
-  }
+let wires={}
+let violations=[]
+let energized=new Set()
+
+const sw1=new ThreeWay(holes.sw1_common,holes.sw1_A,holes.sw1_B)
+const sw2=new ThreeWay(holes.sw2_common,holes.sw2_A,holes.sw2_B)
+
+function connect(id,a,b){
+  const w=new Wire(id,a,b)
+  wires[id]=w
+  a.wires.push(w)
+  b.wires.push(w)
 }
 
-// =============================
-// Switch Devices
-// =============================
+function setup(){
+  connect("w1",holes.live,holes.sw1_common)
+  connect("w2",holes.sw1_A,holes.sw2_A)
+  connect("w3",holes.sw1_B,holes.sw2_B)
+  connect("w4",holes.sw2_common,holes.lamp)
+  connect("w5",holes.lamp,holes.neutral)
+}
 
-class ThreeWaySwitch extends Device {
-  constructor(id) {
-    super(id)
-    this.state = false
-    this.addHole(id + "_common")
-    this.addHole(id + "_travA")
-    this.addHole(id + "_travB")
-  }
+setup()
 
-  toggle() {
-    this.state = !this.state
-  }
-
-  getConnections() {
-    if (!this.state) {
-      return [[this.holes[this.id + "_common"], this.holes[this.id + "_travA"]]]
-    } else {
-      return [[this.holes[this.id + "_common"], this.holes[this.id + "_travB"]]]
+function checkOneHole(){
+  violations=[]
+  Object.values(holes).forEach(h=>{
+    if(h.wires.length>h.capacity){
+      violations.push("1穴1線違反: "+h.id)
     }
-  }
+  })
 }
 
-class FourWaySwitch extends Device {
-  constructor(id) {
-    super(id)
-    this.state = false
-    this.addHole(id + "_inA")
-    this.addHole(id + "_inB")
-    this.addHole(id + "_outA")
-    this.addHole(id + "_outB")
-  }
+function solve(){
+  energized.clear()
+  const visited=new Set()
+  const stack=[holes.live]
 
-  toggle() {
-    this.state = !this.state
-  }
+  while(stack.length){
+    const h=stack.pop()
+    if(visited.has(h))continue
+    visited.add(h)
 
-  getConnections() {
-    if (!this.state) {
-      return [
-        [this.holes[this.id + "_inA"], this.holes[this.id + "_outA"]],
-        [this.holes[this.id + "_inB"], this.holes[this.id + "_outB"]],
-      ]
-    } else {
-      return [
-        [this.holes[this.id + "_inA"], this.holes[this.id + "_outB"]],
-        [this.holes[this.id + "_inB"], this.holes[this.id + "_outA"]],
-      ]
-    }
-  }
-}
+    h.wires.forEach(w=>{
+      energized.add(w.id)
+      stack.push(w.other(h))
+    })
 
-// =============================
-// Engine
-// =============================
-
-class SkillWiringEngine {
-  constructor() {
-    this.devices = {}
-    this.wires = {}
-    this.violations = []
-    this.energizedWires = new Set()
-
-    this.liveHole = null
-    this.neutralHole = null
-  }
-
-  addDevice(device) {
-    this.devices[device.id] = device
-  }
-
-  setPower(liveHole, neutralHole) {
-    this.liveHole = liveHole
-    this.neutralHole = neutralHole
-  }
-
-  connectWire(id, holeA, holeB, color = "black") {
-    const wire = new Wire(id, holeA, holeB, color)
-    this.wires[id] = wire
-
-    holeA.connectedWires.push(wire)
-    holeB.connectedWires.push(wire)
-  }
-
-  clearViolations() {
-    this.violations = []
-  }
-
-  addViolation(v) {
-    this.violations.push(v)
-  }
-
-  checkOneHoleRule() {
-    Object.values(this.devices).forEach(device => {
-      Object.values(device.holes).forEach(hole => {
-        if (hole.connectedWires.length > hole.capacity) {
-          this.addViolation(
-            new Violation(
-              "ONE_HOLE_ONE_WIRE",
-              "hole",
-              hole.id,
-              "major",
-              "1穴1線違反"
-            )
-          )
-        }
+    ;[sw1,sw2].forEach(sw=>{
+      sw.getPairs().forEach(([a,b])=>{
+        if(h===a)stack.push(b)
+        if(h===b)stack.push(a)
       })
     })
   }
-
-  solveElectrical() {
-    this.energizedWires.clear()
-    const visited = new Set()
-    const stack = [this.liveHole]
-
-    while (stack.length) {
-      const hole = stack.pop()
-      if (!hole || visited.has(hole)) continue
-      visited.add(hole)
-
-      hole.connectedWires.forEach(wire => {
-        this.energizedWires.add(wire.id)
-        const nextHole = wire.otherSide(hole)
-        stack.push(nextHole)
-      })
-
-      Object.values(this.devices).forEach(device => {
-        if (typeof device.getConnections === "function") {
-          device.getConnections().forEach(([a, b]) => {
-            if (hole === a) stack.push(b)
-            if (hole === b) stack.push(a)
-          })
-        }
-      })
-    }
-  }
-
-  isLampOn(lampHole) {
-    const visited = new Set()
-    const stack = [this.liveHole]
-
-    while (stack.length) {
-      const hole = stack.pop()
-      if (!hole || visited.has(hole)) continue
-      visited.add(hole)
-
-      if (hole === lampHole) return true
-
-      hole.connectedWires.forEach(wire => {
-        stack.push(wire.otherSide(hole))
-      })
-
-      Object.values(this.devices).forEach(device => {
-        if (typeof device.getConnections === "function") {
-          device.getConnections().forEach(([a, b]) => {
-            if (hole === a) stack.push(b)
-            if (hole === b) stack.push(a)
-          })
-        }
-      })
-    }
-    return false
-  }
-
-  reevaluate() {
-    this.clearViolations()
-    this.checkOneHoleRule()
-    this.solveElectrical()
-  }
 }
 
-// =============================
-// EXPORT
-// =============================
+function render(){
+  document.querySelectorAll(".energized").forEach(e=>e.classList.remove("energized"))
+  document.querySelectorAll(".violation-major").forEach(e=>e.classList.remove("violation-major"))
 
-export {
-  SkillWiringEngine,
-  Device,
-  ThreeWaySwitch,
-  FourWaySwitch
+  energized.forEach(id=>{
+    const w=wires[id]
+    drawLine(w.a.id,w.b.id,true)
+  })
+
+  violations.forEach(v=>{
+    const id=v.split(": ")[1]
+    document.querySelector(`[data-id="${id}"]`)
+      ?.classList.add("violation-major")
+  })
+
+  document.getElementById("panel").innerHTML=
+    "違反:<br>"+(violations.join("<br>")||"なし")
 }
+
+function drawLine(idA,idB,on){
+  const elA=document.querySelector(`[data-id="${idA}"]`)
+  const elB=document.querySelector(`[data-id="${idB}"]`)
+  const line=document.createElementNS("http://www.w3.org/2000/svg","line")
+  line.setAttribute("x1",elA.getAttribute("cx"))
+  line.setAttribute("y1",elA.getAttribute("cy"))
+  line.setAttribute("x2",elB.getAttribute("cx"))
+  line.setAttribute("y2",elB.getAttribute("cy"))
+  line.setAttribute("class","wire"+(on?" energized":""))
+  document.querySelector("svg").appendChild(line)
+}
+
+function reevaluate(){
+  document.querySelectorAll("line").forEach(l=>l.remove())
+  checkOneHole()
+  solve()
+  render()
+}
+
+function toggleSW1(){ sw1.toggle(); reevaluate() }
+function toggleSW2(){ sw2.toggle(); reevaluate() }
+
+function makeViolation(){
+  connect("bad",holes.sw1_common,holes.sw1_A)
+  reevaluate()
+}
+
+reevaluate()
+
+</script>
+
+</body>
+</html>
