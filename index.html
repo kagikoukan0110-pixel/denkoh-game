@@ -2,167 +2,165 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路回路モード</title>
+<title>三路四路エンジン基礎版</title>
 <style>
-body{font-family:sans-serif;text-align:center;background:#f2f2f2;margin:0;}
-#board{width:400px;height:600px;margin:20px auto;background:white;border:3px solid black;position:relative;}
-.node{width:100px;height:40px;border:2px solid black;line-height:40px;position:absolute;background:#ddd;font-weight:bold;}
-.terminal{width:20px;height:20px;border-radius:50%;position:absolute;cursor:pointer;border:2px solid #333;}
-.black{background:black;}
-.white{background:white;}
-.selected{outline:3px solid red;}
-.line{position:absolute;height:4px;transform-origin:0 0;}
-button{margin:6px;padding:8px 14px;}
+body{font-family:sans-serif;text-align:center;background:#f2f2f2;}
+button{margin:5px;padding:8px 14px;}
 #msg{white-space:pre-line;font-weight:bold;margin-top:10px;}
 </style>
 </head>
 <body>
 
-<h2>⚡ 三路回路モード</h2>
+<h2>⚡ 三路＋四路 共通エンジン</h2>
 
-<div id="board">
-
-<div class="node" style="top:30px; left:20px;">電源</div>
-<div class="terminal black" data-id="L" data-color="black" style="top:80px; left:70px;"></div>
-<div class="terminal white" data-id="N" data-color="white" style="top:110px; left:70px;"></div>
-
-<div class="node" style="top:30px; left:250px;">三路SW1</div>
-<div class="terminal black" data-id="S1C" style="top:80px; left:300px;"></div>
-<div class="terminal black" data-id="S1T1" style="top:110px; left:280px;"></div>
-<div class="terminal black" data-id="S1T2" style="top:110px; left:320px;"></div>
-
-<div class="node" style="top:250px; left:250px;">三路SW2</div>
-<div class="terminal black" data-id="S2C" style="top:300px; left:300px;"></div>
-<div class="terminal black" data-id="S2T1" style="top:330px; left:280px;"></div>
-<div class="terminal black" data-id="S2T2" style="top:330px; left:320px;"></div>
-
-<div class="node" style="top:500px; left:140px;">ランプ</div>
-<div class="terminal black" data-id="Lamp1" data-color="black" style="top:460px; left:170px;"></div>
-<div class="terminal white" data-id="Lamp2" data-color="white" style="top:460px; left:210px;"></div>
-
-</div>
-
-<button onclick="toggleS1()">SW1切替</button>
-<button onclick="toggleS2()">SW2切替</button>
+<button onclick="toggle('S1')">三路SW1切替</button>
+<button onclick="toggle('S2')">三路SW2切替</button>
 <button onclick="analyze()">解析</button>
-<button onclick="resetGame()">リセット</button>
 
 <div id="msg"></div>
 
 <script>
 
-let parent={}, connections={}, selected=[];
-let s1pos=0, s2pos=0;
+// ===== 回路エンジン =====
 
-function init(){
-  parent={}; connections={};
-  document.querySelectorAll(".terminal").forEach(t=>{
-    parent[t.dataset.id]=t.dataset.id;
-    connections[t.dataset.id]=[];
-    t.classList.remove("selected");
-  });
-  document.querySelectorAll(".line").forEach(l=>l.remove());
-}
-init();
+class Circuit{
+  constructor(){
+    this.nodes = new Set();
+    this.edges = {};
+  }
 
-function find(x){
-  if(parent[x]!==x) parent[x]=find(parent[x]);
-  return parent[x];
-}
+  addNode(n){
+    this.nodes.add(n);
+    if(!this.edges[n]) this.edges[n]=[];
+  }
 
-function union(a,b){
-  let pa=find(a), pb=find(b);
-  if(pa!==pb) parent[pb]=pa;
-  connections[a].push(b);
-  connections[b].push(a);
-}
+  addEdge(a,b){
+    this.edges[a].push(b);
+    this.edges[b].push(a);
+  }
 
-function drawLine(a,b){
-  const ra=a.getBoundingClientRect();
-  const rb=b.getBoundingClientRect();
-  const boardRect=document.getElementById("board").getBoundingClientRect();
-  const x1=ra.left-boardRect.left+10;
-  const y1=ra.top-boardRect.top+10;
-  const x2=rb.left-boardRect.left+10;
-  const y2=rb.top-boardRect.top+10;
-  const len=Math.hypot(x2-x1,y2-y1);
-  const line=document.createElement("div");
-  line.className="line";
-  line.style.left=x1+"px";
-  line.style.top=y1+"px";
-  line.style.width=len+"px";
-  line.style.background="black";
-  line.style.transform="rotate("+Math.atan2(y2-y1,x2-x1)+"rad)";
-  document.getElementById("board").appendChild(line);
-}
+  dfs(start){
+    let visited = new Set();
+    let stack=[start];
 
-document.querySelectorAll(".terminal").forEach(t=>{
-  t.addEventListener("click",()=>{
-    t.classList.add("selected");
-    selected.push(t);
-    if(selected.length===2){
-      const a=selected[0], b=selected[1];
-      union(a.dataset.id,b.dataset.id);
-      drawLine(a,b);
-      selected.forEach(x=>x.classList.remove("selected"));
-      selected=[];
+    while(stack.length){
+      let n=stack.pop();
+      if(!visited.has(n)){
+        visited.add(n);
+        this.edges[n].forEach(x=>stack.push(x));
+      }
     }
+    return visited;
+  }
+}
+
+// ===== スイッチ定義 =====
+
+let switches = {
+  S1:{
+    type:"3way",
+    pos:0,
+    terminals:{
+      C:"S1C",
+      T1:"S1T1",
+      T2:"S1T2"
+    }
+  },
+  S2:{
+    type:"3way",
+    pos:0,
+    terminals:{
+      C:"S2C",
+      T1:"S2T1",
+      T2:"S2T2"
+    }
+  }
+};
+
+// ===== 固定配線（ユーザー配線と想定） =====
+
+function buildBaseCircuit(){
+
+  let c = new Circuit();
+
+  // ノード登録
+  [
+    "L","N",
+    "S1C","S1T1","S1T2",
+    "S2C","S2T1","S2T2",
+    "Lamp1","Lamp2"
+  ].forEach(n=>c.addNode(n));
+
+  // ===== 配線（例：正しい三路配線） =====
+
+  c.addEdge("L","S1C");
+
+  c.addEdge("S1T1","S2T1");
+  c.addEdge("S1T2","S2T2");
+
+  c.addEdge("S2C","Lamp1");
+  c.addEdge("Lamp2","N");
+
+  return c;
+}
+
+// ===== スイッチ内部適用 =====
+
+function applySwitches(c){
+
+  Object.values(switches).forEach(sw=>{
+
+    if(sw.type==="3way"){
+
+      if(sw.pos===0){
+        c.addEdge(sw.terminals.C, sw.terminals.T1);
+      }else{
+        c.addEdge(sw.terminals.C, sw.terminals.T2);
+      }
+    }
+
+    if(sw.type==="4way"){
+
+      if(sw.pos===0){
+        c.addEdge(sw.terminals.T1, sw.terminals.T3);
+        c.addEdge(sw.terminals.T2, sw.terminals.T4);
+      }else{
+        c.addEdge(sw.terminals.T1, sw.terminals.T4);
+        c.addEdge(sw.terminals.T2, sw.terminals.T3);
+      }
+    }
+
   });
-});
 
-function toggleS1(){
-  s1pos = 1-s1pos;
-  document.getElementById("msg").innerText="SW1位置："+s1pos;
 }
 
-function toggleS2(){
-  s2pos = 1-s2pos;
-  document.getElementById("msg").innerText="SW2位置："+s2pos;
-}
-
-function applySwitchLogic(){
-  if(s1pos===0) union("S1C","S1T1");
-  else union("S1C","S1T2");
-
-  if(s2pos===0) union("S2C","S2T1");
-  else union("S2C","S2T2");
-}
+// ===== 解析 =====
 
 function analyze(){
-  applySwitchLogic();
 
-  if(find("L")===find("N")){
-    show("🔥 L-Nショート");
-    return;
-  }
+  let circuit = buildBaseCircuit();
 
-  let visited=new Set();
-  function dfs(n){
-    if(visited.has(n)) return;
-    visited.add(n);
-    connections[n].forEach(dfs);
-  }
+  applySwitches(circuit);
 
-  dfs("L");
+  let visited = circuit.dfs("L");
 
-  if(visited.has("Lamp1") && find("Lamp2")===find("N")){
-    show("💡 ランプ点灯！");
+  if(visited.has("Lamp1") && circuit.dfs("Lamp2").has("N")){
+    show("💡 ランプ点灯");
   }else{
-    show("❌ 不成立\n三路経路が成立していない");
+    show("❌ 不成立");
   }
+}
+
+function toggle(name){
+  switches[name].pos = 1 - switches[name].pos;
+  show(name+" 位置："+switches[name].pos);
 }
 
 function show(msg){
   document.getElementById("msg").innerText=msg;
 }
 
-function resetGame(){
-  selected=[];
-  s1pos=0; s2pos=0;
-  show("");
-  init();
-}
-
 </script>
+
 </body>
 </html>
