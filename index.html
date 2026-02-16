@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路 統合安定版</title>
+<title>三路 統合安定版 v2</title>
 
 <style>
 body{
@@ -21,6 +21,7 @@ body{
   background:white;
 }
 
+/* ノードは最前面 */
 .node{
   width:22px;
   height:22px;
@@ -28,7 +29,7 @@ body{
   background:black;
   position:absolute;
   cursor:pointer;
-  z-index:2;
+  z-index:10;
 }
 
 .white{
@@ -44,17 +45,20 @@ body{
   position:absolute;
   font-size:14px;
   font-weight:bold;
+  z-index:10;
 }
 
+/* canvasは最背面 */
 canvas{
   position:absolute;
   top:0;
   left:0;
   width:100%;
   height:100%;
-  z-index:1;
+  z-index:0;
   pointer-events:none;
 }
+
 button{
   margin:6px;
   padding:8px 14px;
@@ -63,9 +67,11 @@ button{
 </head>
 <body>
 
-<h2>⚡ 三路 統合安定版</h2>
+<h2>⚡ 三路 統合安定版 v2</h2>
 
 <div id="field">
+
+  <!-- canvasを先に置く -->
   <canvas id="canvas"></canvas>
 
   <div class="label" style="left:30px;top:20px;">電源</div>
@@ -85,6 +91,7 @@ button{
   <div class="label" style="left:140px;top:380px;">ランプ</div>
   <div class="node white" id="LampN" style="left:150px;top:410px;"></div>
   <div class="node" id="LampL" style="left:200px;top:410px;"></div>
+
 </div>
 
 <button onclick="toggle('S1')">SW1切替</button>
@@ -105,7 +112,6 @@ function resizeCanvas(){
   canvas.height=field.clientHeight;
   draw();
 }
-
 window.addEventListener("resize",resizeCanvas);
 resizeCanvas();
 
@@ -130,12 +136,13 @@ function nodeClick(node){
   }
 
   if(selected===node){
-    selected.classList.remove("selected");
+    node.classList.remove("selected");
     selected=null;
     return;
   }
 
   wires.push([selected.id,node.id]);
+
   selected.classList.remove("selected");
   selected=null;
   draw();
