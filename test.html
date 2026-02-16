@@ -161,4 +161,74 @@ function solve(){
       stack.push(sw2?holes.SW2_3:holes.SW2_1)
     if(h===holes.SW2_1 && !sw2)
       stack.push(holes.SW2_0)
-    if(h===holes
+    if(h===holes.SW2_3 && sw2)
+      stack.push(holes.SW2_0)
+  }
+}
+
+// ===== 1穴1線 =====
+
+function checkViolation(){
+  violations=[]
+  Object.values(holes).forEach(h=>{
+    if(h.wires.length>h.capacity)
+      violations.push(h.id)
+  })
+}
+
+// ===== 描画 =====
+
+function render(){
+  document.querySelectorAll(".wire")
+    .forEach(w=>w.classList.remove("energized"))
+
+  energized.forEach(id=>{
+    document.getElementById(id)
+      ?.classList.add("energized")
+  })
+
+  document.querySelectorAll(".terminal")
+    .forEach(t=>t.classList.remove("violation"))
+
+  violations.forEach(id=>{
+    document.getElementById(id)
+      ?.classList.add("violation")
+  })
+
+  document.getElementById("panel").innerHTML =
+    "違反: "+(violations.join(", ")||"なし")
+}
+
+function reevaluate(){
+  checkViolation()
+  solve()
+  render()
+}
+
+// ===== スイッチ操作 =====
+
+function toggleSW1(){
+  sw1=!sw1
+  document.getElementById("SW1_arm")
+    .setAttribute("y2", sw1?120:40)
+  reevaluate()
+}
+
+function toggleSW2(){
+  sw2=!sw2
+  document.getElementById("SW2_arm")
+    .setAttribute("y2", sw2?120:40)
+  reevaluate()
+}
+
+function makeViolation(){
+  connect("bad",holes.SW1_0,holes.SW1_1)
+  reevaluate()
+}
+
+reevaluate()
+
+</script>
+
+</body>
+</html>
