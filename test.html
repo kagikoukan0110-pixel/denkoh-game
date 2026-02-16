@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>三路複線図シミュレーター</title>
+<title>三路複線図（技能試験風UI）</title>
 <style>
 body { font-family:sans-serif; }
 svg { border:1px solid #ccc; }
 
 .wire {
   stroke:black;
-  stroke-width:4;
+  stroke-width:3;
   fill:none;
 }
 
@@ -17,15 +17,25 @@ svg { border:1px solid #ccc; }
   stroke:red !important;
 }
 
-.hole {
-  fill:white;
+.switch-body {
+  fill:none;
   stroke:black;
   stroke-width:2;
 }
 
-.violation {
-  stroke:red !important;
-  stroke-width:4;
+.contact {
+  fill:black;
+}
+
+.arm {
+  stroke:black;
+  stroke-width:3;
+}
+
+.lamp {
+  fill:none;
+  stroke:black;
+  stroke-width:2;
 }
 
 button { margin:5px; }
@@ -33,174 +43,107 @@ button { margin:5px; }
 </head>
 <body>
 
-<h2>三路複線図テスト</h2>
+<h2>三路複線図（三路らしいUI）</h2>
 
-<svg width="800" height="400">
+<svg width="900" height="400">
 
-  <!-- 電源 -->
-  <circle cx="80" cy="120" r="15" class="hole" data-id="L"></circle>
-  <text x="70" y="100">L</text>
+  <!-- 電源 L/N -->
+  <text x="50" y="80">L</text>
+  <circle cx="70" cy="100" r="6" id="Lnode" />
 
-  <circle cx="80" cy="280" r="15" class="hole" data-id="N"></circle>
-  <text x="70" y="260">N</text>
+  <text x="50" y="280">N</text>
+  <circle cx="70" cy="300" r="6" id="Nnode" />
 
-  <!-- 縦幹線（N） -->
-  <path id="wire_N_trunk" class="wire"
-    d="M80 280 V280 H650 V200" />
+  <!-- N幹線 -->
+  <path id="neutral_trunk" class="wire"
+        d="M70 300 H820" />
 
   <!-- SW1 -->
-  <text x="250" y="70">SW1</text>
-  <circle cx="250" cy="120" r="10" class="hole" data-id="SW1_C"></circle>
-  <circle cx="250" cy="170" r="10" class="hole" data-id="SW1_A"></circle>
-  <circle cx="250" cy="220" r="10" class="hole" data-id="SW1_B"></circle>
+  <g id="SW1" transform="translate(200,120)">
+    <rect width="60" height="100" class="switch-body"/>
+    <!-- 端子 -->
+    <circle cx="30" cy="10" r="5" class="contact" id="SW1_C"/>
+    <circle cx="10" cy="90" r="5" class="contact" id="SW1_A"/>
+    <circle cx="50" cy="90" r="5" class="contact" id="SW1_B"/>
+    <!-- 可動接点 -->
+    <line id="SW1_arm" class="arm"
+          x1="30" y1="10"
+          x2="10" y2="90"/>
+  </g>
 
   <!-- SW2 -->
-  <text x="450" y="70">SW2</text>
-  <circle cx="450" cy="120" r="10" class="hole" data-id="SW2_C"></circle>
-  <circle cx="450" cy="170" r="10" class="hole" data-id="SW2_A"></circle>
-  <circle cx="450" cy="220" r="10" class="hole" data-id="SW2_B"></circle>
+  <g id="SW2" transform="translate(450,120)">
+    <rect width="60" height="100" class="switch-body"/>
+    <circle cx="30" cy="10" r="5" class="contact" id="SW2_C"/>
+    <circle cx="10" cy="90" r="5" class="contact" id="SW2_A"/>
+    <circle cx="50" cy="90" r="5" class="contact" id="SW2_B"/>
+    <line id="SW2_arm" class="arm"
+          x1="30" y1="10"
+          x2="10" y2="90"/>
+  </g>
 
-  <!-- Lamp -->
-  <text x="650" y="150">Lamp</text>
-  <circle cx="650" cy="200" r="15" class="hole" data-id="LAMP"></circle>
+  <!-- ランプ -->
+  <g transform="translate(750,180)">
+    <circle cx="0" cy="0" r="25" class="lamp"/>
+    <text x="-5" y="5">R</text>
+  </g>
 
   <!-- 配線 -->
-  <path id="w1" class="wire" d="M80 120 H250 120" />
-  <path id="w2" class="wire" d="M250 170 H450 170" />
-  <path id="w3" class="wire" d="M250 220 H450 220" />
-  <path id="w4" class="wire" d="M450 120 H650 200" />
-  <path id="w5" class="wire" d="M650 200 V280 H80" />
+  <path id="w1" class="wire"
+        d="M70 100 H230" />
+
+  <path id="w2" class="wire"
+        d="M210 210 H460 210" />
+
+  <path id="w3" class="wire"
+        d="M250 210 H500 210" />
+
+  <path id="w4" class="wire"
+        d="M480 130 H750 180" />
+
+  <path id="w5" class="wire"
+        d="M750 205 V300 H70" />
 
 </svg>
 
 <div>
 <button onclick="toggleSW1()">SW1切替</button>
 <button onclick="toggleSW2()">SW2切替</button>
-<button onclick="violate()">1穴1線違反</button>
 </div>
-
-<div id="panel"></div>
 
 <script>
 
-// ======= 簡易エンジン =======
-
-class Hole {
-  constructor(id,capacity=1){
-    this.id=id
-    this.capacity=capacity
-    this.wires=[]
-  }
-}
-
-class Wire {
-  constructor(id,a,b){
-    this.id=id
-    this.a=a
-    this.b=b
-  }
-  other(h){ return h===this.a?this.b:this.a }
-}
-
-const holes={}
-document.querySelectorAll(".hole").forEach(el=>{
-  holes[el.dataset.id]=new Hole(el.dataset.id)
-})
-
-const wires={}
-
-function connect(id,a,b){
-  const w=new Wire(id,a,b)
-  wires[id]=w
-  a.wires.push(w)
-  b.wires.push(w)
-}
-
-connect("w1",holes.L,holes.SW1_C)
-connect("w2",holes.SW1_A,holes.SW2_A)
-connect("w3",holes.SW1_B,holes.SW2_B)
-connect("w4",holes.SW2_C,holes.LAMP)
-connect("w5",holes.LAMP,holes.N)
-
 let sw1=false
 let sw2=false
-let violations=[]
-let energized=new Set()
 
-function solve(){
-  energized.clear()
-  const visited=new Set()
-  const stack=[holes.L]
-
-  while(stack.length){
-    const h=stack.pop()
-    if(visited.has(h))continue
-    visited.add(h)
-
-    h.wires.forEach(w=>{
-      energized.add(w.id)
-      stack.push(w.other(h))
-    })
-
-    // SW1
-    if(h===holes.SW1_C){
-      stack.push(sw1?holes.SW1_B:holes.SW1_A)
-    }
-    if(h===holes.SW1_A && !sw1) stack.push(holes.SW1_C)
-    if(h===holes.SW1_B && sw1) stack.push(holes.SW1_C)
-
-    // SW2
-    if(h===holes.SW2_C){
-      stack.push(sw2?holes.SW2_B:holes.SW2_A)
-    }
-    if(h===holes.SW2_A && !sw2) stack.push(holes.SW2_C)
-    if(h===holes.SW2_B && sw2) stack.push(holes.SW2_C)
-  }
-}
-
-function checkViolation(){
-  violations=[]
-  Object.values(holes).forEach(h=>{
-    if(h.wires.length>h.capacity){
-      violations.push(h.id)
-    }
-  })
-}
-
-function render(){
-  document.querySelectorAll(".wire").forEach(w=>{
-    w.classList.remove("energized")
-  })
-
-  energized.forEach(id=>{
-    document.getElementById(id)?.classList.add("energized")
-  })
-
-  document.querySelectorAll(".hole").forEach(h=>{
-    h.classList.remove("violation")
-  })
-
-  violations.forEach(id=>{
-    document.querySelector(`[data-id="${id}"]`)
-      ?.classList.add("violation")
-  })
-
-  document.getElementById("panel").innerHTML=
-    "違反: "+(violations.join(", ")||"なし")
-}
-
-function reevaluate(){
-  checkViolation()
-  solve()
-  render()
-}
-
-function toggleSW1(){ sw1=!sw1; reevaluate() }
-function toggleSW2(){ sw2=!sw2; reevaluate() }
-
-function violate(){
-  connect("bad",holes.SW1_C,holes.SW1_A)
+function toggleSW1(){
+  sw1=!sw1
+  document.getElementById("SW1_arm")
+    .setAttribute("x2", sw1?50:10)
   reevaluate()
+}
+
+function toggleSW2(){
+  sw2=!sw2
+  document.getElementById("SW2_arm")
+    .setAttribute("x2", sw2?50:10)
+  reevaluate()
+}
+
+// 簡易導通判定（本物エンジンに置換可能）
+function reevaluate(){
+
+  document.querySelectorAll(".wire")
+    .forEach(w=>w.classList.remove("energized"))
+
+  const on = (sw1 === sw2)
+
+  if(on){
+    ["w1","w2","w4","w5"].forEach(id=>{
+      document.getElementById(id)
+        .classList.add("energized")
+    })
+  }
 }
 
 reevaluate()
