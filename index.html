@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 安定版</title>
+<title>複線図モード - 試験版</title>
 <style>
 body{ text-align:center; font-family:sans-serif; background:#f0f0f0; margin:0; }
 #board{ width:360px;height:500px;margin:20px auto;background:white;border:2px solid black;position:relative; }
@@ -11,12 +11,13 @@ body{ text-align:center; font-family:sans-serif; background:#f0f0f0; margin:0; }
 .selected{ outline:3px solid red; }
 .jb{ width:120px;height:120px;border:3px solid #333;position:absolute;top:190px;left:120px;background:#fafafa; }
 #message{ font-size:20px;font-weight:bold;margin-top:10px; }
+#answer{ font-size:14px;margin-top:6px;color:#333; }
 button{ margin:4px;padding:6px 10px; }
 </style>
 </head>
 <body>
 
-<h2>⚡ 複線図モード - 安定解析版</h2>
+<h2>⚡ 複線図モード - 試験版</h2>
 
 <div id="board">
 
@@ -48,6 +49,7 @@ button{ margin:4px;padding:6px 10px; }
 <button onclick="resetGame()">リセット</button>
 
 <div id="message"></div>
+<div id="answer"></div>
 
 <script>
 
@@ -107,20 +109,33 @@ function bundle(){
 function recolor(){
   document.querySelectorAll(".terminal").forEach(t=>{
     let root=find(t.dataset.id);
-    if(!colorMap[root]){
-      colorMap[root]=colors[colorIndex % colors.length];
-      colorIndex++;
+
+    // 単独ノードは黒
+    let groupMembers=document.querySelectorAll(`.terminal`);
+    let count=0;
+    groupMembers.forEach(x=>{
+      if(find(x.dataset.id)===root) count++;
+    });
+
+    if(count===1){
+      t.style.background="black";
+    }else{
+      if(!colorMap[root]){
+        colorMap[root]=colors[colorIndex % colors.length];
+        colorIndex++;
+      }
+      t.style.background=colorMap[root];
     }
-    t.style.background=colorMap[root];
   });
 }
 
 function analyze(){
   const msg=document.getElementById("message");
+  const ans=document.getElementById("answer");
   msg.innerText="";
+  ans.innerText="";
 
-  // 仮想的にSWをONにする
-  union("SW1","SW2");
+  union("SW1","SW2"); // SW ON
 
   if(find("L")===find("N")){
     msg.innerText="🔥 L-Nショート！";
@@ -135,11 +150,17 @@ function analyze(){
     msg.innerText="💡 正解！回路成立！";
   }else{
     msg.innerText="❌ 回路不成立";
+    ans.innerText=
+      "【正解例】\n" +
+      "① L と SW1 を束ねる\n" +
+      "② SW2 と Lamp1 を束ねる\n" +
+      "③ Lamp2 と N を束ねる";
   }
 }
 
 function resetGame(){
   document.getElementById("message").innerText="";
+  document.getElementById("answer").innerText="";
   selected=[];
   init();
 }
