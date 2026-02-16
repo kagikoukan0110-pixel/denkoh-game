@@ -2,8 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 本物解析</title>
-
+<title>複線図モード - 本物解析v6</title>
 <style>
 body{
   text-align:center;
@@ -11,7 +10,6 @@ body{
   background:#f0f0f0;
   margin:0;
 }
-
 #board{
   width:360px;
   height:500px;
@@ -20,52 +18,29 @@ body{
   border:2px solid black;
   position:relative;
 }
-
 .node{
-  width:80px;
-  height:40px;
-  border:2px solid black;
-  text-align:center;
-  line-height:40px;
-  position:absolute;
-  background:#ddd;
+  width:80px;height:40px;border:2px solid black;
+  text-align:center;line-height:40px;
+  position:absolute;background:#ddd;
 }
-
 .terminal{
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:black;
-  position:absolute;
-  cursor:pointer;
+  width:18px;height:18px;border-radius:50%;
+  background:black;position:absolute;cursor:pointer;
   transition:0.2s;
 }
-
-.selected{
-  background:red !important;
-}
-
+.selected{ outline:3px solid red; }
 .jb{
-  width:120px;
-  height:120px;
-  border:3px solid #333;
-  position:absolute;
-  top:190px;
-  left:120px;
-  background:#fafafa;
+  width:120px;height:120px;border:3px solid #333;
+  position:absolute;top:190px;left:120px;background:#fafafa;
 }
-
-#message{
-  font-size:20px;
-  font-weight:bold;
-  margin-top:10px;
-}
+#message{ font-size:20px;font-weight:bold;margin-top:10px; }
+button{ margin:4px;padding:6px 10px; }
+#legend{ font-size:13px;margin-top:6px;color:#555; }
 </style>
 </head>
-
 <body>
 
-<h2>⚡ 複線図モード - 本物解析</h2>
+<h2>⚡ 複線図モード - 本物解析v6</h2>
 
 <div id="board">
 
@@ -86,7 +61,6 @@ body{
 
   <!-- JB -->
   <div class="jb"></div>
-
   <div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
   <div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
   <div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
@@ -96,23 +70,28 @@ body{
 
 </div>
 
-<br>
-<button onclick="bundle()">束ねる</button>
-<button onclick="analyze()">解析</button>
-<button onclick="resetGame()">リセット</button>
+<div>
+  <button onclick="bundle()">束ねる</button>
+  <button onclick="analyze()">解析（SW ON）</button>
+  <button onclick="resetGame()">リセット</button>
+</div>
 
 <div id="message"></div>
+<div id="legend">※ 解析はスイッチON状態で電流経路を探索します。</div>
 
 <script>
-
 let selectedTerminals=[];
 let parent={};
+const terminals = () => Array.from(document.querySelectorAll(".terminal"));
+const message = document.getElementById("message");
 
+// ===== Union-Find =====
 function init(){
   parent={};
-  document.querySelectorAll(".terminal").forEach(t=>{
+  terminals().forEach(t=>{
     parent[t.dataset.id]=t.dataset.id;
     t.style.background="black";
+    t.classList.remove("selected");
   });
 }
 init();
@@ -123,17 +102,14 @@ function find(x){
   }
   return parent[x];
 }
-
 function union(a,b){
   let pa=find(a);
   let pb=find(b);
-  if(pa!==pb){
-    parent[pb]=pa;
-  }
+  if(pa!==pb) parent[pb]=pa;
 }
 
-// 端子クリック処理
-document.querySelectorAll(".terminal").forEach(t=>{
+// ===== 端子選択 =====
+terminals().forEach(t=>{
   t.addEventListener("click",()=>{
     if(selectedTerminals.includes(t)){
       t.classList.remove("selected");
@@ -145,64 +121,108 @@ document.querySelectorAll(".terminal").forEach(t=>{
   });
 });
 
-// 束ねる処理
+// ===== 束ねる =====
 function bundle(){
-  if(selectedTerminals.length < 2) return;
+  if(selectedTerminals.length<2) return;
 
-  let firstId = selectedTerminals[0].dataset.id;
+  const base = selectedTerminals[0].dataset.id;
+  selectedTerminals.forEach(t=> union(base, t.dataset.id));
 
-  selectedTerminals.forEach(t=>{
-    union(firstId, t.dataset.id);
-  });
+  recolorGroups();
 
-  let root = find(firstId);
-
-  // 同一グループを色付け
-  document.querySelectorAll(".terminal").forEach(t=>{
-    if(find(t.dataset.id) === root){
-      t.style.background = "#2ecc71"; // 緑
-    }
-  });
-
-  selectedTerminals.forEach(t=>{
-    t.classList.remove("selected");
-  });
-
-  selectedTerminals = [];
+  selectedTerminals.forEach(t=> t.classList.remove("selected"));
+  selectedTerminals=[];
 }
 
-// 解析
-function analyze(){
-  let message=document.getElementById("message");
+// ===== グループ色分け（rootごとに色割当）=====
+function recolorGroups(){
+  const roots = {};
+  terminals().forEach(t=>{
+    const r = find(t.dataset.id);
+    if(!roots[r]) roots[r] = randomColor(r);
+  });
+  terminals().forEach(t=>{
+    const r = find(t.dataset.id);
+    t.style.background = roots[r];
+  });
+}
 
-  // ショート判定
+// rootに安定色を割り当てる（毎回同じ色になりやすい簡易法）
+function randomColor(seed){
+  let hash=0;
+  for(let i=0;i<seed.length;i++){
+    hash = seed.charCodeAt(i) + ((hash<<5)-hash);
+  }
+  const h = Math.abs(hash)%360;
+  return `hsl(${h},70%,50%)`;
+}
+
+// ===== 電流フロー解析 =====
+function analyze(){
+  message.innerText="";
+
+  // ショート検出（LとNが同一ノード）
   if(find("L")===find("N")){
-    message.innerText="🔥 ショート発生！欠陥！";
+    message.innerText="🔥 L-Nショート！欠陥！";
     return;
   }
 
-  // 正解判定
-  if(
-    find("L")===find("SW1") &&
-    find("SW2")===find("Lamp1") &&
-    find("Lamp2")===find("N")
-  ){
-    message.innerText="💡 正解！ランプ点灯！";
-  }else{
-    message.innerText="❌ 回路不成立";
+  // グラフ構築（ノード=各root）
+  const graph = {};
+  terminals().forEach(t=>{
+    const r = find(t.dataset.id);
+    if(!graph[r]) graph[r]=new Set();
+  });
+
+  // 同一rootは同一ノード（すでに統合済）
+  // スイッチONとして SW1-SW2 を仮想接続
+  const rSW1 = find("SW1");
+  const rSW2 = find("SW2");
+  if(!graph[rSW1]) graph[rSW1]=new Set();
+  if(!graph[rSW2]) graph[rSW2]=new Set();
+  graph[rSW1].add(rSW2);
+  graph[rSW2].add(rSW1);
+
+  // 探索：LからスタートしてLamp1に到達できるか
+  const start = find("L");
+  const target = find("Lamp1");
+  const visited = new Set();
+  const queue = [start];
+
+  while(queue.length){
+    const cur = queue.shift();
+    if(cur===target) break;
+    visited.add(cur);
+
+    // 同一グループ内は同一ノード扱いなので
+    // 追加接続（SW内部）だけ探索
+    if(graph[cur]){
+      graph[cur].forEach(next=>{
+        if(!visited.has(next)) queue.push(next);
+      });
+    }
   }
+
+  if(!visited.has(target) && start!==target){
+    message.innerText="❌ Lからランプへ到達できない";
+    return;
+  }
+
+  // Lamp2からNへ到達確認
+  if(find("Lamp2")!==find("N")){
+    message.innerText="❌ ランプ白側がNに接続されていない";
+    return;
+  }
+
+  message.innerText="💡 正解！電流経路成立！";
 }
 
-// リセット
+// ===== リセット =====
 function resetGame(){
-  document.getElementById("message").innerText="";
   selectedTerminals=[];
-  document.querySelectorAll(".terminal").forEach(t=>{
-    t.classList.remove("selected");
-  });
+  message.innerText="";
   init();
 }
-
 </script>
 
 </body>
