@@ -1,61 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>電工ラボ β - 貴電監修</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>電工ラボ iPhone β - 貴電監修</title>
 
 <style>
-body {
+body{
   margin:0;
-  font-family:sans-serif;
-  background:#d7ccc8;
+  font-family:-apple-system,BlinkMacSystemFont;
+  background:#f4f1ea;
+  overflow:hidden;
 }
 
-header {
+header{
   background:#1e88e5;
   color:white;
-  padding:10px 20px;
+  padding:10px;
   display:flex;
   justify-content:space-between;
+  font-size:14px;
 }
 
-#board {
+#boardContainer{
+  position:relative;
+  height:65vh;
   background:#f4f1ea;
-  margin:20px auto;
-  display:block;
-  border-radius:8px;
-  box-shadow:0 20px 40px rgba(0,0,0,0.3);
+  touch-action:none;
 }
 
-button {
-  padding:6px 12px;
-  margin-right:6px;
+svg{
+  width:100%;
+  height:100%;
 }
 
-#controls {
-  padding:10px;
-  text-align:center;
+footer{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  border-top:1px solid #ccc;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
 }
 
-.lamp-on {
+button{
+  font-size:14px;
+  padding:8px 12px;
+}
+
+.active{
+  background:#1e88e5;
+  color:white;
+}
+
+.lamp-on{
   fill:#ffcc00 !important;
 }
 
-.resultOverlay {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.6);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-.resultCard {
-  background:white;
-  padding:40px;
-  border-radius:10px;
-  text-align:center;
+.highlight{
+  stroke:red !important;
+  stroke-width:4;
 }
 </style>
 </head>
@@ -63,129 +69,104 @@ button {
 <body>
 
 <header>
-  <div>電工ラボ β（貴電監修）</div>
-  <div id="stepLabel">STEP: 材料確認</div>
+  <div>問題01</div>
+  <div id="timer">40:00</div>
 </header>
 
-<div id="controls">
-  <button onclick="nextStep()">次工程</button>
-  <button onclick="toggleBreaker()">ブレーカー</button>
-  <button onclick="connectSwitch()">スイッチ切替</button>
-  <button onclick="applyCrimp()">圧着</button>
-  <button onclick="submitExam()">採点</button>
+<div id="boardContainer">
+<svg viewBox="0 0 800 500" id="board">
+
+  <rect id="breaker" x="80" y="80" width="60" height="80" fill="#ccc" stroke="#999"/>
+  <rect id="switch" x="300" y="150" width="60" height="80" fill="#fafafa" stroke="#999"/>
+  <rect id="box" x="300" y="320" width="100" height="70" fill="#fff" stroke="#999"/>
+  <circle id="lamp" cx="650" cy="190" r="20" fill="#666"/>
+
+</svg>
 </div>
 
-<svg id="board" width="800" height="500" viewBox="0 0 800 500">
-
-  <!-- ブレーカー -->
-  <rect id="breaker" x="60" y="80" width="60" height="80" fill="#ccc" stroke="#999"/>
-  <text x="65" y="70" font-size="12">BR</text>
-
-  <!-- スイッチ -->
-  <rect id="switch1" x="200" y="150" width="60" height="80" fill="#fafafa" stroke="#999"/>
-  <rect id="switch2" x="400" y="150" width="60" height="80" fill="#fafafa" stroke="#999"/>
-
-  <!-- BOX -->
-  <rect id="box" x="300" y="300" width="100" height="80" fill="#fff" stroke="#999"/>
-
-  <!-- ランプ -->
-  <circle id="lamp" cx="650" cy="190" r="20" fill="#666"/>
-</svg>
+<footer>
+  <button onclick="setMode('wire')" id="wireBtn" class="active">配線</button>
+  <button onclick="setMode('crimp')" id="crimpBtn">圧着</button>
+  <button onclick="submitExam()">確認</button>
+</footer>
 
 <script>
-let breakerOn = false;
-let switchState = 0;
-let crimpDone = false;
-let stepIndex = 0;
+let mode="wire";
+let breakerOn=false;
+let connected=false;
+let crimped=false;
+let scale=1;
+let startDist=0;
 
-const steps = [
-  "材料確認",
-  "器具配置",
-  "圧着",
-  "接続",
-  "確認"
-];
-
-function nextStep(){
-  if(stepIndex < steps.length-1){
-    stepIndex++;
-    document.getElementById("stepLabel").textContent = "STEP: " + steps[stepIndex];
-  }
+function setMode(m){
+  mode=m;
+  document.getElementById("wireBtn").classList.remove("active");
+  document.getElementById("crimpBtn").classList.remove("active");
+  document.getElementById(m+"Btn").classList.add("active");
 }
 
-function toggleBreaker(){
-  breakerOn = !breakerOn;
+document.getElementById("breaker").addEventListener("click",()=>{
+  breakerOn=!breakerOn;
   document.getElementById("breaker")
-    .setAttribute("fill", breakerOn ? "#4caf50" : "#ccc");
+    .setAttribute("fill",breakerOn?"#4caf50":"#ccc");
   updateLamp();
-}
+});
 
-function connectSwitch(){
-  switchState = switchState === 0 ? 1 : 0;
+document.getElementById("switch").addEventListener("click",()=>{
+  if(mode!=="wire") return;
+  connected=!connected;
   updateLamp();
-}
+});
 
-function applyCrimp(){
-  if(stepIndex !== 2){
-    alert("圧着工程ではありません");
-    return;
-  }
-  crimpDone = true;
+document.getElementById("box").addEventListener("click",()=>{
+  if(mode!=="crimp") return;
+  crimped=true;
   alert("圧着完了");
-}
+  updateLamp();
+});
 
 function updateLamp(){
-
-  const lamp = document.getElementById("lamp");
-
-  if(breakerOn && switchState === 1 && crimpDone){
+  const lamp=document.getElementById("lamp");
+  if(breakerOn && connected && crimped){
     lamp.classList.add("lamp-on");
-  } else {
+  }else{
     lamp.classList.remove("lamp-on");
   }
 }
 
 function submitExam(){
+  let score=100;
+  let errors=[];
+  if(!breakerOn){score-=10;errors.push("ブレーカー未投入")}
+  if(!connected){score-=20;errors.push("配線未接続")}
+  if(!crimped){score-=20;errors.push("圧着未実施")}
 
-  let score = 100;
-  let reasons = [];
+  const pass=score>=60;
 
-  if(!breakerOn){
-    score -= 10;
-    reasons.push("ブレーカー未投入");
-  }
-
-  if(!crimpDone){
-    score -= 20;
-    reasons.push("圧着未実施");
-  }
-
-  if(switchState !== 1){
-    score -= 10;
-    reasons.push("スイッチ不適切");
-  }
-
-  const pass = score >= 60;
-
-  showResult(score, pass, reasons);
+  showResult(score,pass,errors);
 }
 
-function showResult(score, pass, reasons){
-
-  const overlay = document.createElement("div");
-  overlay.className = "resultOverlay";
-
-  overlay.innerHTML = `
-    <div class="resultCard">
-      <h1>${pass ? "合格" : "不合格"}</h1>
-      <h2>${score}点</h2>
-      <p>${reasons.join("<br>")}</p>
-      <button onclick="location.reload()">もう一度</button>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
+function showResult(score,pass,errors){
+  alert((pass?"合格":"不合格")+"\n"+score+"点\n"+errors.join("\n"));
 }
+
+/* ピンチズーム */
+const board=document.getElementById("board");
+document.getElementById("boardContainer").addEventListener("touchmove",(e)=>{
+  if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(startDist){
+      scale*=dist/startDist;
+      board.style.transform=`scale(${scale})`;
+    }
+    startDist=dist;
+  }
+});
+document.getElementById("boardContainer").addEventListener("touchend",()=>{
+  startDist=0;
+});
 </script>
 
 </body>
