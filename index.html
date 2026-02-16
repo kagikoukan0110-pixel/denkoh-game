@@ -43,6 +43,13 @@ body {
   font-size: 18px;
   margin-top: 10px;
 }
+
+#clearMessage {
+  font-size: 22px;
+  color: green;
+  margin-top: 10px;
+  font-weight: bold;
+}
 </style>
 </head>
 
@@ -57,6 +64,8 @@ body {
 </div>
 
 <div id="score">スコア: -</div>
+<div id="clearMessage"></div>
+
 <button onclick="clearLines()">やり直す</button>
 
 <script>
@@ -64,6 +73,7 @@ body {
 let game = document.getElementById("game");
 let goal = document.getElementById("goal");
 let scoreDisplay = document.getElementById("score");
+let clearMessage = document.getElementById("clearMessage");
 
 let drawing = false;
 let lastX, lastY;
@@ -132,10 +142,7 @@ function draw(e) {
 
     let score = Math.max(0, Math.floor(BASE_SCORE - totalLength * 5));
     scoreDisplay.innerText = "スコア: " + score;
-
-    setTimeout(() => {
-      alert("⚡ 施工完了！\nスコア: " + score);
-    }, 100);
+    clearMessage.innerText = "⚡ 施工完了！";
   }
 
   lastX = pos.x;
@@ -151,6 +158,7 @@ function clearLines() {
   cleared = false;
   totalLength = 0;
   scoreDisplay.innerText = "スコア: -";
+  clearMessage.innerText = "";
 }
 
 </script>
