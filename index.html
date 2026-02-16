@@ -2,165 +2,179 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>電工パズル</title>
+<title>電工パズル - 複線図モード</title>
 
 <style>
 body {
-  text-align: center;
-  font-family: sans-serif;
-  background: #f0f0f0;
-  margin: 0;
-  overflow: hidden;
+  text-align:center;
+  font-family:sans-serif;
+  background:#f0f0f0;
+  margin:0;
 }
 
-#game {
-  width: 320px;
-  height: 320px;
-  margin: 20px auto;
-  background: white;
-  border: 2px solid black;
-  position: relative;
-  touch-action: none;
+#board {
+  width:340px;
+  height:400px;
+  margin:20px auto;
+  background:white;
+  border:2px solid black;
+  position:relative;
 }
 
-.point {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  position: absolute;
+.node {
+  width:60px;
+  height:40px;
+  border:2px solid black;
+  position:absolute;
+  text-align:center;
+  line-height:40px;
+  font-weight:bold;
+  background:#ddd;
 }
 
-#start { top: 20px; left: 20px; background: green; }
-#goal { bottom: 20px; right: 20px; background: red; }
+.terminal {
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:black;
+  position:absolute;
+  cursor:pointer;
+}
 
 .line {
-  position: absolute;
-  background: black;
-  height: 4px;
+  position:absolute;
+  background:black;
+  height:3px;
+  transform-origin:0 0;
+}
+
+.selected {
+  background:red !important;
 }
 
 #score {
-  font-size: 18px;
-  margin-top: 10px;
+  font-size:18px;
+  margin-top:10px;
 }
 
-#clearMessage {
-  font-size: 22px;
-  color: green;
-  margin-top: 10px;
-  font-weight: bold;
+#message {
+  font-size:20px;
+  font-weight:bold;
+  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>⚡ 電工パズル - ステージ1</h2>
-<p>分電盤からエアコン位置まで配線せよ</p>
+<h2>⚡ 複線図モード - 単極スイッチ</h2>
 
-<div id="game">
-  <div id="start" class="point"></div>
-  <div id="goal" class="point"></div>
+<div id="board">
+
+  <!-- 電源 -->
+  <div class="node" style="top:30px; left:20px;">電源</div>
+  <div class="terminal" data-id="L" style="top:80px; left:45px;"></div>
+  <div class="terminal" data-id="N" style="top:110px; left:45px;"></div>
+
+  <!-- スイッチ -->
+  <div class="node" style="top:180px; left:140px;">SW</div>
+  <div class="terminal" data-id="SW1" style="top:230px; left:165px;"></div>
+  <div class="terminal" data-id="SW2" style="top:230px; left:195px;"></div>
+
+  <!-- ランプ -->
+  <div class="node" style="top:30px; left:230px;">ランプ</div>
+  <div class="terminal" data-id="Lamp1" style="top:80px; left:255px;"></div>
+  <div class="terminal" data-id="Lamp2" style="top:110px; left:255px;"></div>
+
 </div>
 
-<div id="score">スコア: -</div>
-<div id="clearMessage"></div>
-
-<button onclick="clearLines()">やり直す</button>
+<div id="score">スコア: 10000</div>
+<div id="message"></div>
+<button onclick="resetGame()">リセット</button>
 
 <script>
 
-let game = document.getElementById("game");
-let goal = document.getElementById("goal");
-let scoreDisplay = document.getElementById("score");
-let clearMessage = document.getElementById("clearMessage");
+let selected = null;
+let connections = [];
+let score = 10000;
 
-let drawing = false;
-let lastX, lastY;
-let cleared = false;
-let totalLength = 0;
+const correctConnections = [
+  ["L","SW1"],
+  ["SW2","Lamp1"],
+  ["N","Lamp2"]
+];
 
-const BASE_SCORE = 10000;
+const terminals = document.querySelectorAll(".terminal");
+const board = document.getElementById("board");
+const scoreDisplay = document.getElementById("score");
+const message = document.getElementById("message");
 
-game.addEventListener("touchstart", startDraw);
-game.addEventListener("mousedown", startDraw);
+terminals.forEach(t => {
+  t.addEventListener("click", () => handleClick(t));
+});
 
-game.addEventListener("touchmove", draw);
-game.addEventListener("mousemove", draw);
-
-game.addEventListener("touchend", stopDraw);
-game.addEventListener("mouseup", stopDraw);
-
-function getPos(e) {
-  let rect = game.getBoundingClientRect();
-
-  if (e.touches) {
-    return {
-      x: e.touches[0].clientX - rect.left,
-      y: e.touches[0].clientY - rect.top
-    };
+function handleClick(t) {
+  if (!selected) {
+    selected = t;
+    t.classList.add("selected");
   } else {
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
+    if (selected === t) return;
+
+    createLine(selected, t);
+    checkConnection(selected.dataset.id, t.dataset.id);
+
+    selected.classList.remove("selected");
+    selected = null;
   }
 }
 
-function startDraw(e) {
-  drawing = true;
-  let pos = getPos(e);
-  lastX = pos.x;
-  lastY = pos.y;
-}
+function createLine(a, b) {
+  let rectA = a.getBoundingClientRect();
+  let rectB = b.getBoundingClientRect();
+  let rectBoard = board.getBoundingClientRect();
 
-function draw(e) {
-  if (!drawing) return;
-  e.preventDefault();
+  let x1 = rectA.left - rectBoard.left + 9;
+  let y1 = rectA.top - rectBoard.top + 9;
+  let x2 = rectB.left - rectBoard.left + 9;
+  let y2 = rectB.top - rectBoard.top + 9;
 
-  let pos = getPos(e);
-
-  let segmentLength = Math.hypot(pos.x - lastX, pos.y - lastY);
-  totalLength += segmentLength;
+  let length = Math.hypot(x2-x1, y2-y1);
 
   let line = document.createElement("div");
   line.className = "line";
-  line.style.left = lastX + "px";
-  line.style.top = lastY + "px";
-  line.style.width = segmentLength + "px";
-  line.style.transformOrigin = "0 0";
+  line.style.left = x1 + "px";
+  line.style.top = y1 + "px";
+  line.style.width = length + "px";
   line.style.transform =
-    "rotate(" + Math.atan2(pos.y - lastY, pos.x - lastX) + "rad)";
-  game.appendChild(line);
-
-  lastX = pos.x;
-  lastY = pos.y;
+    "rotate(" + Math.atan2(y2-y1, x2-x1) + "rad)";
+  board.appendChild(line);
 }
 
-function stopDraw() {
-  drawing = false;
+function checkConnection(a, b) {
+  let match = correctConnections.some(pair =>
+    (pair[0]===a && pair[1]===b) ||
+    (pair[0]===b && pair[1]===a)
+  );
 
-  let goalX = goal.offsetLeft + 10;
-  let goalY = goal.offsetTop + 10;
+  if (!match) {
+    score -= 2000;
+  } else {
+    connections.push([a,b]);
+  }
 
-  let dx = lastX - goalX;
-  let dy = lastY - goalY;
+  scoreDisplay.innerText = "スコア: " + score;
 
-  if (Math.hypot(dx, dy) < 20 && !cleared) {
-    cleared = true;
-
-    let score = Math.max(0, Math.floor(BASE_SCORE - totalLength * 5));
-    scoreDisplay.innerText = "スコア: " + score;
-    clearMessage.innerText = "⚡ 施工完了！";
+  if (connections.length === correctConnections.length) {
+    message.innerText = "💡 正解！ランプ点灯！";
   }
 }
 
-function clearLines() {
-  document.querySelectorAll(".line").forEach(l => l.remove());
-  cleared = false;
-  totalLength = 0;
-  scoreDisplay.innerText = "スコア: -";
-  clearMessage.innerText = "";
+function resetGame() {
+  document.querySelectorAll(".line").forEach(l=>l.remove());
+  connections = [];
+  score = 10000;
+  scoreDisplay.innerText = "スコア: 10000";
+  message.innerText = "";
 }
 
 </script>
