@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路テスト版（本物エンジン）</title>
+<title>三路＋描画統合版</title>
 
 <style>
 body{
@@ -27,6 +27,12 @@ body{
   border-radius:50%;
   background:black;
   position:absolute;
+  cursor:pointer;
+}
+
+.white{
+  background:white;
+  border:2px solid black;
 }
 
 .label{
@@ -40,31 +46,29 @@ button{
   padding:8px 14px;
 }
 
-#lineLayer{
+canvas{
   position:absolute;
   width:100%;
   height:100%;
   pointer-events:none;
 }
 
-#msg{
-  margin-top:10px;
-  font-weight:bold;
-  white-space:pre-line;
+.selected{
+  outline:3px solid red;
 }
 </style>
 </head>
 <body>
 
-<h2>⚡ 三路テスト（本物判定）</h2>
+<h2>⚡ 三路 統合テスト版</h2>
 
 <div id="field">
-  <canvas id="lineLayer"></canvas>
+  <canvas id="canvas"></canvas>
 
   <!-- 電源 -->
   <div class="label" style="left:30px;top:20px;">電源</div>
   <div class="node" id="L" style="left:60px;top:50px;"></div>
-  <div class="node" id="N" style="left:60px;top:90px;background:white;border:2px solid black;"></div>
+  <div class="node white" id="N" style="left:60px;top:90px;"></div>
 
   <!-- SW1 -->
   <div class="label" style="left:220px;top:20px;">三路SW1</div>
@@ -80,8 +84,8 @@ button{
 
   <!-- ランプ -->
   <div class="label" style="left:140px;top:380px;">ランプ</div>
-  <div class="node" id="Lamp1" style="left:150px;top:410px;"></div>
-  <div class="node" id="Lamp2" style="left:200px;top:410px;background:white;border:2px solid black;"></div>
+  <div class="node white" id="LampN" style="left:150px;top:410px;"></div>
+  <div class="node" id="LampL" style="left:200px;top:410px;"></div>
 
 </div>
 
@@ -94,18 +98,80 @@ button{
 
 <script>
 
-// ===== グラフ回路エンジン =====
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const field=document.getElementById("field");
+
+canvas.width=field.clientWidth;
+canvas.height=field.clientHeight;
+
+let selected=null;
+let wires=[];
+
+let switches={
+  S1:{pos:0},
+  S2:{pos:0}
+};
+
+// ノードクリック
+document.querySelectorAll(".node").forEach(n=>{
+  n.addEventListener("click",()=>nodeClick(n));
+});
+
+function nodeClick(node){
+
+  if(!selected){
+    selected=node;
+    node.classList.add("selected");
+    return;
+  }
+
+  if(selected===node){
+    selected.classList.remove("selected");
+    selected=null;
+    return;
+  }
+
+  wires.push([selected.id,node.id]);
+  selected.classList.remove("selected");
+  selected=null;
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  wires.forEach(pair=>{
+    let a=document.getElementById(pair[0]);
+    let b=document.getElementById(pair[1]);
+
+    let r1=a.getBoundingClientRect();
+    let r2=b.getBoundingClientRect();
+    let f=field.getBoundingClientRect();
+
+    let x1=r1.left-f.left+11;
+    let y1=r1.top-f.top+11;
+    let x2=r2.left-f.left+11;
+    let y2=r2.top-f.top+11;
+
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.strokeStyle="black";
+    ctx.lineWidth=3;
+    ctx.stroke();
+  });
+}
+
+// ===== 回路エンジン =====
 
 class Circuit{
   constructor(){
-    this.nodes=new Set();
     this.edges={};
   }
-  addNode(n){
-    this.nodes.add(n);
-    if(!this.edges[n]) this.edges[n]=[];
-  }
   addEdge(a,b){
+    if(!this.edges[a]) this.edges[a]=[];
+    if(!this.edges[b]) this.edges[b]=[];
     this.edges[a].push(b);
     this.edges[b].push(a);
   }
@@ -116,43 +182,17 @@ class Circuit{
       let n=stack.pop();
       if(!visited.has(n)){
         visited.add(n);
-        this.edges[n].forEach(x=>stack.push(x));
+        (this.edges[n]||[]).forEach(x=>stack.push(x));
       }
     }
     return visited;
   }
 }
 
-// ===== スイッチ状態 =====
-
-let switches={
-  S1:{pos:0},
-  S2:{pos:0}
-};
-
-// ===== ユーザー配線（固定例） =====
-
-let baseConnections=[
-  ["L","S1C"],
-  ["S1T1","S2T1"],
-  ["S1T2","S2T2"],
-  ["S2C","Lamp1"],
-  ["Lamp2","N"]
-];
-
-// ===== 回路構築 =====
-
 function buildCircuit(){
-
   let c=new Circuit();
 
-  // ノード登録
-  document.querySelectorAll(".node").forEach(n=>{
-    c.addNode(n.id);
-  });
-
-  // 固定配線
-  baseConnections.forEach(pair=>{
+  wires.forEach(pair=>{
     c.addEdge(pair[0],pair[1]);
   });
 
@@ -172,40 +212,32 @@ function buildCircuit(){
   return c;
 }
 
-// ===== 解析 =====
-
 function analyze(){
 
   let c=buildCircuit();
 
-  let visited=c.dfs("L");
+  let fromL=c.dfs("L");
+  let fromLampN=c.dfs("LampN");
 
-  let lampSide=c.dfs("Lamp2");
-
-  if(visited.has("Lamp1") && lampSide.has("N")){
-    show("💡 ランプ点灯\n（論理成立）");
+  if(fromL.has("LampL") && fromLampN.has("N")){
+    show("💡 ランプ点灯");
   }else{
     show("❌ 回路不成立");
   }
 }
 
-// ===== 切替 =====
-
 function toggle(name){
   switches[name].pos=1-switches[name].pos;
-  show(name+" → "+switches[name].pos);
-}
-
-// ===== 表示 =====
-
-function show(msg){
-  document.getElementById("msg").innerText=msg;
 }
 
 function reset(){
-  switches.S1.pos=0;
-  switches.S2.pos=0;
+  wires=[];
+  draw();
   show("リセット完了");
+}
+
+function show(msg){
+  document.getElementById("msg").innerText=msg;
 }
 
 </script>
