@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路 統合安定版 v2</title>
+<title>三路 SVG版</title>
 
 <style>
 body{
@@ -21,7 +21,6 @@ body{
   background:white;
 }
 
-/* ノードは最前面 */
 .node{
   width:22px;
   height:22px;
@@ -48,14 +47,11 @@ body{
   z-index:10;
 }
 
-/* canvasは最背面 */
-canvas{
+svg{
   position:absolute;
-  top:0;
-  left:0;
   width:100%;
   height:100%;
-  z-index:0;
+  z-index:1;
   pointer-events:none;
 }
 
@@ -67,12 +63,11 @@ button{
 </head>
 <body>
 
-<h2>⚡ 三路 統合安定版 v2</h2>
+<h2>⚡ 三路 SVG安定版</h2>
 
 <div id="field">
 
-  <!-- canvasを先に置く -->
-  <canvas id="canvas"></canvas>
+  <svg id="svgLayer"></svg>
 
   <div class="label" style="left:30px;top:20px;">電源</div>
   <div class="node" id="L" style="left:60px;top:50px;"></div>
@@ -103,17 +98,8 @@ button{
 
 <script>
 
+const svg=document.getElementById("svgLayer");
 const field=document.getElementById("field");
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-
-function resizeCanvas(){
-  canvas.width=field.clientWidth;
-  canvas.height=field.clientHeight;
-  draw();
-}
-window.addEventListener("resize",resizeCanvas);
-resizeCanvas();
 
 let selected=null;
 let wires=[];
@@ -145,13 +131,16 @@ function nodeClick(node){
 
   selected.classList.remove("selected");
   selected=null;
+
   draw();
 }
 
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  svg.innerHTML="";
 
   wires.forEach(pair=>{
+
     let a=document.getElementById(pair[0]);
     let b=document.getElementById(pair[1]);
 
@@ -164,12 +153,16 @@ function draw(){
     let x2=r2.left-f.left+r2.width/2;
     let y2=r2.top-f.top+r2.height/2;
 
-    ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x2,y2);
-    ctx.strokeStyle="black";
-    ctx.lineWidth=3;
-    ctx.stroke();
+    let line=document.createElementNS("http://www.w3.org/2000/svg","line");
+
+    line.setAttribute("x1",x1);
+    line.setAttribute("y1",y1);
+    line.setAttribute("x2",x2);
+    line.setAttribute("y2",y2);
+    line.setAttribute("stroke","black");
+    line.setAttribute("stroke-width","3");
+
+    svg.appendChild(line);
   });
 }
 
@@ -196,6 +189,7 @@ class Circuit{
 }
 
 function buildCircuit(){
+
   let c=new Circuit();
 
   wires.forEach(pair=>c.addEdge(pair[0],pair[1]));
@@ -210,7 +204,9 @@ function buildCircuit(){
 }
 
 function analyze(){
+
   let c=buildCircuit();
+
   let fromL=c.dfs("L");
   let fromLampN=c.dfs("LampN");
 
