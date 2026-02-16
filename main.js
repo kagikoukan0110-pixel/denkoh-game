@@ -4,4 +4,4 @@ import { setupInteraction } from "./ui/interaction.js";
 alert("STEP2 OK");
 
 initBoard();
-setupInteraction();
+setupInteraction({}, {}); // ダミー渡す
