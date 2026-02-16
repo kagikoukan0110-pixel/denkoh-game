@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 本物判定</title>
+<title>複線図モード - 本物解析</title>
 
 <style>
 body{
@@ -40,6 +40,10 @@ body{
   cursor:pointer;
 }
 
+.selected{
+  background:red !important;
+}
+
 .jb{
   width:120px;
   height:120px;
@@ -57,24 +61,17 @@ body{
   transform-origin:0 0;
 }
 
-.selected{
-  background:red !important;
-}
-
-#score{
-  font-size:18px;
-}
-
 #message{
   font-size:20px;
   font-weight:bold;
+  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>⚡ 複線図モード - 本物判定版</h2>
+<h2>⚡ 複線図モード - 本物解析</h2>
 
 <div id="board">
 
@@ -95,27 +92,31 @@ body{
   <div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
   <div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
   <div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
-
   <div class="terminal" data-id="JB4" style="top:260px; left:140px;"></div>
   <div class="terminal" data-id="JB5" style="top:260px; left:190px;"></div>
   <div class="terminal" data-id="JB6" style="top:260px; left:240px;"></div>
 
 </div>
 
-<div id="score">スコア: 10000</div>
-<div id="message"></div>
+<button onclick="bundle()">束ねる</button>
+<button onclick="analyze()">解析</button>
 <button onclick="resetGame()">リセット</button>
+
+<div id="message"></div>
 
 <script>
 
-let selected=null;
-let score=10000;
-
-const board=document.getElementById("board");
-const scoreDisplay=document.getElementById("score");
-const message=document.getElementById("message");
-
+let selectedTerminals=[];
+let lines=[];
 let parent={};
+
+function init(){
+  parent={};
+  document.querySelectorAll(".terminal").forEach(t=>{
+    parent[t.dataset.id]=t.dataset.id;
+  });
+}
+init();
 
 function find(x){
   if(parent[x]!==x){
@@ -132,73 +133,53 @@ function union(a,b){
   }
 }
 
-function init(){
-  parent={};
-  document.querySelectorAll(".terminal").forEach(t=>{
-    parent[t.dataset.id]=t.dataset.id;
-  });
-}
-
-init();
-
 document.querySelectorAll(".terminal").forEach(t=>{
-  t.addEventListener("click",()=>handleClick(t));
+  t.addEventListener("click",()=>{
+    if(selectedTerminals.includes(t)){
+      t.classList.remove("selected");
+      selectedTerminals=selectedTerminals.filter(x=>x!==t);
+    }else{
+      t.classList.add("selected");
+      selectedTerminals.push(t);
+    }
+  });
 });
 
-function handleClick(t){
-  if(!selected){
-    selected=t;
-    t.classList.add("selected");
-  }else{
-    if(selected===t) return;
-    createLine(selected,t);
-    union(selected.dataset.id,t.dataset.id);
-    selected.classList.remove("selected");
-    selected=null;
-    checkAnswer();
+function bundle(){
+  if(selectedTerminals.length<2) return;
+  let first=selectedTerminals[0].dataset.id;
+  selectedTerminals.forEach(t=>{
+    union(first,t.dataset.id);
+    t.classList.remove("selected");
+  });
+  selectedTerminals=[];
+}
+
+function analyze(){
+  let message=document.getElementById("message");
+
+  // ショート判定
+  if(find("L")===find("N")){
+    message.innerText="🔥 ショート発生！欠陥！";
+    return;
   }
-}
 
-function createLine(a,b){
-  let ra=a.getBoundingClientRect();
-  let rb=b.getBoundingClientRect();
-  let rbBoard=board.getBoundingClientRect();
-
-  let x1=ra.left-rbBoard.left+9;
-  let y1=ra.top-rbBoard.top+9;
-  let x2=rb.left-rbBoard.left+9;
-  let y2=rb.top-rbBoard.top+9;
-
-  let len=Math.hypot(x2-x1,y2-y1);
-
-  let line=document.createElement("div");
-  line.className="line";
-  line.style.left=x1+"px";
-  line.style.top=y1+"px";
-  line.style.width=len+"px";
-  line.style.transform="rotate("+Math.atan2(y2-y1,x2-x1)+"rad)";
-  board.appendChild(line);
-}
-
-function same(a,b){
-  return find(a)===find(b);
-}
-
-function checkAnswer(){
+  // 正常回路判定
   if(
-    same("L","SW1") &&
-    same("SW2","Lamp1") &&
-    same("N","Lamp2")
+    find("L")===find("SW1") &&
+    find("SW2")===find("Lamp1") &&
+    find("Lamp2")===find("N")
   ){
     message.innerText="💡 正解！ランプ点灯！";
+  }else{
+    message.innerText="❌ 回路不成立";
   }
 }
 
 function resetGame(){
-  document.querySelectorAll(".line").forEach(l=>l.remove());
-  score=10000;
-  scoreDisplay.innerText="スコア: 10000";
-  message.innerText="";
+  document.getElementById("message").innerText="";
+  selectedTerminals=[];
+  document.querySelectorAll(".terminal").forEach(t=>t.classList.remove("selected"));
   init();
 }
 
