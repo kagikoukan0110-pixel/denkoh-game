@@ -2,9 +2,9 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 結線表示版</title>
+<title>複線図モード - JB限定結線</title>
 <style>
-body{ text-align:center; font-family:sans-serif; background:#f0f0f0; margin:0; }
+body{ text-align:center;font-family:sans-serif;background:#f0f0f0;margin:0; }
 #board{ width:360px;height:500px;margin:20px auto;background:white;border:2px solid black;position:relative; }
 
 .node{ width:80px;height:40px;border:2px solid black;text-align:center;line-height:40px;position:absolute;background:#ddd; }
@@ -22,10 +22,7 @@ body{ text-align:center; font-family:sans-serif; background:#f0f0f0; margin:0; }
 .jb{ width:120px;height:120px;border:3px solid #333;position:absolute;top:190px;left:120px;background:#fafafa; }
 
 .line{
-  position:absolute;
-  height:3px;
-  background:black;
-  transform-origin:0 0;
+  position:absolute;height:3px;background:black;transform-origin:0 0;
 }
 
 #message{ font-size:20px;font-weight:bold;margin-top:10px; }
@@ -35,7 +32,7 @@ button{ margin:4px;padding:6px 10px; }
 </head>
 <body>
 
-<h2>⚡ 複線図モード - 結線表示版</h2>
+<h2>⚡ 複線図モード - JB限定結線</h2>
 
 <div id="board">
 
@@ -53,16 +50,16 @@ button{ margin:4px;padding:6px 10px; }
 
 <div class="jb"></div>
 
-<div class="terminal black" data-id="JB1" style="top:210px; left:140px;"></div>
-<div class="terminal black" data-id="JB2" style="top:210px; left:190px;"></div>
-<div class="terminal black" data-id="JB3" style="top:210px; left:240px;"></div>
-<div class="terminal black" data-id="JB4" style="top:260px; left:140px;"></div>
-<div class="terminal black" data-id="JB5" style="top:260px; left:190px;"></div>
-<div class="terminal black" data-id="JB6" style="top:260px; left:240px;"></div>
+<div class="terminal black" data-id="JB1" data-jb="true" style="top:210px; left:140px;"></div>
+<div class="terminal black" data-id="JB2" data-jb="true" style="top:210px; left:190px;"></div>
+<div class="terminal black" data-id="JB3" data-jb="true" style="top:210px; left:240px;"></div>
+<div class="terminal black" data-id="JB4" data-jb="true" style="top:260px; left:140px;"></div>
+<div class="terminal black" data-id="JB5" data-jb="true" style="top:260px; left:190px;"></div>
+<div class="terminal black" data-id="JB6" data-jb="true" style="top:260px; left:240px;"></div>
 
 </div>
 
-<button onclick="bundle()">束ねる</button>
+<button onclick="bundle()">束ねる（JB内のみ）</button>
 <button onclick="analyze()">解析（SW ON）</button>
 <button onclick="resetGame()">リセット</button>
 
@@ -132,6 +129,14 @@ function drawLine(a,b){
 function bundle(){
   if(selected.length<2) return;
 
+  // JB端子以外が含まれていたら禁止
+  if(selected.some(t=>!t.dataset.jb)){
+    document.getElementById("message").innerText="❌ JB内端子のみ束ね可能";
+    selected.forEach(t=>t.classList.remove("selected"));
+    selected=[];
+    return;
+  }
+
   const base=selected[0];
 
   for(let i=1;i<selected.length;i++){
@@ -164,7 +169,7 @@ function analyze(){
     msg.innerText="💡 正解！回路成立！";
   }else{
     msg.innerText="❌ 回路不成立";
-    ans.innerText="正解例：\nL→SW1\nSW2→ランプ黒\nランプ白→N";
+    ans.innerText="正解例：\nJB内で3本束ね×2\nL→SW→Lamp黒\nLamp白→N";
   }
 }
 
