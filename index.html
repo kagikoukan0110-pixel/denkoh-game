@@ -20,7 +20,7 @@ body {
   background: white;
   border: 2px solid black;
   position: relative;
-  touch-action: none; /* ここでスクロール防止 */
+  touch-action: none;
 }
 
 .point {
@@ -38,6 +38,11 @@ body {
   background: black;
   height: 4px;
 }
+
+#score {
+  font-size: 18px;
+  margin-top: 10px;
+}
 </style>
 </head>
 
@@ -51,16 +56,21 @@ body {
   <div id="goal" class="point"></div>
 </div>
 
+<div id="score">スコア: -</div>
 <button onclick="clearLines()">やり直す</button>
 
 <script>
 
 let game = document.getElementById("game");
 let goal = document.getElementById("goal");
+let scoreDisplay = document.getElementById("score");
 
 let drawing = false;
 let lastX, lastY;
 let cleared = false;
+let totalLength = 0;
+
+const BASE_SCORE = 10000;
 
 game.addEventListener("touchstart", startDraw);
 game.addEventListener("mousedown", startDraw);
@@ -100,24 +110,31 @@ function draw(e) {
 
   let pos = getPos(e);
 
+  let segmentLength = Math.hypot(pos.x - lastX, pos.y - lastY);
+  totalLength += segmentLength;
+
   let line = document.createElement("div");
   line.className = "line";
   line.style.left = lastX + "px";
   line.style.top = lastY + "px";
-  line.style.width = Math.hypot(pos.x - lastX, pos.y - lastY) + "px";
+  line.style.width = segmentLength + "px";
   line.style.transformOrigin = "0 0";
   line.style.transform =
     "rotate(" + Math.atan2(pos.y - lastY, pos.x - lastX) + "rad)";
   game.appendChild(line);
 
-  // ゴール判定（安定版）
+  // ゴール判定
   let goalX = goal.offsetLeft + 10;
   let goalY = goal.offsetTop + 10;
 
   if (Math.hypot(pos.x - goalX, pos.y - goalY) < 20 && !cleared) {
     cleared = true;
+
+    let score = Math.max(0, Math.floor(BASE_SCORE - totalLength * 5));
+    scoreDisplay.innerText = "スコア: " + score;
+
     setTimeout(() => {
-      alert("⚡ 施工完了！");
+      alert("⚡ 施工完了！\nスコア: " + score);
     }, 100);
   }
 
@@ -132,6 +149,8 @@ function stopDraw() {
 function clearLines() {
   document.querySelectorAll(".line").forEach(l => l.remove());
   cleared = false;
+  totalLength = 0;
+  scoreDisplay.innerText = "スコア: -";
 }
 
 </script>
