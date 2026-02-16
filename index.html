@@ -2,37 +2,36 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>電工パズル - 複線図モード</title>
+<title>複線図モード - ジョイントボックス</title>
 
 <style>
-body {
+body{
   text-align:center;
   font-family:sans-serif;
   background:#f0f0f0;
   margin:0;
 }
 
-#board {
-  width:340px;
-  height:400px;
+#board{
+  width:360px;
+  height:500px;
   margin:20px auto;
   background:white;
   border:2px solid black;
   position:relative;
 }
 
-.node {
-  width:60px;
+.node{
+  width:80px;
   height:40px;
   border:2px solid black;
-  position:absolute;
   text-align:center;
   line-height:40px;
-  font-weight:bold;
+  position:absolute;
   background:#ddd;
 }
 
-.terminal {
+.terminal{
   width:18px;
   height:18px;
   border-radius:50%;
@@ -41,50 +40,70 @@ body {
   cursor:pointer;
 }
 
-.line {
+.jb{
+  width:120px;
+  height:120px;
+  border:3px solid #333;
+  position:absolute;
+  top:190px;
+  left:120px;
+  background:#fafafa;
+}
+
+.line{
   position:absolute;
   background:black;
   height:3px;
   transform-origin:0 0;
 }
 
-.selected {
+.selected{
   background:red !important;
 }
 
-#score {
+#score{
   font-size:18px;
-  margin-top:10px;
 }
 
-#message {
+#message{
   font-size:20px;
   font-weight:bold;
-  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>⚡ 複線図モード - 単極スイッチ</h2>
+<h2>⚡ 複線図モード - ジョイントボックス</h2>
 
 <div id="board">
 
   <!-- 電源 -->
-  <div class="node" style="top:30px; left:20px;">電源</div>
-  <div class="terminal" data-id="L" style="top:80px; left:45px;"></div>
-  <div class="terminal" data-id="N" style="top:110px; left:45px;"></div>
+  <div class="node" style="top:40px; left:20px;">電源</div>
+  <div class="terminal" data-id="L" style="top:90px; left:50px;"></div>
+  <div class="terminal" data-id="N" style="top:120px; left:50px;"></div>
 
   <!-- スイッチ -->
-  <div class="node" style="top:180px; left:140px;">SW</div>
-  <div class="terminal" data-id="SW1" style="top:230px; left:165px;"></div>
-  <div class="terminal" data-id="SW2" style="top:230px; left:195px;"></div>
+  <div class="node" style="top:40px; left:250px;">SW</div>
+  <div class="terminal" data-id="SW1" style="top:90px; left:280px;"></div>
+  <div class="terminal" data-id="SW2" style="top:120px; left:280px;"></div>
 
   <!-- ランプ -->
-  <div class="node" style="top:30px; left:230px;">ランプ</div>
-  <div class="terminal" data-id="Lamp1" style="top:80px; left:255px;"></div>
-  <div class="terminal" data-id="Lamp2" style="top:110px; left:255px;"></div>
+  <div class="node" style="top:400px; left:140px;">ランプ</div>
+  <div class="terminal" data-id="Lamp1" style="top:360px; left:165px;"></div>
+  <div class="terminal" data-id="Lamp2" style="top:360px; left:195px;"></div>
+
+  <!-- ジョイントボックス -->
+  <div class="jb"></div>
+
+  <!-- JB端子 -->
+  <div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
+  <div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
+  <div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
+
+  <div class="terminal" data-id="JB4" style="top:260px; left:140px;"></div>
+  <div class="terminal" data-id="JB5" style="top:260px; left:190px;"></div>
+  <div class="terminal" data-id="JB6" style="top:260px; left:240px;"></div>
 
 </div>
 
@@ -94,87 +113,85 @@ body {
 
 <script>
 
-let selected = null;
-let connections = [];
-let score = 10000;
+let selected=null;
+let score=10000;
+let connections=[];
 
-const correctConnections = [
-  ["L","SW1"],
-  ["SW2","Lamp1"],
-  ["N","Lamp2"]
+const board=document.getElementById("board");
+const scoreDisplay=document.getElementById("score");
+const message=document.getElementById("message");
+
+const correctPairs=[
+  ["L","JB1"],
+  ["SW1","JB1"],
+  ["SW2","JB2"],
+  ["Lamp1","JB2"],
+  ["N","JB3"],
+  ["Lamp2","JB3"]
 ];
 
-const terminals = document.querySelectorAll(".terminal");
-const board = document.getElementById("board");
-const scoreDisplay = document.getElementById("score");
-const message = document.getElementById("message");
-
-terminals.forEach(t => {
-  t.addEventListener("click", () => handleClick(t));
+document.querySelectorAll(".terminal").forEach(t=>{
+  t.addEventListener("click",()=>handleClick(t));
 });
 
-function handleClick(t) {
-  if (!selected) {
-    selected = t;
+function handleClick(t){
+  if(!selected){
+    selected=t;
     t.classList.add("selected");
-  } else {
-    if (selected === t) return;
-
-    createLine(selected, t);
-    checkConnection(selected.dataset.id, t.dataset.id);
-
+  }else{
+    if(selected===t) return;
+    createLine(selected,t);
+    check(selected.dataset.id,t.dataset.id);
     selected.classList.remove("selected");
-    selected = null;
+    selected=null;
   }
 }
 
-function createLine(a, b) {
-  let rectA = a.getBoundingClientRect();
-  let rectB = b.getBoundingClientRect();
-  let rectBoard = board.getBoundingClientRect();
+function createLine(a,b){
+  let ra=a.getBoundingClientRect();
+  let rb=b.getBoundingClientRect();
+  let rbBoard=board.getBoundingClientRect();
 
-  let x1 = rectA.left - rectBoard.left + 9;
-  let y1 = rectA.top - rectBoard.top + 9;
-  let x2 = rectB.left - rectBoard.left + 9;
-  let y2 = rectB.top - rectBoard.top + 9;
+  let x1=ra.left-rbBoard.left+9;
+  let y1=ra.top-rbBoard.top+9;
+  let x2=rb.left-rbBoard.left+9;
+  let y2=rb.top-rbBoard.top+9;
 
-  let length = Math.hypot(x2-x1, y2-y1);
+  let len=Math.hypot(x2-x1,y2-y1);
 
-  let line = document.createElement("div");
-  line.className = "line";
-  line.style.left = x1 + "px";
-  line.style.top = y1 + "px";
-  line.style.width = length + "px";
-  line.style.transform =
-    "rotate(" + Math.atan2(y2-y1, x2-x1) + "rad)";
+  let line=document.createElement("div");
+  line.className="line";
+  line.style.left=x1+"px";
+  line.style.top=y1+"px";
+  line.style.width=len+"px";
+  line.style.transform="rotate("+Math.atan2(y2-y1,x2-x1)+"rad)";
   board.appendChild(line);
 }
 
-function checkConnection(a, b) {
-  let match = correctConnections.some(pair =>
-    (pair[0]===a && pair[1]===b) ||
-    (pair[0]===b && pair[1]===a)
+function check(a,b){
+  let ok=correctPairs.some(p=>
+    (p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)
   );
 
-  if (!match) {
-    score -= 2000;
-  } else {
+  if(!ok){
+    score-=1500;
+  }else{
     connections.push([a,b]);
   }
 
-  scoreDisplay.innerText = "スコア: " + score;
+  scoreDisplay.innerText="スコア: "+score;
 
-  if (connections.length === correctConnections.length) {
-    message.innerText = "💡 正解！ランプ点灯！";
+  if(connections.length===correctPairs.length){
+    message.innerText="💡 正解！ランプ点灯！";
   }
 }
 
-function resetGame() {
+function resetGame(){
   document.querySelectorAll(".line").forEach(l=>l.remove());
-  connections = [];
-  score = 10000;
-  scoreDisplay.innerText = "スコア: 10000";
-  message.innerText = "";
+  connections=[];
+  score=10000;
+  scoreDisplay.innerText="スコア: 10000";
+  message.innerText="";
 }
 
 </script>
