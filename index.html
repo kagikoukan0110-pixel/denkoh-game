@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 模範表示</title>
+<title>複線図モード - 本物判定</title>
 
 <style>
 body{
@@ -69,17 +69,12 @@ body{
   font-size:20px;
   font-weight:bold;
 }
-
-#answerImage{
-  display:none;
-  margin-top:15px;
-}
 </style>
 </head>
 
 <body>
 
-<h2>⚡ 複線図モード - ジョイントボックス</h2>
+<h2>⚡ 複線図モード - 本物判定版</h2>
 
 <div id="board">
 
@@ -101,44 +96,50 @@ body{
   <div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
   <div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
 
+  <div class="terminal" data-id="JB4" style="top:260px; left:140px;"></div>
+  <div class="terminal" data-id="JB5" style="top:260px; left:190px;"></div>
+  <div class="terminal" data-id="JB6" style="top:260px; left:240px;"></div>
+
 </div>
 
 <div id="score">スコア: 10000</div>
 <div id="message"></div>
 <button onclick="resetGame()">リセット</button>
 
-<!-- 正解画像（簡易SVG） -->
-<div id="answerImage">
-  <h3>模範複線図</h3>
-  <svg width="300" height="200">
-    <line x1="20" y1="50" x2="120" y2="100" stroke="black" stroke-width="3"/>
-    <line x1="280" y1="50" x2="170" y2="100" stroke="black" stroke-width="3"/>
-    <line x1="150" y1="180" x2="150" y2="120" stroke="black" stroke-width="3"/>
-    <text x="10" y="45">L</text>
-    <text x="280" y="45">SW</text>
-    <text x="145" y="195">Lamp</text>
-  </svg>
-</div>
-
 <script>
 
 let selected=null;
 let score=10000;
-let connections=[];
 
 const board=document.getElementById("board");
 const scoreDisplay=document.getElementById("score");
 const message=document.getElementById("message");
-const answerImage=document.getElementById("answerImage");
 
-const correctPairs=[
-  ["L","JB1"],
-  ["SW1","JB1"],
-  ["SW2","JB2"],
-  ["Lamp1","JB2"],
-  ["N","JB3"],
-  ["Lamp2","JB3"]
-];
+let parent={};
+
+function find(x){
+  if(parent[x]!==x){
+    parent[x]=find(parent[x]);
+  }
+  return parent[x];
+}
+
+function union(a,b){
+  let pa=find(a);
+  let pb=find(b);
+  if(pa!==pb){
+    parent[pb]=pa;
+  }
+}
+
+function init(){
+  parent={};
+  document.querySelectorAll(".terminal").forEach(t=>{
+    parent[t.dataset.id]=t.dataset.id;
+  });
+}
+
+init();
 
 document.querySelectorAll(".terminal").forEach(t=>{
   t.addEventListener("click",()=>handleClick(t));
@@ -151,9 +152,10 @@ function handleClick(t){
   }else{
     if(selected===t) return;
     createLine(selected,t);
-    check(selected.dataset.id,t.dataset.id);
+    union(selected.dataset.id,t.dataset.id);
     selected.classList.remove("selected");
     selected=null;
+    checkAnswer();
   }
 }
 
@@ -178,32 +180,26 @@ function createLine(a,b){
   board.appendChild(line);
 }
 
-function check(a,b){
-  let ok=correctPairs.some(p=>
-    (p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)
-  );
+function same(a,b){
+  return find(a)===find(b);
+}
 
-  if(!ok){
-    score-=1500;
-  }else{
-    connections.push([a,b]);
-  }
-
-  scoreDisplay.innerText="スコア: "+score;
-
-  if(connections.length===correctPairs.length){
+function checkAnswer(){
+  if(
+    same("L","SW1") &&
+    same("SW2","Lamp1") &&
+    same("N","Lamp2")
+  ){
     message.innerText="💡 正解！ランプ点灯！";
-    answerImage.style.display="block";
   }
 }
 
 function resetGame(){
   document.querySelectorAll(".line").forEach(l=>l.remove());
-  connections=[];
   score=10000;
   scoreDisplay.innerText="スコア: 10000";
   message.innerText="";
-  answerImage.style.display="none";
+  init();
 }
 
 </script>
