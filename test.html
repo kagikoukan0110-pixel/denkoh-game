@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路 SVG版</title>
+<title>三路 SVG完全安定版</title>
 
 <style>
 body{
@@ -47,10 +47,11 @@ body{
   z-index:10;
 }
 
+/* ここが重要 */
 svg{
   position:absolute;
-  width:100%;
-  height:100%;
+  top:0;
+  left:0;
   z-index:1;
   pointer-events:none;
 }
@@ -63,11 +64,12 @@ button{
 </head>
 <body>
 
-<h2>⚡ 三路 SVG安定版</h2>
+<h2>⚡ 三路 SVG完全安定版</h2>
 
 <div id="field">
 
-  <svg id="svgLayer"></svg>
+  <!-- viewBox固定 -->
+  <svg id="svgLayer" width="360" height="520" viewBox="0 0 360 520"></svg>
 
   <div class="label" style="left:30px;top:20px;">電源</div>
   <div class="node" id="L" style="left:60px;top:50px;"></div>
@@ -99,7 +101,6 @@ button{
 <script>
 
 const svg=document.getElementById("svgLayer");
-const field=document.getElementById("field");
 
 let selected=null;
 let wires=[];
@@ -144,6 +145,7 @@ function draw(){
     let a=document.getElementById(pair[0]);
     let b=document.getElementById(pair[1]);
 
+    // 🔥 offset方式（親基準）
     let x1=a.offsetLeft + a.offsetWidth/2;
     let y1=a.offsetTop + a.offsetHeight/2;
     let x2=b.offsetLeft + b.offsetWidth/2;
@@ -161,7 +163,6 @@ function draw(){
     svg.appendChild(line);
   });
 }
-
 
 class Circuit{
   constructor(){ this.edges={}; }
