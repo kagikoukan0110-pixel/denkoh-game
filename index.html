@@ -109,7 +109,16 @@ function draw(e) {
   lastY = pos.y;
 }
 
-function stopDraw() {
+function stopDraw(// ゴール判定（簡易＆確実版）
+let goalX = goal.offsetLeft + 10;
+let goalY = goal.offsetTop + 10;
+
+if (Math.hypot(pos.x - goalX, pos.y - goalY) < 20 && !cleared) {
+  cleared = true;
+  setTimeout(() => {
+    alert("⚡ 施工完了！");
+  }, 100);
+}) {
   drawing = false;
 }
 function clearLines() {
