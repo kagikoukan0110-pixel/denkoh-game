@@ -144,14 +144,10 @@ function draw(){
     let a=document.getElementById(pair[0]);
     let b=document.getElementById(pair[1]);
 
-    let r1=a.getBoundingClientRect();
-    let r2=b.getBoundingClientRect();
-    let f=field.getBoundingClientRect();
-
-    let x1=r1.left-f.left+r1.width/2;
-    let y1=r1.top-f.top+r1.height/2;
-    let x2=r2.left-f.left+r2.width/2;
-    let y2=r2.top-f.top+r2.height/2;
+    let x1=a.offsetLeft + a.offsetWidth/2;
+    let y1=a.offsetTop + a.offsetHeight/2;
+    let x2=b.offsetLeft + b.offsetWidth/2;
+    let y2=b.offsetTop + b.offsetHeight/2;
 
     let line=document.createElementNS("http://www.w3.org/2000/svg","line");
 
@@ -165,6 +161,7 @@ function draw(){
     svg.appendChild(line);
   });
 }
+
 
 class Circuit{
   constructor(){ this.edges={}; }
