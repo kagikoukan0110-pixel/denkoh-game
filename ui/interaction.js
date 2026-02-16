@@ -1,13 +1,6 @@
-export function setupInteraction(graph, scoring){
+if(e.target.id === "lamp"){
+  graph.connect("L","lamp");
+  const score = scoring.calculate();
 
-  document.addEventListener("click",(e)=>{
-
-    if(e.target.id === "lamp"){
-      graph.connect("L","lamp");
-      const score = scoring.calculate();
-      console.log("Score:", score);
-    }
-
-  });
-
+  e.target.setAttribute("fill", score === 100 ? "yellow" : "red");
 }
