@@ -1,440 +1,192 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<title>圧着UIデモ — 電工シミュレーター</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>電工ラボ β - 貴電監修</title>
+
 <style>
-  body { font-family: system-ui, -apple-system, "Hiragino Kaku Gothic Pro", "メイリオ", sans-serif; background:#f7f8fa; margin:18px; }
-  .container { max-width:1200px; margin:0 auto; background:#fff; padding:12px; border-radius:8px; box-shadow:0 6px 18px rgba(10,10,20,0.06); }
-  svg { width:100%; height:360px; background:#fafafa; border:1px solid #eee; border-radius:6px; }
-  .terminal { cursor:pointer; stroke:#777; stroke-width:1; }
-  .wire { fill:none; stroke:#cfcfcf; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; }
-  .wire.highlight { stroke:#ff4d4f; stroke-dasharray:6 4; stroke-width:6; }
-  .terminal-label { font-size:11px; fill:#333; pointer-events:none; }
-  /* crimp colors */
-  .crimp-none { fill:#ddd; }
-  .crimp-small { fill:#ffb86b; } /* orange */
-  .crimp-med { fill:#6ad39a; }  /* green */
-  .crimp-large { fill:#6ea8ff; } /* blue */
-  .sleeve-ring { stroke:#333; stroke-width:2; fill:none; }
-  /* context menu */
-  .crimp-menu {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 6px;
-    box-shadow: 0 6px 18px rgba(20,20,40,0.08);
-    z-index: 1200;
-    width: 200px;
-    display:none;
-  }
-  .crimp-menu label { display:block; margin-bottom:6px; font-size:13px;}
-  .crimp-menu .actions { text-align:right; margin-top:8px; }
-  button { background:#2b8cff; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
-  button.ghost { background:#f3f4f6; color:#333; margin-right:6px; }
-  .panel { margin-top:10px; font-size:14px; color:#333; }
-  .deductions { margin-top:8px; background:#fff9f9; border:1px solid #ffe6e6; padding:8px; border-radius:6px; color:#8b1c1c; }
+body {
+  margin:0;
+  font-family:sans-serif;
+  background:#d7ccc8;
+}
+
+header {
+  background:#1e88e5;
+  color:white;
+  padding:10px 20px;
+  display:flex;
+  justify-content:space-between;
+}
+
+#board {
+  background:#f4f1ea;
+  margin:20px auto;
+  display:block;
+  border-radius:8px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.3);
+}
+
+button {
+  padding:6px 12px;
+  margin-right:6px;
+}
+
+#controls {
+  padding:10px;
+  text-align:center;
+}
+
+.lamp-on {
+  fill:#ffcc00 !important;
+}
+
+.resultOverlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.resultCard {
+  background:white;
+  padding:40px;
+  border-radius:10px;
+  text-align:center;
+}
 </style>
 </head>
-<body>
-<div class="container">
-  <h3>圧着UIデモ（右クリックで端子を設定）</h3>
-  <div id="svgwrap" style="position:relative;">
-    <svg id="stage" viewBox="0 0 1200 360" xmlns="http://www.w3.org/2000/svg"></svg>
-    <!-- context menu (HTML overlay) -->
-    <div id="crimpMenu" class="crimp-menu" role="dialog" aria-hidden="true">
-      <div>
-        <strong id="menuTitle">端子: </strong>
-      </div>
-      <div style="margin-top:8px;">
-        <label><input type="radio" name="crimpSize" value="small"> 小 (small)</label>
-        <label><input type="radio" name="crimpSize" value="med"> 中 (med)</label>
-        <label><input type="radio" name="crimpSize" value="large"> 大 (large)</label>
-        <label style="margin-top:6px;"><input id="sleeveChk" type="checkbox"> スリーブ を付ける</label>
-      </div>
-      <div class="actions">
-        <button id="applyBtn">適用</button>
-        <button id="clearBtn" class="ghost">解除</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="panel">
-    <strong>採点結果（簡易）</strong>
-    <div id="deductionsArea" class="deductions" aria-live="polite">— ここに検査結果が表示されます —</div>
-  </div>
+<body>
+
+<header>
+  <div>電工ラボ β（貴電監修）</div>
+  <div id="stepLabel">STEP: 材料確認</div>
+</header>
+
+<div id="controls">
+  <button onclick="nextStep()">次工程</button>
+  <button onclick="toggleBreaker()">ブレーカー</button>
+  <button onclick="connectSwitch()">スイッチ切替</button>
+  <button onclick="applyCrimp()">圧着</button>
+  <button onclick="submitExam()">採点</button>
 </div>
 
+<svg id="board" width="800" height="500" viewBox="0 0 800 500">
+
+  <!-- ブレーカー -->
+  <rect id="breaker" x="60" y="80" width="60" height="80" fill="#ccc" stroke="#999"/>
+  <text x="65" y="70" font-size="12">BR</text>
+
+  <!-- スイッチ -->
+  <rect id="switch1" x="200" y="150" width="60" height="80" fill="#fafafa" stroke="#999"/>
+  <rect id="switch2" x="400" y="150" width="60" height="80" fill="#fafafa" stroke="#999"/>
+
+  <!-- BOX -->
+  <rect id="box" x="300" y="300" width="100" height="80" fill="#fff" stroke="#999"/>
+
+  <!-- ランプ -->
+  <circle id="lamp" cx="650" cy="190" r="20" fill="#666"/>
+</svg>
+
 <script>
-/* -------------------------
-   簡易 Graph / Rendering
-   ------------------------- */
-class Graph {
-  constructor() {
-    this.nodes = new Map();
-    this.wires = new Map();
-  }
-  addNode(node) { this.nodes.set(node.id, node); }
-  addWire(wire) { this.wires.set(wire.id, wire); }
-  neighbors(nodeId) {
-    const res = [];
-    for (const w of this.wires.values()) {
-      if (w.endpoints.includes(nodeId)) {
-        // return the other endpoint node id
-        const other = w.endpoints[0] === nodeId ? w.endpoints[1] : w.endpoints[0];
-        res.push(other);
-      }
-    }
-    return res;
-  }
+let breakerOn = false;
+let switchState = 0;
+let crimpDone = false;
+let stepIndex = 0;
 
-  // BOXを経由しない経路（中間ノードにboxがない経路）が存在するか
-  hasBoxlessPath(srcId, dstId) {
-    const visited = new Set();
-    const self = this;
-    function dfs(cur) {
-      if (cur === dstId) return true;
-      visited.add(cur);
-      for (const nxt of self.neighbors(cur)) {
-        if (visited.has(nxt)) continue;
-        // 中間ノードがboxならスキップ（終点は許容）
-        if (nxt !== dstId) {
-          const nnode = self.nodes.get(nxt);
-          if (nnode && nnode.type === 'box') continue;
-        }
-        if (dfs(nxt)) return true;
-      }
-      visited.delete(cur);
-      return false;
-    }
-    return dfs(srcId);
-  }
-}
-
-/* -------------------------
-   初期データ（サンプル）
-   実プロジェクトでは既存 nodes/wires を使う
-   ------------------------- */
-const graph = new Graph();
-
-// nodes: terminals と機器配置 (id, type, x,y)
-const nodes = [
-  { id:'power-L', type:'power', x:80, y:160, label:'L' },
-  { id:'power-N', type:'power', x:80, y:200, label:'N' },
-
-  { id:'S1-0', type:'terminal', x:300, y:170, label:'S1-0', meta:{expectedCrimpSize:'med'} },
-  { id:'S1-1', type:'terminal', x:360, y:150, label:'S1-1', meta:{expectedCrimpSize:'small', requireSleeve:true} },
-  { id:'S1-3', type:'terminal', x:360, y:190, label:'S1-3', meta:{expectedCrimpSize:'small'} },
-
-  { id:'BOX-B1', type:'box', x:520, y:170, label:'BOX-B1' },
-
-  { id:'S2-0', type:'terminal', x:720, y:170, label:'S2-0' },
-  { id:'S2-1', type:'terminal', x:780, y:150, label:'S2-1', meta:{expectedCrimpSize:'small', requireSleeve:true} },
-  { id:'S2-3', type:'terminal', x:780, y:190, label:'S2-3', meta:{expectedCrimpSize:'small'} },
-
-  { id:'ceiling-L', type:'ceiling', x:1040, y:170, label:'L' },
-  { id:'ceiling-N', type:'ceiling', x:1040, y:200, label:'N' }
+const steps = [
+  "材料確認",
+  "器具配置",
+  "圧着",
+  "接続",
+  "確認"
 ];
 
-for (const n of nodes) graph.addNode(n);
-
-// wires (id, endpoints, optional poly points for nice routing)
-const wires = [
-  { id:'w1', endpoints:['power-L','S1-0'], points:[ {x:120,y:170}, {x:280,y:170} ], crimps: { 'power-L':{size:'med', sleeve:false}, 'S1-0':{size:'med', sleeve:true} } },
-  { id:'w2', endpoints:['S1-0','S1-1'], points:[ {x:320,y:170}, {x:352,y:158} ], crimps: {} },
-
-  // direct traveler NG wire between S1-1 and S2-1 (to demonstrate penalty)
-  { id:'wtrav', endpoints:['S1-1','S2-1'], points:[ {x:380,y:150}, {x:760,y:150} ], crimps: { 'S1-1':{size:'small', sleeve:false}, 'S2-1':{size:'small', sleeve:false} } },
-
-  // alternative proper route via BOX
-  { id:'wA', endpoints:['S1-1','BOX-B1'], points:[ {x:392,y:150}, {x:520,y:170} ], crimps: { 'S1-1':{size:'small', sleeve:true} ,'BOX-B1':{size:null, sleeve:false} } },
-  { id:'wB', endpoints:['BOX-B1','S2-1'], points:[ {x:560,y:170}, {x:760,y:150} ], crimps: { 'BOX-B1':{size:null}, 'S2-1':{size:'small', sleeve:true} } },
-
-  { id:'w3', endpoints:['S2-0','S2-1'], points:[ {x:700,y:170}, {x:772,y:158} ], crimps: {} },
-  { id:'w4', endpoints:['S2-0','S2-3'], points:[ {x:700,y:170}, {x:772,y:188} ], crimps: {} },
-
-  { id:'wCeil', endpoints:['S2-0','ceiling-L'], points:[ {x:820,y:170}, {x:1040,y:170} ], crimps: { 'S2-0':{size:'med', sleeve:false}, 'ceiling-L':{size:'med'} } }
-];
-
-for (const w of wires) {
-  graph.addWire(w);
+function nextStep(){
+  if(stepIndex < steps.length-1){
+    stepIndex++;
+    document.getElementById("stepLabel").textContent = "STEP: " + steps[stepIndex];
+  }
 }
 
-/* -------------------------
-   SVG描画
-   ------------------------- */
-const svgNS = "http://www.w3.org/2000/svg";
-const stage = document.getElementById('stage');
-
-function clearStage() {
-  while (stage.firstChild) stage.removeChild(stage.firstChild);
+function toggleBreaker(){
+  breakerOn = !breakerOn;
+  document.getElementById("breaker")
+    .setAttribute("fill", breakerOn ? "#4caf50" : "#ccc");
+  updateLamp();
 }
 
-function draw() {
-  clearStage();
-
-  // draw wires first (background)
-  for (const w of graph.wires.values()) {
-    const g = document.createElementNS(svgNS, 'g');
-    const path = document.createElementNS(svgNS, 'polyline');
-
-    // Build points
-    let pts = [];
-    // start at endpoints' coords
-    const a = graph.nodes.get(w.endpoints[0]);
-    const b = graph.nodes.get(w.endpoints[1]);
-    pts.push(`${a.x},${a.y}`);
-    if (w.points && w.points.length) {
-      for (const p of w.points) pts.push(`${p.x},${p.y}`);
-    } else {
-      // simple midpoint
-      const mx = (a.x + b.x)/2;
-      pts.push(`${mx},${a.y}`);
-    }
-    pts.push(`${b.x},${b.y}`);
-    path.setAttribute('points', pts.join(' '));
-    path.setAttribute('class', 'wire');
-    path.setAttribute('id', `wire-${w.id}`);
-    // attach data-wireid
-    path.dataset.wireId = w.id;
-    g.appendChild(path);
-    stage.appendChild(g);
-  }
-
-  // draw nodes/terminals on top
-  for (const node of graph.nodes.values()) {
-    // device background boxes for 'switch'/'box' omitted for brevity - focusing on terminals
-    const circle = document.createElementNS(svgNS, 'circle');
-    circle.setAttribute('cx', node.x);
-    circle.setAttribute('cy', node.y);
-    circle.setAttribute('r', 8);
-    circle.setAttribute('id', `n-${node.id}`);
-    circle.setAttribute('class', 'terminal crimp-none');
-    circle.dataset.nodeId = node.id;
-
-    // color by crimp presence (if any wire endpoint has crimp info)
-    const crimpState = getCrimpStateForNode(node.id);
-    if (crimpState.size === 'small') circle.classList.replace('crimp-none','crimp-small');
-    if (crimpState.size === 'med') circle.classList.replace('crimp-none','crimp-med');
-    if (crimpState.size === 'large') circle.classList.replace('crimp-none','crimp-large');
-
-    // pointer events
-    circle.style.pointerEvents = 'all';
-
-    // sleeve ring if any wire has sleeve true for this node
-    stage.appendChild(circle);
-
-    if (crimpState.sleeve) {
-      const ring = document.createElementNS(svgNS, 'circle');
-      ring.setAttribute('cx', node.x);
-      ring.setAttribute('cy', node.y);
-      ring.setAttribute('r', 12);
-      ring.setAttribute('class', 'sleeve-ring');
-      ring.setAttribute('id', `sleeve-${node.id}`);
-      stage.appendChild(ring);
-    }
-
-    // label
-    const label = document.createElementNS(svgNS, 'text');
-    label.setAttribute('x', node.x + 12);
-    label.setAttribute('y', node.y + 4);
-    label.setAttribute('class', 'terminal-label');
-    label.textContent = node.label || node.id;
-    stage.appendChild(label);
-
-    // event: right click opens menu
-    circle.addEventListener('contextmenu', (ev) => {
-      ev.preventDefault();
-      openCrimpMenu(node.id, ev.clientX, ev.clientY);
-      return false;
-    });
-  }
-
-  // after drawing, run checks and highlight any offending wires
-  runChecksAndHighlight();
+function connectSwitch(){
+  switchState = switchState === 0 ? 1 : 0;
+  updateLamp();
 }
 
-function getCrimpStateForNode(nodeId) {
-  // aggregate across all wires attached to this node:
-  // if any wire has crimp size at that node, prefer that; if multiple, pick first
-  let state = { size: null, sleeve:false };
-  for (const w of graph.wires.values()) {
-    if (w.endpoints.includes(nodeId)) {
-      const c = (w.crimps && w.crimps[nodeId]) || null;
-      if (c && c.size) {
-        state.size = c.size;
-        state.sleeve = !!c.sleeve;
-        break;
-      }
-      if (c && c.sleeve) {
-        state.sleeve = true;
-      }
-    }
-  }
-  return state;
-}
-
-/* -------------------------
-   Crimp UI（右クリックメニュー）
-   ------------------------- */
-const crimpMenu = document.getElementById('crimpMenu');
-const menuTitle = document.getElementById('menuTitle');
-let currentNodeForMenu = null;
-
-function openCrimpMenu(nodeId, clientX, clientY) {
-  currentNodeForMenu = nodeId;
-  menuTitle.textContent = `端子: ${nodeId}`;
-  // prefill with current crimp state (if any)
-  const state = getCrimpStateForNode(nodeId);
-  const radios = crimpMenu.querySelectorAll('input[name="crimpSize"]');
-  radios.forEach(r => r.checked = (r.value === state.size));
-  document.getElementById('sleeveChk').checked = !!state.sleeve;
-
-  // position (keep inside viewport of svgwrap)
-  const wrap = document.getElementById('svgwrap');
-  const rect = wrap.getBoundingClientRect();
-  let left = clientX - rect.left + 8;
-  let top = clientY - rect.top + 8;
-  // limit
-  if (left + 220 > rect.width) left = rect.width - 220;
-  if (top + 160 > rect.height) top = rect.height - 160;
-  crimpMenu.style.left = left + 'px';
-  crimpMenu.style.top = top + 'px';
-  crimpMenu.style.display = 'block';
-  crimpMenu.setAttribute('aria-hidden','false');
-}
-
-document.addEventListener('click', (ev) => {
-  // hide menu if click outside
-  if (ev.target.closest('.crimp-menu') === null) {
-    crimpMenu.style.display = 'none';
-    crimpMenu.setAttribute('aria-hidden','true');
-  }
-});
-
-// apply / clear handlers
-document.getElementById('applyBtn').addEventListener('click', () => {
-  if (!currentNodeForMenu) return;
-  const size = crimpMenu.querySelector('input[name="crimpSize"]:checked')?.value || null;
-  const sleeve = document.getElementById('sleeveChk').checked;
-  applyCrimpToNode(currentNodeForMenu, size, sleeve);
-  crimpMenu.style.display = 'none';
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!currentNodeForMenu) return;
-  applyCrimpToNode(currentNodeForMenu, null, false);
-  crimpMenu.style.display = 'none';
-});
-
-function applyCrimpToNode(nodeId, size, sleeve) {
-  // find all wires that have this node as endpoint and update their crimps entry for this node
-  for (const w of graph.wires.values()) {
-    if (w.endpoints.includes(nodeId)) {
-      if (!w.crimps) w.crimps = {};
-      w.crimps[nodeId] = { size: size, sleeve: !!sleeve };
-    }
-  }
-  // re-render visual
-  draw();
-}
-
-/* -------------------------
-   チェック関数（圧着・渡り線 via BOX）
-   ------------------------- */
-const PENALTIES = { traveler_no_box:3, missing_crimp:5, wrong_crimp_size:2, missing_sleeve:1 };
-
-function checkCrimps(graph) {
-  const deductions = [];
-  for (const w of graph.wires.values()) {
-    for (const nodeId of w.endpoints) {
-      const node = graph.nodes.get(nodeId);
-      if (!node) continue;
-      // 対象: terminal / switch-term / ceiling-term 等、ここでは type 'terminal' / 'ceiling' とみなす
-      if (['terminal','ceiling','power'].includes(node.type)) {
-        const cr = (w.crimps && w.crimps[nodeId]) || null;
-        if (!cr || !cr.size) {
-          deductions.push({ type:'missing_crimp', message:`${nodeId} に圧着なし (wire:${w.id})`, points:PENALTIES.missing_crimp, wireId:w.id, nodeId });
-        } else {
-          // expected size check
-          const expected = (node.meta && node.meta.expectedCrimpSize) || 'med';
-          if (cr.size !== expected) {
-            deductions.push({ type:'wrong_crimp_size', message:`${nodeId} の圧着サイズ ${cr.size} が期待 (${expected}) と異なる (wire:${w.id})`, points:PENALTIES.wrong_crimp_size, wireId:w.id, nodeId });
-          }
-          if (node.meta && node.meta.requireSleeve && !cr.sleeve) {
-            deductions.push({ type:'missing_sleeve', message:`${nodeId} にスリーブが必要 (wire:${w.id})`, points:PENALTIES.missing_sleeve, wireId:w.id, nodeId });
-          }
-        }
-      }
-    }
-  }
-  return deductions;
-}
-
-function checkTravelerRule(graph) {
-  const deductions = [];
-  // ここは固定の渡り端子セット（プロジェクトに合わせて変更）
-  const travelers = [['S1-1','S2-1'], ['S1-3','S2-3']];
-  for (const [a,b] of travelers) {
-    if (graph.hasBoxlessPath(a,b)) {
-      deductions.push({ type:'traveler_no_box', message:`${a} → ${b} がBOXを経由していません`, points:PENALTIES.traveler_no_box, path:[a,b] });
-    }
-  }
-  return deductions;
-}
-
-function runChecksAndHighlight() {
-  // clear previous wire highlights
-  for (const el of document.querySelectorAll('.wire')) el.classList.remove('highlight');
-
-  const ded1 = checkTravelerRule(graph);
-  const ded2 = checkCrimps(graph);
-
-  // highlight wires involved in traveler_no_box (attempt to find direct wire between endpoints)
-  for (const d of ded1) {
-    if (d.type === 'traveler_no_box') {
-      // try to find direct wire that connects the two terminals (simple approach)
-      for (const w of graph.wires.values()) {
-        if (w.endpoints.includes(d.path[0]) && w.endpoints.includes(d.path[1])) {
-          const el = document.getElementById(`wire-${w.id}`);
-          if (el) el.classList.add('highlight');
-        }
-      }
-    }
-  }
-
-  // highlight wires with missing crimp
-  for (const d of ded2) {
-    if (d.type === 'missing_crimp' || d.type === 'wrong_crimp_size' || d.type === 'missing_sleeve') {
-      const wireEl = document.getElementById(`wire-${d.wireId}`);
-      if (wireEl) wireEl.classList.add('highlight');
-    }
-  }
-
-  // show on UI
-  const area = document.getElementById('deductionsArea');
-  const all = [...ded1, ...ded2];
-  if (!all.length) {
-    area.textContent = "合格 — 圧着・渡り線チェックに問題ありません。";
-    area.style.background = "#f6ffef";
-    area.style.border = "1px solid #d3ffd9";
-    area.style.color = "#1a6f3a";
+function applyCrimp(){
+  if(stepIndex !== 2){
+    alert("圧着工程ではありません");
     return;
   }
-  area.style.background = "#fff9f9";
-  area.style.border = "1px solid #ffe6e6";
-  area.style.color = "#8b1c1c";
-  // build HTML
-  area.innerHTML = all.map(d => `<div>・${d.message} <span style="color:#666">(-${d.points}点)</span></div>`).join('');
+  crimpDone = true;
+  alert("圧着完了");
 }
 
-/* -------------------------
-   初期描画
-   ------------------------- */
-draw();
+function updateLamp(){
 
+  const lamp = document.getElementById("lamp");
+
+  if(breakerOn && switchState === 1 && crimpDone){
+    lamp.classList.add("lamp-on");
+  } else {
+    lamp.classList.remove("lamp-on");
+  }
+}
+
+function submitExam(){
+
+  let score = 100;
+  let reasons = [];
+
+  if(!breakerOn){
+    score -= 10;
+    reasons.push("ブレーカー未投入");
+  }
+
+  if(!crimpDone){
+    score -= 20;
+    reasons.push("圧着未実施");
+  }
+
+  if(switchState !== 1){
+    score -= 10;
+    reasons.push("スイッチ不適切");
+  }
+
+  const pass = score >= 60;
+
+  showResult(score, pass, reasons);
+}
+
+function showResult(score, pass, reasons){
+
+  const overlay = document.createElement("div");
+  overlay.className = "resultOverlay";
+
+  overlay.innerHTML = `
+    <div class="resultCard">
+      <h1>${pass ? "合格" : "不合格"}</h1>
+      <h2>${score}点</h2>
+      <p>${reasons.join("<br>")}</p>
+      <button onclick="location.reload()">もう一度</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
 </script>
+
 </body>
 </html>
