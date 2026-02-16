@@ -1,5 +1,7 @@
 import { initBoard } from "./ui/board.js";
+import { setupInteraction } from "./ui/interaction.js";
 
-alert("STEP1 OK");
+alert("STEP2 OK");
 
 initBoard();
+setupInteraction();
