@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三路 統合安定版 v2</title>
+
+<style>
+body{
+  font-family:sans-serif;
+  text-align:center;
+  background:#f2f2f2;
+  margin:0;
+}
+
+#field{
+  width:360px;
+  height:520px;
+  margin:20px auto;
+  border:3px solid black;
+  position:relative;
+  background:white;
+}
+
+/* ノードは最前面 */
+.node{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:black;
+  position:absolute;
+  cursor:pointer;
+  z-index:10;
+}
+
+.white{
+  background:white;
+  border:2px solid black;
+}
+
+.selected{
+  outline:3px solid red;
+}
+
+.label{
+  position:absolute;
+  font-size:14px;
+  font-weight:bold;
+  z-index:10;
+}
+
+/* canvasは最背面 */
+canvas{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+}
+
+button{
+  margin:6px;
+  padding:8px 14px;
+}
+</style>
+</head>
+<body>
+
+<h2>⚡ 三路 統合安定版 v2</h2>
+
+<div id="field">
+
+  <!-- canvasを先に置く -->
+  <canvas id="canvas"></canvas>
+
+  <div class="label" style="left:30px;top:20px;">電源</div>
+  <div class="node" id="L" style="left:60px;top:50px;"></div>
+  <div class="node white" id="N" style="left:60px;top:90px;"></div>
+
+  <div class="label" style="left:220px;top:20px;">三路SW1</div>
+  <div class="node" id="S1C" style="left:250px;top:50px;"></div>
+  <div class="node" id="S1T1" style="left:220px;top:90px;"></div>
+  <div class="node" id="S1T2" style="left:280px;top:90px;"></div>
+
+  <div class="label" style="left:220px;top:180px;">三路SW2</div>
+  <div class="node" id="S2C" style="left:250px;top:210px;"></div>
+  <div class="node" id="S2T1" style="left:220px;top:250px;"></div>
+  <div class="node" id="S2T2" style="left:280px;top:250px;"></div>
+
+  <div class="label" style="left:140px;top:380px;">ランプ</div>
+  <div class="node white" id="LampN" style="left:150px;top:410px;"></div>
+  <div class="node" id="LampL" style="left:200px;top:410px;"></div>
+
+</div>
+
+<button onclick="toggle('S1')">SW1切替</button>
+<button onclick="toggle('S2')">SW2切替</button>
+<button onclick="analyze()">解析</button>
+<button onclick="reset()">リセット</button>
+
+<div id="msg"></div>
+
+<script>
+
+const field=document.getElementById("field");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+function resizeCanvas(){
+  canvas.width=field.clientWidth;
+  canvas.height=field.clientHeight;
+  draw();
+}
+window.addEventListener("resize",resizeCanvas);
+resizeCanvas();
+
+let selected=null;
+let wires=[];
+
+let switches={
+  S1:{pos:0},
+  S2:{pos:0}
+};
+
+document.querySelectorAll(".node").forEach(n=>{
+  n.addEventListener("click",()=>nodeClick(n));
+});
+
+function nodeClick(node){
+
+  if(!selected){
+    selected=node;
+    node.classList.add("selected");
+    return;
+  }
+
+  if(selected===node){
+    node.classList.remove("selected");
+    selected=null;
+    return;
+  }
+
+  wires.push([selected.id,node.id]);
+
+  selected.classList.remove("selected");
+  selected=null;
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  wires.forEach(pair=>{
+    let a=document.getElementById(pair[0]);
+    let b=document.getElementById(pair[1]);
+
+    let r1=a.getBoundingClientRect();
+    let r2=b.getBoundingClientRect();
+    let f=field.getBoundingClientRect();
+
+    let x1=r1.left-f.left+r1.width/2;
+    let y1=r1.top-f.top+r1.height/2;
+    let x2=r2.left-f.left+r2.width/2;
+    let y2=r2.top-f.top+r2.height/2;
+
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.strokeStyle="black";
+    ctx.lineWidth=3;
+    ctx.stroke();
+  });
+}
+
+class Circuit{
+  constructor(){ this.edges={}; }
+  addEdge(a,b){
+    if(!this.edges[a]) this.edges[a]=[];
+    if(!this.edges[b]) this.edges[b]=[];
+    this.edges[a].push(b);
+    this.edges[b].push(a);
+  }
+  dfs(start){
+    let visited=new Set();
+    let stack=[start];
+    while(stack.length){
+      let n=stack.pop();
+      if(!visited.has(n)){
+        visited.add(n);
+        (this.edges[n]||[]).forEach(x=>stack.push(x));
+      }
+    }
+    return visited;
+  }
+}
+
+function buildCircuit(){
+  let c=new Circuit();
+
+  wires.forEach(pair=>c.addEdge(pair[0],pair[1]));
+
+  if(switches.S1.pos===0) c.addEdge("S1C","S1T1");
+  else c.addEdge("S1C","S1T2");
+
+  if(switches.S2.pos===0) c.addEdge("S2C","S2T1");
+  else c.addEdge("S2C","S2T2");
+
+  return c;
+}
+
+function analyze(){
+  let c=buildCircuit();
+  let fromL=c.dfs("L");
+  let fromLampN=c.dfs("LampN");
+
+  if(fromL.has("LampL") && fromLampN.has("N")){
+    show("💡 ランプ点灯");
+  }else{
+    show("❌ 回路不成立");
+  }
+}
+
+function toggle(name){
+  switches[name].pos=1-switches[name].pos;
+}
+
+function reset(){
+  wires=[];
+  draw();
+  show("リセット完了");
+}
+
+function show(msg){
+  document.getElementById("msg").innerText=msg;
+}
+
+</script>
+</body>
+</html>
