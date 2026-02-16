@@ -1,5 +1,5 @@
 import { initBoard } from "./ui/board.js";
 
-alert("MAIN OK");
+alert("STEP1 OK");
 
 initBoard();
