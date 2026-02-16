@@ -2,47 +2,116 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>三路四路エンジン基礎版</title>
+<title>三路テスト版（本物エンジン）</title>
+
 <style>
-body{font-family:sans-serif;text-align:center;background:#f2f2f2;}
-button{margin:5px;padding:8px 14px;}
-#msg{white-space:pre-line;font-weight:bold;margin-top:10px;}
+body{
+  font-family:sans-serif;
+  text-align:center;
+  background:#f2f2f2;
+  margin:0;
+}
+
+#field{
+  width:360px;
+  height:520px;
+  margin:20px auto;
+  border:3px solid black;
+  position:relative;
+  background:white;
+}
+
+.node{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:black;
+  position:absolute;
+}
+
+.label{
+  position:absolute;
+  font-size:14px;
+  font-weight:bold;
+}
+
+button{
+  margin:6px;
+  padding:8px 14px;
+}
+
+#lineLayer{
+  position:absolute;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+
+#msg{
+  margin-top:10px;
+  font-weight:bold;
+  white-space:pre-line;
+}
 </style>
 </head>
 <body>
 
-<h2>⚡ 三路＋四路 共通エンジン</h2>
+<h2>⚡ 三路テスト（本物判定）</h2>
 
-<button onclick="toggle('S1')">三路SW1切替</button>
-<button onclick="toggle('S2')">三路SW2切替</button>
+<div id="field">
+  <canvas id="lineLayer"></canvas>
+
+  <!-- 電源 -->
+  <div class="label" style="left:30px;top:20px;">電源</div>
+  <div class="node" id="L" style="left:60px;top:50px;"></div>
+  <div class="node" id="N" style="left:60px;top:90px;background:white;border:2px solid black;"></div>
+
+  <!-- SW1 -->
+  <div class="label" style="left:220px;top:20px;">三路SW1</div>
+  <div class="node" id="S1C" style="left:250px;top:50px;"></div>
+  <div class="node" id="S1T1" style="left:220px;top:90px;"></div>
+  <div class="node" id="S1T2" style="left:280px;top:90px;"></div>
+
+  <!-- SW2 -->
+  <div class="label" style="left:220px;top:180px;">三路SW2</div>
+  <div class="node" id="S2C" style="left:250px;top:210px;"></div>
+  <div class="node" id="S2T1" style="left:220px;top:250px;"></div>
+  <div class="node" id="S2T2" style="left:280px;top:250px;"></div>
+
+  <!-- ランプ -->
+  <div class="label" style="left:140px;top:380px;">ランプ</div>
+  <div class="node" id="Lamp1" style="left:150px;top:410px;"></div>
+  <div class="node" id="Lamp2" style="left:200px;top:410px;background:white;border:2px solid black;"></div>
+
+</div>
+
+<button onclick="toggle('S1')">SW1切替</button>
+<button onclick="toggle('S2')">SW2切替</button>
 <button onclick="analyze()">解析</button>
+<button onclick="reset()">リセット</button>
 
 <div id="msg"></div>
 
 <script>
 
-// ===== 回路エンジン =====
+// ===== グラフ回路エンジン =====
 
 class Circuit{
   constructor(){
-    this.nodes = new Set();
-    this.edges = {};
+    this.nodes=new Set();
+    this.edges={};
   }
-
   addNode(n){
     this.nodes.add(n);
     if(!this.edges[n]) this.edges[n]=[];
   }
-
   addEdge(a,b){
     this.edges[a].push(b);
     this.edges[b].push(a);
   }
-
   dfs(start){
-    let visited = new Set();
+    let visited=new Set();
     let stack=[start];
-
     while(stack.length){
       let n=stack.pop();
       if(!visited.has(n)){
@@ -54,110 +123,89 @@ class Circuit{
   }
 }
 
-// ===== スイッチ定義 =====
+// ===== スイッチ状態 =====
 
-let switches = {
-  S1:{
-    type:"3way",
-    pos:0,
-    terminals:{
-      C:"S1C",
-      T1:"S1T1",
-      T2:"S1T2"
-    }
-  },
-  S2:{
-    type:"3way",
-    pos:0,
-    terminals:{
-      C:"S2C",
-      T1:"S2T1",
-      T2:"S2T2"
-    }
-  }
+let switches={
+  S1:{pos:0},
+  S2:{pos:0}
 };
 
-// ===== 固定配線（ユーザー配線と想定） =====
+// ===== ユーザー配線（固定例） =====
 
-function buildBaseCircuit(){
+let baseConnections=[
+  ["L","S1C"],
+  ["S1T1","S2T1"],
+  ["S1T2","S2T2"],
+  ["S2C","Lamp1"],
+  ["Lamp2","N"]
+];
 
-  let c = new Circuit();
+// ===== 回路構築 =====
+
+function buildCircuit(){
+
+  let c=new Circuit();
 
   // ノード登録
-  [
-    "L","N",
-    "S1C","S1T1","S1T2",
-    "S2C","S2T1","S2T2",
-    "Lamp1","Lamp2"
-  ].forEach(n=>c.addNode(n));
-
-  // ===== 配線（例：正しい三路配線） =====
-
-  c.addEdge("L","S1C");
-
-  c.addEdge("S1T1","S2T1");
-  c.addEdge("S1T2","S2T2");
-
-  c.addEdge("S2C","Lamp1");
-  c.addEdge("Lamp2","N");
-
-  return c;
-}
-
-// ===== スイッチ内部適用 =====
-
-function applySwitches(c){
-
-  Object.values(switches).forEach(sw=>{
-
-    if(sw.type==="3way"){
-
-      if(sw.pos===0){
-        c.addEdge(sw.terminals.C, sw.terminals.T1);
-      }else{
-        c.addEdge(sw.terminals.C, sw.terminals.T2);
-      }
-    }
-
-    if(sw.type==="4way"){
-
-      if(sw.pos===0){
-        c.addEdge(sw.terminals.T1, sw.terminals.T3);
-        c.addEdge(sw.terminals.T2, sw.terminals.T4);
-      }else{
-        c.addEdge(sw.terminals.T1, sw.terminals.T4);
-        c.addEdge(sw.terminals.T2, sw.terminals.T3);
-      }
-    }
-
+  document.querySelectorAll(".node").forEach(n=>{
+    c.addNode(n.id);
   });
 
+  // 固定配線
+  baseConnections.forEach(pair=>{
+    c.addEdge(pair[0],pair[1]);
+  });
+
+  // 三路内部
+  if(switches.S1.pos===0){
+    c.addEdge("S1C","S1T1");
+  }else{
+    c.addEdge("S1C","S1T2");
+  }
+
+  if(switches.S2.pos===0){
+    c.addEdge("S2C","S2T1");
+  }else{
+    c.addEdge("S2C","S2T2");
+  }
+
+  return c;
 }
 
 // ===== 解析 =====
 
 function analyze(){
 
-  let circuit = buildBaseCircuit();
+  let c=buildCircuit();
 
-  applySwitches(circuit);
+  let visited=c.dfs("L");
 
-  let visited = circuit.dfs("L");
+  let lampSide=c.dfs("Lamp2");
 
-  if(visited.has("Lamp1") && circuit.dfs("Lamp2").has("N")){
-    show("💡 ランプ点灯");
+  if(visited.has("Lamp1") && lampSide.has("N")){
+    show("💡 ランプ点灯\n（論理成立）");
   }else{
-    show("❌ 不成立");
+    show("❌ 回路不成立");
   }
 }
 
+// ===== 切替 =====
+
 function toggle(name){
-  switches[name].pos = 1 - switches[name].pos;
-  show(name+" 位置："+switches[name].pos);
+  switches[name].pos=1-switches[name].pos;
+  show(name+" → "+switches[name].pos);
 }
+
+// ===== 表示 =====
 
 function show(msg){
   document.getElementById("msg").innerText=msg;
+}
+
+function reset(){
+  switches.S1.pos=0;
+  switches.S2.pos=0;
+  show("リセット完了");
 }
 
 </script>
