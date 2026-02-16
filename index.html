@@ -2,59 +2,48 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 直感配線版</title>
+<title>電工技能試験モード - 完全版</title>
 <style>
-body{ text-align:center;font-family:sans-serif;background:#f0f0f0;margin:0; }
-#board{ width:360px;height:500px;margin:20px auto;background:white;border:2px solid black;position:relative; }
-
-.node{ width:80px;height:40px;border:2px solid black;text-align:center;line-height:40px;position:absolute;background:#ddd; }
-
-.terminal{
-  width:18px;height:18px;border-radius:50%;
-  position:absolute;cursor:pointer;border:2px solid #333;
-}
-
-.black{ background:black; }
-.white{ background:white; }
-
-.selected{ outline:3px solid red; }
-
-.jb{ width:120px;height:120px;border:3px solid #333;position:absolute;top:190px;left:120px;background:#fafafa; }
-
-.line{
-  position:absolute;height:3px;background:black;transform-origin:0 0;
-}
-
-#message{ font-size:20px;font-weight:bold;margin-top:10px; }
-button{ margin:4px;padding:6px 10px; }
+body{ text-align:center;font-family:sans-serif;background:#f2f2f2;margin:0;}
+#board{ width:380px;height:560px;margin:20px auto;background:white;border:3px solid black;position:relative;}
+.node{ width:90px;height:40px;border:2px solid black;text-align:center;line-height:40px;position:absolute;background:#ddd;font-weight:bold;}
+.terminal{ width:20px;height:20px;border-radius:50%;position:absolute;cursor:pointer;border:2px solid #333;}
+.black{ background:black;}
+.white{ background:white;}
+.selected{ outline:3px solid red;}
+.jb{ width:140px;height:140px;border:3px solid #333;position:absolute;top:210px;left:120px;background:#fafafa;}
+.line{ position:absolute;height:4px;transform-origin:0 0;}
+#message{ font-size:18px;font-weight:bold;margin-top:10px;white-space:pre-line;}
+button{ margin:5px;padding:8px 14px;}
+#answer{ font-size:14px;margin-top:5px;color:#444;}
 </style>
 </head>
 <body>
 
-<h2>⚡ 複線図モード - 直感配線版</h2>
+<h2>⚡ 電工技能試験モード - 完全版</h2>
 
 <div id="board">
 
 <div class="node" style="top:40px; left:20px;">電源</div>
-<div class="terminal black" data-id="L" style="top:90px; left:50px;"></div>
-<div class="terminal white" data-id="N" style="top:120px; left:50px;"></div>
+<div class="terminal black" data-id="L" data-color="black" style="top:90px; left:60px;"></div>
+<div class="terminal white" data-id="N" data-color="white" style="top:120px; left:60px;"></div>
 
-<div class="node" style="top:40px; left:250px;">SW</div>
-<div class="terminal black" data-id="SW1" style="top:90px; left:280px;"></div>
-<div class="terminal black" data-id="SW2" style="top:120px; left:280px;"></div>
+<div class="node" style="top:40px; left:260px;">SW</div>
+<div class="terminal black" data-id="SW1" data-color="black" style="top:90px; left:300px;"></div>
+<div class="terminal black" data-id="SW2" data-color="black" style="top:120px; left:300px;"></div>
 
-<div class="node" style="top:400px; left:140px;">ランプ</div>
-<div class="terminal black" data-id="Lamp1" style="top:360px; left:165px;"></div>
-<div class="terminal white" data-id="Lamp2" style="top:360px; left:195px;"></div>
+<div class="node" style="top:470px; left:150px;">ランプ</div>
+<div class="terminal black" data-id="Lamp1" data-color="black" style="top:430px; left:170px;"></div>
+<div class="terminal white" data-id="Lamp2" data-color="white" style="top:430px; left:210px;"></div>
 
 <div class="jb"></div>
 
-<div class="terminal black" data-id="JB1" data-jb="true" style="top:210px; left:140px;"></div>
-<div class="terminal black" data-id="JB2" data-jb="true" style="top:210px; left:190px;"></div>
-<div class="terminal black" data-id="JB3" data-jb="true" style="top:210px; left:240px;"></div>
-<div class="terminal black" data-id="JB4" data-jb="true" style="top:260px; left:140px;"></div>
-<div class="terminal black" data-id="JB5" data-jb="true" style="top:260px; left:190px;"></div>
-<div class="terminal black" data-id="JB6" data-jb="true" style="top:260px; left:240px;"></div>
+<div class="terminal black" data-id="JB1" data-jb="true" style="top:230px; left:150px;"></div>
+<div class="terminal black" data-id="JB2" data-jb="true" style="top:230px; left:200px;"></div>
+<div class="terminal black" data-id="JB3" data-jb="true" style="top:230px; left:250px;"></div>
+<div class="terminal black" data-id="JB4" data-jb="true" style="top:280px; left:150px;"></div>
+<div class="terminal black" data-id="JB5" data-jb="true" style="top:280px; left:200px;"></div>
+<div class="terminal black" data-id="JB6" data-jb="true" style="top:280px; left:250px;"></div>
 
 </div>
 
@@ -62,17 +51,21 @@ button{ margin:4px;padding:6px 10px; }
 <button onclick="resetGame()">リセット</button>
 
 <div id="message"></div>
+<div id="answer"></div>
 
 <script>
 
 let selected=[];
 let parent={};
+let connections={};
 const board=document.getElementById("board");
 
 function init(){
   parent={};
+  connections={};
   document.querySelectorAll(".terminal").forEach(t=>{
     parent[t.dataset.id]=t.dataset.id;
+    connections[t.dataset.id]=[];
     t.classList.remove("selected");
   });
   document.querySelectorAll(".line").forEach(l=>l.remove());
@@ -88,6 +81,8 @@ function union(a,b){
   let pa=find(a);
   let pb=find(b);
   if(pa!==pb) parent[pb]=pa;
+  connections[a].push(b);
+  connections[b].push(a);
 }
 
 function drawLine(a,b){
@@ -95,10 +90,10 @@ function drawLine(a,b){
   const rb=b.getBoundingClientRect();
   const rBoard=board.getBoundingClientRect();
 
-  const x1=ra.left-rBoard.left+9;
-  const y1=ra.top-rBoard.top+9;
-  const x2=rb.left-rBoard.left+9;
-  const y2=rb.top-rBoard.top+9;
+  const x1=ra.left-rBoard.left+10;
+  const y1=ra.top-rBoard.top+10;
+  const x2=rb.left-rBoard.left+10;
+  const y2=rb.top-rBoard.top+10;
 
   const len=Math.hypot(x2-x1,y2-y1);
 
@@ -107,6 +102,9 @@ function drawLine(a,b){
   line.style.left=x1+"px";
   line.style.top=y1+"px";
   line.style.width=len+"px";
+
+  const color = (a.dataset.color==="white"||b.dataset.color==="white")?"white":"black";
+  line.style.background=color;
   line.style.transform="rotate("+Math.atan2(y2-y1,x2-x1)+"rad)";
   board.appendChild(line);
 }
@@ -120,9 +118,8 @@ document.querySelectorAll(".terminal").forEach(t=>{
       const a=selected[0];
       const b=selected[1];
 
-      // 器具同士は禁止
       if(!a.dataset.jb && !b.dataset.jb){
-        document.getElementById("message").innerText="❌ 器具同士は接続不可";
+        show("❌ 器具同士は接続不可");
       }else{
         union(a.dataset.id,b.dataset.id);
         drawLine(a,b);
@@ -135,27 +132,60 @@ document.querySelectorAll(".terminal").forEach(t=>{
 });
 
 function analyze(){
+  show("");
+  document.getElementById("answer").innerText="";
+
   union("SW1","SW2");
 
   if(find("L")===find("N")){
-    document.getElementById("message").innerText="🔥 L-Nショート！";
+    show("🔥 L-Nショート！");
     return;
   }
 
-  if(
-    find("L")===find("SW1") &&
-    find("SW2")===find("Lamp1") &&
-    find("Lamp2")===find("N")
-  ){
-    document.getElementById("message").innerText="💡 正解！回路成立！";
-  }else{
-    document.getElementById("message").innerText="❌ 回路不成立";
+  let visited=new Set();
+  function dfs(n){
+    if(visited.has(n)) return;
+    visited.add(n);
+    connections[n].forEach(dfs);
   }
+
+  dfs("L");
+
+  if(!visited.has("Lamp1")){
+    show("❌ Lからランプ黒へ到達できない");
+    showAnswer();
+    return;
+  }
+
+  visited.clear();
+  dfs("Lamp2");
+
+  if(!visited.has("N")){
+    show("❌ ランプ白からNへ戻れない");
+    showAnswer();
+    return;
+  }
+
+  show("💡 正解！回路成立！");
+}
+
+function show(msg){
+  document.getElementById("message").innerText=msg;
+}
+
+function showAnswer(){
+  document.getElementById("answer").innerText=
+  "【正解例】\n"+
+  "L→SW1\n"+
+  "SW2→ランプ黒\n"+
+  "ランプ白→N\n"+
+  "JB内で3本ずつ束ね";
 }
 
 function resetGame(){
-  document.getElementById("message").innerText="";
   selected=[];
+  show("");
+  document.getElementById("answer").innerText="";
   init();
 }
 
