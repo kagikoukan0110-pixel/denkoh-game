@@ -1,7 +1,10 @@
 import { initBoard } from "./ui/board.js";
 import { setupInteraction } from "./ui/interaction.js";
+import { Graph } from "./engine/graph.js";
 
-alert("STEP2 OK");
+alert("STEP3 OK");
+
+const graph = new Graph();
 
 initBoard();
-setupInteraction({}, {}); // ダミー渡す
+setupInteraction(graph, {});
