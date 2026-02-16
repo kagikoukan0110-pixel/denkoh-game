@@ -2,153 +2,163 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>三路複線図（技能試験風UI）</title>
+<title>三路2台 + DFSエンジン接続版</title>
 <style>
-body { font-family:sans-serif; }
 svg { border:1px solid #ccc; }
 
-.wire {
-  stroke:black;
-  stroke-width:3;
-  fill:none;
-}
+.body { fill:none; stroke:black; stroke-width:2; }
+.terminal { fill:black; cursor:pointer; }
+.arm { stroke:black; stroke-width:3; }
 
-.energized {
-  stroke:red !important;
-}
+.wire { stroke:black; stroke-width:3; fill:none; }
+.energized { stroke:red !important; }
 
-.switch-body {
-  fill:none;
-  stroke:black;
-  stroke-width:2;
-}
+.violation { stroke:red !important; fill:red; }
 
-.contact {
-  fill:black;
-}
-
-.arm {
-  stroke:black;
-  stroke-width:3;
-}
-
-.lamp {
-  fill:none;
-  stroke:black;
-  stroke-width:2;
-}
-
-button { margin:5px; }
+text { font-size:14px; }
 </style>
 </head>
 <body>
 
-<h2>三路複線図（三路らしいUI）</h2>
+<h3>三路2台 複線図 + 本物エンジン</h3>
 
-<svg width="900" height="400">
+<svg width="950" height="420">
 
-  <!-- 電源 L/N -->
-  <text x="50" y="80">L</text>
-  <circle cx="70" cy="100" r="6" id="Lnode" />
+<!-- 電源 L -->
+<circle cx="60" cy="200" r="6" id="L"/>
+<text x="40" y="205">L</text>
 
-  <text x="50" y="280">N</text>
-  <circle cx="70" cy="300" r="6" id="Nnode" />
+<!-- 左三路 -->
+<g transform="translate(150,120)">
+  <rect width="160" height="160" class="body"/>
+  <circle cx="20" cy="80" r="6" class="terminal" id="SW1_0"/>
+  <text x="5" y="85">0</text>
 
-  <!-- N幹線 -->
-  <path id="neutral_trunk" class="wire"
-        d="M70 300 H820" />
+  <circle cx="140" cy="40" r="6" class="terminal" id="SW1_1"/>
+  <text x="150" y="45">1</text>
 
-  <!-- SW1 -->
-  <g id="SW1" transform="translate(200,120)">
-    <rect width="60" height="100" class="switch-body"/>
-    <!-- 端子 -->
-    <circle cx="30" cy="10" r="5" class="contact" id="SW1_C"/>
-    <circle cx="10" cy="90" r="5" class="contact" id="SW1_A"/>
-    <circle cx="50" cy="90" r="5" class="contact" id="SW1_B"/>
-    <!-- 可動接点 -->
-    <line id="SW1_arm" class="arm"
-          x1="30" y1="10"
-          x2="10" y2="90"/>
-  </g>
+  <circle cx="140" cy="120" r="6" class="terminal" id="SW1_3"/>
+  <text x="150" y="125">3</text>
 
-  <!-- SW2 -->
-  <g id="SW2" transform="translate(450,120)">
-    <rect width="60" height="100" class="switch-body"/>
-    <circle cx="30" cy="10" r="5" class="contact" id="SW2_C"/>
-    <circle cx="10" cy="90" r="5" class="contact" id="SW2_A"/>
-    <circle cx="50" cy="90" r="5" class="contact" id="SW2_B"/>
-    <line id="SW2_arm" class="arm"
-          x1="30" y1="10"
-          x2="10" y2="90"/>
-  </g>
+  <line id="SW1_arm" class="arm"
+        x1="20" y1="80"
+        x2="140" y2="40"/>
+</g>
 
-  <!-- ランプ -->
-  <g transform="translate(750,180)">
-    <circle cx="0" cy="0" r="25" class="lamp"/>
-    <text x="-5" y="5">R</text>
-  </g>
+<!-- 右三路 -->
+<g transform="translate(520,120)">
+  <rect width="160" height="160" class="body"/>
 
-  <!-- 配線 -->
-  <path id="w1" class="wire"
-        d="M70 100 H230" />
+  <circle cx="20" cy="40" r="6" class="terminal" id="SW2_1"/>
+  <text x="5" y="45">1</text>
 
-  <path id="w2" class="wire"
-        d="M210 210 H460 210" />
+  <circle cx="20" cy="120" r="6" class="terminal" id="SW2_3"/>
+  <text x="5" y="125">3</text>
 
-  <path id="w3" class="wire"
-        d="M250 210 H500 210" />
+  <circle cx="140" cy="80" r="6" class="terminal" id="SW2_0"/>
+  <text x="150" y="85">0</text>
 
-  <path id="w4" class="wire"
-        d="M480 130 H750 180" />
+  <line id="SW2_arm" class="arm"
+        x1="140" y1="80"
+        x2="20" y2="40"/>
+</g>
 
-  <path id="w5" class="wire"
-        d="M750 205 V300 H70" />
+<!-- ランプ -->
+<circle cx="880" cy="200" r="25" fill="none" stroke="black" stroke-width="2"/>
+<text x="875" y="205">R</text>
+<circle cx="855" cy="200" r="6" id="LAMP"/>
+
+<!-- 配線 -->
+<path id="wL" class="wire" d="M60 200 H170 200"/>
+<path id="trav1" class="wire" d="M290 160 H520 160"/>
+<path id="trav2" class="wire" d="M290 240 H520 240"/>
+<path id="wLamp" class="wire" d="M660 200 H855"/>
+<path id="neutral" class="wire" d="M880 225 V330 H60"/>
 
 </svg>
 
 <div>
 <button onclick="toggleSW1()">SW1切替</button>
 <button onclick="toggleSW2()">SW2切替</button>
+<button onclick="makeViolation()">1穴1線違反</button>
 </div>
+
+<div id="panel"></div>
 
 <script>
 
-let sw1=false
-let sw2=false
+// ===== エンジン =====
 
-function toggleSW1(){
-  sw1=!sw1
-  document.getElementById("SW1_arm")
-    .setAttribute("x2", sw1?50:10)
-  reevaluate()
-}
-
-function toggleSW2(){
-  sw2=!sw2
-  document.getElementById("SW2_arm")
-    .setAttribute("x2", sw2?50:10)
-  reevaluate()
-}
-
-// 簡易導通判定（本物エンジンに置換可能）
-function reevaluate(){
-
-  document.querySelectorAll(".wire")
-    .forEach(w=>w.classList.remove("energized"))
-
-  const on = (sw1 === sw2)
-
-  if(on){
-    ["w1","w2","w4","w5"].forEach(id=>{
-      document.getElementById(id)
-        .classList.add("energized")
-    })
+class Hole {
+  constructor(id, capacity=1){
+    this.id=id
+    this.capacity=capacity
+    this.wires=[]
   }
 }
 
-reevaluate()
+class Wire {
+  constructor(id,a,b){
+    this.id=id
+    this.a=a
+    this.b=b
+  }
+  other(h){ return h===this.a?this.b:this.a }
+}
 
-</script>
+const holes={}
+document.querySelectorAll("circle[id]").forEach(el=>{
+  holes[el.id]=new Hole(el.id)
+})
 
-</body>
-</html>
+const wires={}
+
+function connect(id,a,b){
+  const w=new Wire(id,a,b)
+  wires[id]=w
+  a.wires.push(w)
+  b.wires.push(w)
+}
+
+connect("wL",holes.L,holes.SW1_0)
+connect("trav1",holes.SW1_1,holes.SW2_1)
+connect("trav2",holes.SW1_3,holes.SW2_3)
+connect("wLamp",holes.SW2_0,holes.LAMP)
+connect("neutral",holes.LAMP,holes.L)
+
+let sw1=false
+let sw2=false
+let energized=new Set()
+let violations=[]
+
+// ===== DFS導通 =====
+
+function solve(){
+  energized.clear()
+  const visited=new Set()
+  const stack=[holes.L]
+
+  while(stack.length){
+    const h=stack.pop()
+    if(visited.has(h))continue
+    visited.add(h)
+
+    h.wires.forEach(w=>{
+      energized.add(w.id)
+      stack.push(w.other(h))
+    })
+
+    // SW1
+    if(h===holes.SW1_0)
+      stack.push(sw1?holes.SW1_3:holes.SW1_1)
+    if(h===holes.SW1_1 && !sw1)
+      stack.push(holes.SW1_0)
+    if(h===holes.SW1_3 && sw1)
+      stack.push(holes.SW1_0)
+
+    // SW2
+    if(h===holes.SW2_0)
+      stack.push(sw2?holes.SW2_3:holes.SW2_1)
+    if(h===holes.SW2_1 && !sw2)
+      stack.push(holes.SW2_0)
+    if(h===holes
