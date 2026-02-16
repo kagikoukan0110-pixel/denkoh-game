@@ -1,231 +1,268 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>三路2台 + ブレーカー版</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>電工技能試験シミュレーター</title>
+
 <style>
-svg { border:1px solid #ccc; }
+body {
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f8f8f8;
+}
 
-.body { fill:none; stroke:black; stroke-width:2; }
-.terminal { fill:black; }
-.arm { stroke:black; stroke-width:3; }
+header {
+  display:flex;
+  justify-content:space-between;
+  padding:12px 16px;
+  background:white;
+  box-shadow:0 2px 4px rgba(0,0,0,0.08);
+}
 
-.wire { stroke:black; stroke-width:3; fill:none; }
-.energized { stroke:red !important; }
+button {
+  background:#111;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+}
 
-.violation { fill:red !important; }
+svg {
+  background:white;
+  display:block;
+  margin:20px auto;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
 
-text { font-size:14px; }
-button { margin:5px; }
+.device {
+  fill:white;
+  stroke:black;
+  stroke-width:2;
+}
+
+.terminal {
+  fill:white;
+  stroke:black;
+  stroke-width:2;
+  cursor:pointer;
+}
+
+.wire {
+  stroke:black;
+  stroke-width:3;
+}
+
+.live {
+  stroke:#e60000 !important;
+}
 </style>
 </head>
 <body>
 
-<h3>三路2台 複線図 + ブレーカー</h3>
+<header>
+  <div>三路＋四路テスト回路</div>
+  <div id="timer">00:00</div>
+</header>
 
-<svg width="1000" height="450">
+<svg id="board" width="800" height="400"></svg>
 
-<!-- 電源（ブレーカー） -->
-<text x="30" y="120">L</text>
-<circle cx="60" cy="130" r="6" id="L"/>
-
-<text x="30" y="200">N</text>
-<circle cx="60" cy="210" r="6" id="N"/>
-
-<!-- 左三路 -->
-<g transform="translate(200,100)">
-  <rect width="160" height="160" class="body"/>
-
-  <circle cx="20" cy="80" r="6" class="terminal" id="SW1_0"/>
-  <text x="5" y="85">0</text>
-
-  <circle cx="140" cy="40" r="6" class="terminal" id="SW1_1"/>
-  <text x="150" y="45">1</text>
-
-  <circle cx="140" cy="120" r="6" class="terminal" id="SW1_3"/>
-  <text x="150" y="125">3</text>
-
-  <line id="SW1_arm" class="arm"
-        x1="20" y1="80"
-        x2="140" y2="40"/>
-</g>
-
-<!-- 右三路（反転） -->
-<g transform="translate(600,100)">
-  <rect width="160" height="160" class="body"/>
-
-  <circle cx="20" cy="40" r="6" class="terminal" id="SW2_1"/>
-  <text x="5" y="45">1</text>
-
-  <circle cx="20" cy="120" r="6" class="terminal" id="SW2_3"/>
-  <text x="5" y="125">3</text>
-
-  <circle cx="140" cy="80" r="6" class="terminal" id="SW2_0"/>
-  <text x="150" y="85">0</text>
-
-  <line id="SW2_arm" class="arm"
-        x1="140" y1="80"
-        x2="20" y2="40"/>
-</g>
-
-<!-- ランプ -->
-<circle cx="900" cy="180" r="25"
-        fill="none" stroke="black" stroke-width="2"/>
-<text x="895" y="185">R</text>
-<circle cx="875" cy="180" r="6" id="LAMP"/>
-
-<!-- 配線（端子中心基準） -->
-<path id="wL" class="wire"
-      d="M60 130 H220 180"/>
-
-<path id="trav1" class="wire"
-      d="M340 140 H600 140"/>
-
-<path id="trav2" class="wire"
-      d="M340 220 H600 220"/>
-
-<path id="wLamp" class="wire"
-      d="M740 180 H875"/>
-
-<path id="neutral" class="wire"
-      d="M875 205 V210 H60"/>
-
-</svg>
-
-<div>
-<button onclick="toggleBreaker()">ブレーカー</button>
-<button onclick="toggleSW1()">SW1</button>
-<button onclick="toggleSW2()">SW2</button>
+<div style="text-align:center;margin-bottom:20px;">
+  <button onclick="check()">採点</button>
+  <button onclick="resetBoard()">リセット</button>
 </div>
 
-<div id="panel"></div>
-
 <script>
-
-// ====== エンジン ======
-
-class Hole{
-  constructor(id,capacity=1){
-    this.id=id
-    this.capacity=capacity
-    this.wires=[]
+/* ===============================
+   Graph
+================================*/
+class Graph {
+  constructor(){ this.edges = {}; }
+  connect(a,b){
+    if(!this.edges[a]) this.edges[a]=[];
+    if(!this.edges[b]) this.edges[b]=[];
+    if(!this.edges[a].includes(b)) this.edges[a].push(b);
+    if(!this.edges[b].includes(a)) this.edges[b].push(a);
   }
 }
 
-class Wire{
-  constructor(id,a,b){
-    this.id=id
-    this.a=a
-    this.b=b
+/* ===============================
+   Problem
+================================*/
+const problem = {
+  power:{
+    L:"breaker.L_out",
+    N:"lamp.N"
+  },
+  devices:[
+    {id:"breaker",type:"breaker",terminals:["L_in","L_out"]},
+    {id:"sw1",type:"3way",terminals:["common","traveler1","traveler2"],state:0},
+    {id:"sw2",type:"4way",terminals:["in1","in2","out1","out2"],state:0},
+    {id:"sw3",type:"3way",terminals:["common","traveler1","traveler2"],state:0},
+    {id:"lamp",type:"lamp",terminals:["L","N"]}
+  ],
+  rules:{ oneHoleOneWire:true, detectShort:true }
+};
+
+/* ===============================
+   Engine
+================================*/
+class Engine{
+  constructor(problem){
+    this.problem=problem;
+    this.graph=new Graph();
+    this.userConnections=[];
   }
-  other(h){ return h===this.a?this.b:this.a }
-}
 
-const holes={}
-document.querySelectorAll("circle[id]").forEach(el=>{
-  holes[el.id]=new Hole(el.id)
-})
+  rebuild(){
+    this.graph=new Graph();
+    for(const [a,b] of this.userConnections){
+      this.graph.connect(a,b);
+    }
+    this.applyInternal();
+  }
 
-const wires={}
-function connect(id,a,b){
-  const w=new Wire(id,a,b)
-  wires[id]=w
-  a.wires.push(w)
-  b.wires.push(w)
-}
+  applyInternal(){
+    for(const d of this.problem.devices){
 
-// 正しい接続
-connect("wL",holes.L,holes.SW1_0)
-connect("trav1",holes.SW1_1,holes.SW2_1)
-connect("trav2",holes.SW1_3,holes.SW2_3)
-connect("wLamp",holes.SW2_0,holes.LAMP)
-connect("neutral",holes.LAMP,holes.N)
+      if(d.type==="3way"){
+        const c=`${d.id}.common`;
+        const t1=`${d.id}.traveler1`;
+        const t2=`${d.id}.traveler2`;
+        this.graph.connect(c, d.state===0?t1:t2);
+      }
 
-let breaker=false
-let sw1=false
-let sw2=false
-let energized=new Set()
+      if(d.type==="4way"){
+        const i1=`${d.id}.in1`;
+        const i2=`${d.id}.in2`;
+        const o1=`${d.id}.out1`;
+        const o2=`${d.id}.out2`;
+        if(d.state===0){
+          this.graph.connect(i1,o1);
+          this.graph.connect(i2,o2);
+        }else{
+          this.graph.connect(i1,o2);
+          this.graph.connect(i2,o1);
+        }
+      }
+    }
+  }
 
-// ===== DFS =====
+  dfs(a,target,visited=new Set()){
+    if(a===target) return true;
+    visited.add(a);
+    const neighbors=this.graph.edges[a]||[];
+    for(const n of neighbors){
+      if(!visited.has(n)){
+        if(this.dfs(n,target,visited)) return true;
+      }
+    }
+    return false;
+  }
 
-function solve(){
-  energized.clear()
-  if(!breaker) return
-
-  const visited=new Set()
-  const stack=[holes.L]
-
-  while(stack.length){
-    const h=stack.pop()
-    if(visited.has(h)) continue
-    visited.add(h)
-
-    h.wires.forEach(w=>{
-      energized.add(w.id)
-      stack.push(w.other(h))
-    })
-
-    // SW1
-    if(h===holes.SW1_0)
-      stack.push(sw1?holes.SW1_3:holes.SW1_1)
-    if(h===holes.SW1_1 && !sw1)
-      stack.push(holes.SW1_0)
-    if(h===holes.SW1_3 && sw1)
-      stack.push(holes.SW1_0)
-
-    // SW2
-    if(h===holes.SW2_0)
-      stack.push(sw2?holes.SW2_3:holes.SW2_1)
-    if(h===holes.SW2_1 && !sw2)
-      stack.push(holes.SW2_0)
-    if(h===holes.SW2_3 && sw2)
-      stack.push(holes.SW2_0)
+  isLampOn(){
+    return this.dfs(problem.power.L,"lamp.L") &&
+           !this.dfs(problem.power.L,problem.power.N);
   }
 }
 
-// ===== 描画 =====
+const engine=new Engine(problem);
+
+/* ===============================
+   Storage
+================================*/
+class StorageManager{
+  constructor(){ this.key="denko_data"; }
+  save(data){ localStorage.setItem(this.key,JSON.stringify(data)); }
+  load(){ return JSON.parse(localStorage.getItem(this.key)||"{}"); }
+}
+const storage=new StorageManager();
+
+/* ===============================
+   UI
+================================*/
+const svg=document.getElementById("board");
+let selected=null;
+
+function addTerminal(x,y,id){
+  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+  c.setAttribute("cx",x);
+  c.setAttribute("cy",y);
+  c.setAttribute("r",6);
+  c.setAttribute("class","terminal");
+  c.dataset.terminal=id;
+  c.onclick=terminalClick;
+  svg.appendChild(c);
+}
+
+function terminalClick(e){
+  const id=e.target.dataset.terminal;
+  if(!selected){
+    selected=id;
+  }else{
+    engine.userConnections.push([selected,id]);
+    selected=null;
+    engine.rebuild();
+    render();
+  }
+}
+
+function drawWire(a,b,live){
+  const A=document.querySelector(`[data-terminal="${a}"]`);
+  const B=document.querySelector(`[data-terminal="${b}"]`);
+  if(!A||!B)return;
+  const x1=A.getAttribute("cx");
+  const y1=A.getAttribute("cy");
+  const x2=B.getAttribute("cx");
+  const y2=B.getAttribute("cy");
+
+  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1);
+  line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2);
+  line.setAttribute("y2",y2);
+  line.setAttribute("class","wire"+(live?" live":""));
+  svg.appendChild(line);
+}
 
 function render(){
-  document.querySelectorAll(".wire")
-    .forEach(w=>w.classList.remove("energized"))
-
-  energized.forEach(id=>{
-    document.getElementById(id)
-      ?.classList.add("energized")
-  })
-
-  document.getElementById("panel").innerHTML =
-    breaker?"電源ON":"電源OFF"
+  document.querySelectorAll(".wire").forEach(e=>e.remove());
+  for(const [a,b] of engine.userConnections){
+    drawWire(a,b,false);
+  }
+  if(engine.isLampOn()){
+    document.querySelectorAll(".wire").forEach(w=>w.classList.add("live"));
+  }
 }
 
-function reevaluate(){
-  solve()
-  render()
+function resetBoard(){
+  engine.userConnections=[];
+  engine.rebuild();
+  render();
 }
 
-// ===== 操作 =====
+/* ===============================
+   初期配置
+================================*/
+addTerminal(100,200,"breaker.L_out");
+addTerminal(200,150,"sw1.common");
+addTerminal(200,250,"sw1.traveler1");
+addTerminal(200,300,"sw1.traveler2");
 
-function toggleBreaker(){
-  breaker=!breaker
-  reevaluate()
-}
+addTerminal(350,200,"sw2.in1");
+addTerminal(350,250,"sw2.in2");
+addTerminal(450,200,"sw2.out1");
+addTerminal(450,250,"sw2.out2");
 
-function toggleSW1(){
-  sw1=!sw1
-  document.getElementById("SW1_arm")
-    .setAttribute("y2", sw1?120:40)
-  reevaluate()
-}
+addTerminal(600,150,"sw3.common");
+addTerminal(600,250,"sw3.traveler1");
+addTerminal(600,300,"sw3.traveler2");
 
-function toggleSW2(){
-  sw2=!sw2
-  document.getElementById("SW2_arm")
-    .setAttribute("y2", sw2?120:40)
-  reevaluate()
-}
+addTerminal(750,200,"lamp.L");
+addTerminal(750,250,"lamp.N");
 
-reevaluate()
-
+engine.rebuild();
 </script>
 
 </body>
