@@ -2,14 +2,30 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>複線図モード - 試験版</title>
+<title>複線図モード - 明示版</title>
 <style>
 body{ text-align:center; font-family:sans-serif; background:#f0f0f0; margin:0; }
 #board{ width:360px;height:500px;margin:20px auto;background:white;border:2px solid black;position:relative; }
 .node{ width:80px;height:40px;border:2px solid black;text-align:center;line-height:40px;position:absolute;background:#ddd; }
-.terminal{ width:18px;height:18px;border-radius:50%;background:black;position:absolute;cursor:pointer; }
+
+.terminal{
+  width:18px;height:18px;border-radius:50%;
+  position:absolute;cursor:pointer;
+  border:2px solid #333;
+}
+
+.black{ background:black; }
+.white{ background:white; }
+
 .selected{ outline:3px solid red; }
+
 .jb{ width:120px;height:120px;border:3px solid #333;position:absolute;top:190px;left:120px;background:#fafafa; }
+
+.label{
+  position:absolute;
+  font-size:12px;
+}
+
 #message{ font-size:20px;font-weight:bold;margin-top:10px; }
 #answer{ font-size:14px;margin-top:6px;color:#333; }
 button{ margin:4px;padding:6px 10px; }
@@ -17,30 +33,40 @@ button{ margin:4px;padding:6px 10px; }
 </head>
 <body>
 
-<h2>⚡ 複線図モード - 試験版</h2>
+<h2>⚡ 複線図モード - 表示明確版</h2>
 
 <div id="board">
 
+<!-- 電源 -->
 <div class="node" style="top:40px; left:20px;">電源</div>
-<div class="terminal" data-id="L" style="top:90px; left:50px;"></div>
-<div class="terminal" data-id="N" style="top:120px; left:50px;"></div>
+<div class="terminal black" data-id="L" style="top:90px; left:50px;"></div>
+<div class="label" style="top:90px; left:75px;">L(黒)</div>
 
+<div class="terminal white" data-id="N" style="top:120px; left:50px;"></div>
+<div class="label" style="top:120px; left:75px;">N(白)</div>
+
+<!-- スイッチ -->
 <div class="node" style="top:40px; left:250px;">SW</div>
-<div class="terminal" data-id="SW1" style="top:90px; left:280px;"></div>
-<div class="terminal" data-id="SW2" style="top:120px; left:280px;"></div>
+<div class="terminal black" data-id="SW1" style="top:90px; left:280px;"></div>
+<div class="terminal black" data-id="SW2" style="top:120px; left:280px;"></div>
 
+<!-- ランプ -->
 <div class="node" style="top:400px; left:140px;">ランプ</div>
-<div class="terminal" data-id="Lamp1" style="top:360px; left:165px;"></div>
-<div class="terminal" data-id="Lamp2" style="top:360px; left:195px;"></div>
+<div class="terminal black" data-id="Lamp1" style="top:360px; left:165px;"></div>
+<div class="label" style="top:360px; left:140px;">黒</div>
 
+<div class="terminal white" data-id="Lamp2" style="top:360px; left:195px;"></div>
+<div class="label" style="top:360px; left:220px;">白</div>
+
+<!-- JB -->
 <div class="jb"></div>
 
-<div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
-<div class="terminal" data-id="JB2" style="top:210px; left:190px;"></div>
-<div class="terminal" data-id="JB3" style="top:210px; left:240px;"></div>
-<div class="terminal" data-id="JB4" style="top:260px; left:140px;"></div>
-<div class="terminal" data-id="JB5" style="top:260px; left:190px;"></div>
-<div class="terminal" data-id="JB6" style="top:260px; left:240px;"></div>
+<div class="terminal black" data-id="JB1" style="top:210px; left:140px;"></div>
+<div class="terminal black" data-id="JB2" style="top:210px; left:190px;"></div>
+<div class="terminal black" data-id="JB3" style="top:210px; left:240px;"></div>
+<div class="terminal black" data-id="JB4" style="top:260px; left:140px;"></div>
+<div class="terminal black" data-id="JB5" style="top:260px; left:190px;"></div>
+<div class="terminal black" data-id="JB6" style="top:260px; left:240px;"></div>
 
 </div>
 
@@ -55,17 +81,11 @@ button{ margin:4px;padding:6px 10px; }
 
 let selected=[];
 let parent={};
-let colorMap={};
-let colorIndex=0;
-const colors=["#2ecc71","#3498db","#e67e22","#9b59b6","#e74c3c","#1abc9c"];
 
 function init(){
   parent={};
-  colorMap={};
-  colorIndex=0;
   document.querySelectorAll(".terminal").forEach(t=>{
     parent[t.dataset.id]=t.dataset.id;
-    t.style.background="black";
     t.classList.remove("selected");
   });
 }
@@ -96,37 +116,10 @@ document.querySelectorAll(".terminal").forEach(t=>{
 
 function bundle(){
   if(selected.length<2) return;
-
   let base=selected[0].dataset.id;
   selected.forEach(t=>union(base,t.dataset.id));
-
-  recolor();
-
   selected.forEach(t=>t.classList.remove("selected"));
   selected=[];
-}
-
-function recolor(){
-  document.querySelectorAll(".terminal").forEach(t=>{
-    let root=find(t.dataset.id);
-
-    // 単独ノードは黒
-    let groupMembers=document.querySelectorAll(`.terminal`);
-    let count=0;
-    groupMembers.forEach(x=>{
-      if(find(x.dataset.id)===root) count++;
-    });
-
-    if(count===1){
-      t.style.background="black";
-    }else{
-      if(!colorMap[root]){
-        colorMap[root]=colors[colorIndex % colors.length];
-        colorIndex++;
-      }
-      t.style.background=colorMap[root];
-    }
-  });
 }
 
 function analyze(){
@@ -135,7 +128,7 @@ function analyze(){
   msg.innerText="";
   ans.innerText="";
 
-  union("SW1","SW2"); // SW ON
+  union("SW1","SW2");
 
   if(find("L")===find("N")){
     msg.innerText="🔥 L-Nショート！";
@@ -152,9 +145,9 @@ function analyze(){
     msg.innerText="❌ 回路不成立";
     ans.innerText=
       "【正解例】\n" +
-      "① L と SW1 を束ねる\n" +
-      "② SW2 と Lamp1 を束ねる\n" +
-      "③ Lamp2 と N を束ねる";
+      "L(黒) → SW1\n" +
+      "SW2 → ランプ黒\n" +
+      "ランプ白 → N(白)";
   }
 }
 
