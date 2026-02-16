@@ -2,35 +2,40 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>三路2台 + DFSエンジン接続版</title>
+<title>三路2台 + ブレーカー版</title>
 <style>
 svg { border:1px solid #ccc; }
 
 .body { fill:none; stroke:black; stroke-width:2; }
-.terminal { fill:black; cursor:pointer; }
+.terminal { fill:black; }
 .arm { stroke:black; stroke-width:3; }
 
 .wire { stroke:black; stroke-width:3; fill:none; }
 .energized { stroke:red !important; }
 
-.violation { stroke:red !important; fill:red; }
+.violation { fill:red !important; }
 
 text { font-size:14px; }
+button { margin:5px; }
 </style>
 </head>
 <body>
 
-<h3>三路2台 複線図 + 本物エンジン</h3>
+<h3>三路2台 複線図 + ブレーカー</h3>
 
-<svg width="950" height="420">
+<svg width="1000" height="450">
 
-<!-- 電源 L -->
-<circle cx="60" cy="200" r="6" id="L"/>
-<text x="40" y="205">L</text>
+<!-- 電源（ブレーカー） -->
+<text x="30" y="120">L</text>
+<circle cx="60" cy="130" r="6" id="L"/>
+
+<text x="30" y="200">N</text>
+<circle cx="60" cy="210" r="6" id="N"/>
 
 <!-- 左三路 -->
-<g transform="translate(150,120)">
+<g transform="translate(200,100)">
   <rect width="160" height="160" class="body"/>
+
   <circle cx="20" cy="80" r="6" class="terminal" id="SW1_0"/>
   <text x="5" y="85">0</text>
 
@@ -45,8 +50,8 @@ text { font-size:14px; }
         x2="140" y2="40"/>
 </g>
 
-<!-- 右三路 -->
-<g transform="translate(520,120)">
+<!-- 右三路（反転） -->
+<g transform="translate(600,100)">
   <rect width="160" height="160" class="body"/>
 
   <circle cx="20" cy="40" r="6" class="terminal" id="SW2_1"/>
@@ -64,40 +69,50 @@ text { font-size:14px; }
 </g>
 
 <!-- ランプ -->
-<circle cx="880" cy="200" r="25" fill="none" stroke="black" stroke-width="2"/>
-<text x="875" y="205">R</text>
-<circle cx="855" cy="200" r="6" id="LAMP"/>
+<circle cx="900" cy="180" r="25"
+        fill="none" stroke="black" stroke-width="2"/>
+<text x="895" y="185">R</text>
+<circle cx="875" cy="180" r="6" id="LAMP"/>
 
-<!-- 配線 -->
-<path id="wL" class="wire" d="M60 200 H170 200"/>
-<path id="trav1" class="wire" d="M290 160 H520 160"/>
-<path id="trav2" class="wire" d="M290 240 H520 240"/>
-<path id="wLamp" class="wire" d="M660 200 H855"/>
-<path id="neutral" class="wire" d="M880 225 V330 H60"/>
+<!-- 配線（端子中心基準） -->
+<path id="wL" class="wire"
+      d="M60 130 H220 180"/>
+
+<path id="trav1" class="wire"
+      d="M340 140 H600 140"/>
+
+<path id="trav2" class="wire"
+      d="M340 220 H600 220"/>
+
+<path id="wLamp" class="wire"
+      d="M740 180 H875"/>
+
+<path id="neutral" class="wire"
+      d="M875 205 V210 H60"/>
 
 </svg>
 
 <div>
-<button onclick="toggleSW1()">SW1切替</button>
-<button onclick="toggleSW2()">SW2切替</button>
-<button onclick="makeViolation()">1穴1線違反</button>
+<button onclick="toggleBreaker()">ブレーカー</button>
+<button onclick="toggleSW1()">SW1</button>
+<button onclick="toggleSW2()">SW2</button>
 </div>
 
 <div id="panel"></div>
 
 <script>
 
-// ===== エンジン =====
+// ====== エンジン ======
 
-class Hole {
-  constructor(id, capacity=1){
+class Hole{
+  constructor(id,capacity=1){
     this.id=id
     this.capacity=capacity
     this.wires=[]
   }
 }
 
-class Wire {
+class Wire{
   constructor(id,a,b){
     this.id=id
     this.a=a
@@ -112,7 +127,6 @@ document.querySelectorAll("circle[id]").forEach(el=>{
 })
 
 const wires={}
-
 function connect(id,a,b){
   const w=new Wire(id,a,b)
   wires[id]=w
@@ -120,27 +134,30 @@ function connect(id,a,b){
   b.wires.push(w)
 }
 
+// 正しい接続
 connect("wL",holes.L,holes.SW1_0)
 connect("trav1",holes.SW1_1,holes.SW2_1)
 connect("trav2",holes.SW1_3,holes.SW2_3)
 connect("wLamp",holes.SW2_0,holes.LAMP)
-connect("neutral",holes.LAMP,holes.L)
+connect("neutral",holes.LAMP,holes.N)
 
+let breaker=false
 let sw1=false
 let sw2=false
 let energized=new Set()
-let violations=[]
 
-// ===== DFS導通 =====
+// ===== DFS =====
 
 function solve(){
   energized.clear()
+  if(!breaker) return
+
   const visited=new Set()
   const stack=[holes.L]
 
   while(stack.length){
     const h=stack.pop()
-    if(visited.has(h))continue
+    if(visited.has(h)) continue
     visited.add(h)
 
     h.wires.forEach(w=>{
@@ -166,16 +183,6 @@ function solve(){
   }
 }
 
-// ===== 1穴1線 =====
-
-function checkViolation(){
-  violations=[]
-  Object.values(holes).forEach(h=>{
-    if(h.wires.length>h.capacity)
-      violations.push(h.id)
-  })
-}
-
 // ===== 描画 =====
 
 function render(){
@@ -187,25 +194,21 @@ function render(){
       ?.classList.add("energized")
   })
 
-  document.querySelectorAll(".terminal")
-    .forEach(t=>t.classList.remove("violation"))
-
-  violations.forEach(id=>{
-    document.getElementById(id)
-      ?.classList.add("violation")
-  })
-
   document.getElementById("panel").innerHTML =
-    "違反: "+(violations.join(", ")||"なし")
+    breaker?"電源ON":"電源OFF"
 }
 
 function reevaluate(){
-  checkViolation()
   solve()
   render()
 }
 
-// ===== スイッチ操作 =====
+// ===== 操作 =====
+
+function toggleBreaker(){
+  breaker=!breaker
+  reevaluate()
+}
 
 function toggleSW1(){
   sw1=!sw1
@@ -218,11 +221,6 @@ function toggleSW2(){
   sw2=!sw2
   document.getElementById("SW2_arm")
     .setAttribute("y2", sw2?120:40)
-  reevaluate()
-}
-
-function makeViolation(){
-  connect("bad",holes.SW1_0,holes.SW1_1)
   reevaluate()
 }
 
