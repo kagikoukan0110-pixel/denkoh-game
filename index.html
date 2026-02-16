@@ -38,6 +38,7 @@ body{
   background:black;
   position:absolute;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .selected{
@@ -54,13 +55,6 @@ body{
   background:#fafafa;
 }
 
-.line{
-  position:absolute;
-  background:black;
-  height:3px;
-  transform-origin:0 0;
-}
-
 #message{
   font-size:20px;
   font-weight:bold;
@@ -75,18 +69,22 @@ body{
 
 <div id="board">
 
+  <!-- 電源 -->
   <div class="node" style="top:40px; left:20px;">電源</div>
   <div class="terminal" data-id="L" style="top:90px; left:50px;"></div>
   <div class="terminal" data-id="N" style="top:120px; left:50px;"></div>
 
+  <!-- スイッチ -->
   <div class="node" style="top:40px; left:250px;">SW</div>
   <div class="terminal" data-id="SW1" style="top:90px; left:280px;"></div>
   <div class="terminal" data-id="SW2" style="top:120px; left:280px;"></div>
 
+  <!-- ランプ -->
   <div class="node" style="top:400px; left:140px;">ランプ</div>
   <div class="terminal" data-id="Lamp1" style="top:360px; left:165px;"></div>
   <div class="terminal" data-id="Lamp2" style="top:360px; left:195px;"></div>
 
+  <!-- JB -->
   <div class="jb"></div>
 
   <div class="terminal" data-id="JB1" style="top:210px; left:140px;"></div>
@@ -98,6 +96,7 @@ body{
 
 </div>
 
+<br>
 <button onclick="bundle()">束ねる</button>
 <button onclick="analyze()">解析</button>
 <button onclick="resetGame()">リセット</button>
@@ -107,13 +106,13 @@ body{
 <script>
 
 let selectedTerminals=[];
-let lines=[];
 let parent={};
 
 function init(){
   parent={};
   document.querySelectorAll(".terminal").forEach(t=>{
     parent[t.dataset.id]=t.dataset.id;
+    t.style.background="black";
   });
 }
 init();
@@ -133,6 +132,7 @@ function union(a,b){
   }
 }
 
+// 端子クリック処理
 document.querySelectorAll(".terminal").forEach(t=>{
   t.addEventListener("click",()=>{
     if(selectedTerminals.includes(t)){
@@ -145,16 +145,33 @@ document.querySelectorAll(".terminal").forEach(t=>{
   });
 });
 
+// 束ねる処理
 function bundle(){
-  if(selectedTerminals.length<2) return;
-  let first=selectedTerminals[0].dataset.id;
+  if(selectedTerminals.length < 2) return;
+
+  let firstId = selectedTerminals[0].dataset.id;
+
   selectedTerminals.forEach(t=>{
-    union(first,t.dataset.id);
+    union(firstId, t.dataset.id);
+  });
+
+  let root = find(firstId);
+
+  // 同一グループを色付け
+  document.querySelectorAll(".terminal").forEach(t=>{
+    if(find(t.dataset.id) === root){
+      t.style.background = "#2ecc71"; // 緑
+    }
+  });
+
+  selectedTerminals.forEach(t=>{
     t.classList.remove("selected");
   });
-  selectedTerminals=[];
+
+  selectedTerminals = [];
 }
 
+// 解析
 function analyze(){
   let message=document.getElementById("message");
 
@@ -164,7 +181,7 @@ function analyze(){
     return;
   }
 
-  // 正常回路判定
+  // 正解判定
   if(
     find("L")===find("SW1") &&
     find("SW2")===find("Lamp1") &&
@@ -176,10 +193,13 @@ function analyze(){
   }
 }
 
+// リセット
 function resetGame(){
   document.getElementById("message").innerText="";
   selectedTerminals=[];
-  document.querySelectorAll(".terminal").forEach(t=>t.classList.remove("selected"));
+  document.querySelectorAll(".terminal").forEach(t=>{
+    t.classList.remove("selected");
+  });
   init();
 }
 
