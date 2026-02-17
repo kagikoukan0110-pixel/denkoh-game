@@ -57,7 +57,6 @@ html, body {
   overflow: hidden;
 }
 
-/* グリッド */
 #workspace::before {
   content: "";
   position: absolute;
@@ -101,18 +100,21 @@ html, body {
   height: 60px;
   background: #0a2134;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
+  gap: 20px;
 }
 
+/* 🔥 半分サイズ */
 #bottomBar button {
-  width: 120px;
-  padding: 10px 0;
-  border-radius: 10px;
+  width: 60px;          /* 120 → 60 */
+  padding: 6px 0;       /* 小さく */
+  border-radius: 8px;
   border: 2px solid #3fa3ff;
   background: transparent;
   color: #3fa3ff;
   font-weight: bold;
+  font-size: 12px;      /* 少し小さく */
 }
 
 #bottomBar button:active {
