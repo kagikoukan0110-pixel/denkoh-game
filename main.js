@@ -1,95 +1,126 @@
 const workspace = document.getElementById("workspace");
 const wireLayer = document.getElementById("wireLayer");
 
-let devices = [];
+let selectedTerminal = null;
 let wires = [];
-let selectedDevice = null;
 
 /* ==========================
-   デバイス生成
+   デバイス定義
 ========================== */
 
-function createDevice(id, label, type, x, y) {
+const devices = [
+  {
+    id: "power",
+    label: "電源",
+    x: 80,
+    y: 250,
+    terminals: ["L", "N"]
+  },
+  {
+    id: "sw1",
+    label: "三路",
+    x: 350,
+    y: 200,
+    terminals: ["0", "1", "3"]
+  },
+  {
+    id: "sw2",
+    label: "三路",
+    x: 600,
+    y: 200,
+    terminals: ["0", "1", "3"]
+  },
+  {
+    id: "lamp",
+    label: "ランプ",
+    x: 850,
+    y: 250,
+    terminals: ["L", "N"]
+  }
+];
 
-  const div = document.createElement("div");
-  div.className = "device";
-  div.innerText = label;
-  div.style.left = x + "px";
-  div.style.top = y + "px";
-  div.dataset.id = id;
-  div.dataset.type = type;
+/* ==========================
+   描画
+========================== */
 
-  workspace.appendChild(div);
+function renderDevices() {
 
-  devices.push({ id, type, x, y });
+  devices.forEach(device => {
 
-  div.addEventListener("click", () => {
-    handleDeviceClick(id, div);
+    const div = document.createElement("div");
+    div.className = "device";
+    div.style.left = device.x + "px";
+    div.style.top = device.y + "px";
+    div.innerText = device.label;
+
+    workspace.appendChild(div);
+
+    // 端子描画
+    device.terminals.forEach((t, index) => {
+
+      const terminal = document.createElement("div");
+      terminal.className = "terminal";
+      terminal.innerText = t;
+
+      const offset = index * 30;
+
+      terminal.style.left = device.x + 10 + "px";
+      terminal.style.top = device.y + 60 + offset + "px";
+
+      terminal.dataset.id = device.id + "_" + t;
+
+      workspace.appendChild(terminal);
+
+      terminal.addEventListener("click", () => {
+        handleTerminalClick(terminal);
+      });
+
+    });
+
   });
+
 }
 
 /* ==========================
-   接続ロジック制限
+   端子クリック
 ========================== */
 
-function canConnect(a, b) {
+function handleTerminalClick(terminal) {
 
-  const A = devices.find(d => d.id === a);
-  const B = devices.find(d => d.id === b);
+  if (!selectedTerminal) {
 
-  if (!A || !B) return false;
+    selectedTerminal = terminal;
+    terminal.style.background = "#ffd54f";
 
-  // 同じものは不可
-  if (A.id === B.id) return false;
-
-  // 電源→三路右 直結禁止
-  if (A.type === "power" && B.id === "sw2") return false;
-  if (B.type === "power" && A.id === "sw2") return false;
-
-  return true;
-}
-
-/* ==========================
-   クリック処理
-========================== */
-
-function handleDeviceClick(id, element) {
-
-  if (!selectedDevice) {
-    selectedDevice = id;
-    element.style.background = "#ffd54f";
   } else {
 
-    if (canConnect(selectedDevice, id)) {
-      createWire(selectedDevice, id);
+    if (selectedTerminal !== terminal) {
+      createWire(selectedTerminal, terminal);
     }
 
-    resetDeviceColors();
-    selectedDevice = null;
+    selectedTerminal.style.background = "#fff";
+    selectedTerminal = null;
   }
-}
-
-function resetDeviceColors() {
-  document.querySelectorAll(".device").forEach(d=>{
-    d.style.background="#e0e0e0";
-  });
 }
 
 /* ==========================
    配線描画
 ========================== */
 
-function createWire(fromId, toId) {
+function createWire(t1, t2) {
 
-  const from = devices.find(d => d.id === fromId);
-  const to = devices.find(d => d.id === toId);
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
 
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  const r1 = t1.getBoundingClientRect();
+  const r2 = t2.getBoundingClientRect();
 
-  const x1 = from.x + 40;
-  const y1 = from.y + 30;
-  const x2 = to.x + 40;
-  const y2 = to.y + 30;
+  const wsRect = workspace.getBoundingClientRect();
+
+  const x1 = r1.left - wsRect.left + r1.width / 2;
+  const y1 = r1.top - wsRect.top + r1.height / 2;
+
+  const x2 = r2.left - wsRect.left + r2.width / 2;
+  const y2 = r2.top - wsRect.top + r2.height / 2;
 
   line.setAttribute("x1", x1);
   line.setAttribute("y1", y1);
@@ -99,21 +130,15 @@ function createWire(fromId, toId) {
   line.setAttribute("stroke-width", "4");
 
   wireLayer.appendChild(line);
-  wires.push({fromId,toId});
+
+  wires.push({
+    from: t1.dataset.id,
+    to: t2.dataset.id
+  });
 }
 
 /* ==========================
-   ステージ1-1固定
+   初期化
 ========================== */
 
-function loadStage() {
-
-  // 少し左に寄せて全体見えるように
-  createDevice("power","電源","power",80,250);
-  createDevice("sw1","三路","switch",350,200);
-  createDevice("sw2","三路","switch",600,200);
-  createDevice("lamp","ランプ","lamp",850,250);
-
-}
-
-loadStage();
+renderDevices();
