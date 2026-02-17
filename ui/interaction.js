@@ -1,71 +1,37 @@
-export function setupInteraction(graph, scoring){
+export function setupInteraction(){
 
-  const lamp = document.getElementById("lamp");
-  const breaker = document.getElementById("breaker");
-  const s1 = document.getElementById("s1");
-  const s2 = document.getElementById("s2");
-  const resultBox = document.getElementById("result");
+  let selectedTerminal = null;
 
-  const small = document.getElementById("crimpSmall");
-  const medium = document.getElementById("crimpMedium");
-  const large = document.getElementById("crimpLarge");
+  const terminals = document.querySelectorAll(".terminal");
 
-  breaker.addEventListener("click", ()=>{
-    graph.toggleBreaker();
-    breaker.setAttribute("fill", graph.breakerOn ? "#4caf50" : "#ccc");
-    updateLamp();
-  });
+  terminals.forEach(term => {
 
-  s1.addEventListener("click", ()=>{
-    graph.toggleS1();
-    updateLamp();
-  });
+    term.addEventListener("click", ()=>{
 
-  s2.addEventListener("click", ()=>{
-    graph.toggleS2();
-    updateLamp();
-  });
+      const id = term.dataset.id;
 
-  small.addEventListener("click", ()=>{
-    graph.setCrimp("small");
-    small.setAttribute("fill","#4caf50");
-  });
-
-  medium.addEventListener("click", ()=>{
-    graph.setCrimp("medium");
-    medium.setAttribute("fill","#ff9800");
-  });
-
-  large.addEventListener("click", ()=>{
-    graph.setCrimp("large");
-    large.setAttribute("fill","#f44336");
-  });
-
-  document.getElementById("checkBtn")
-    .addEventListener("click", ()=>{
-
-      const result = scoring.run();
-
-      if(result.major){
-        resultBox.innerHTML = result.major;
-        resultBox.style.background = "#b00020";
+      // 同じ端子を2回タップ → 解除
+      if(selectedTerminal === term){
+        term.setAttribute("fill", "#fff");
+        selectedTerminal = null;
         return;
       }
 
-      resultBox.innerHTML =
-        `得点: ${result.score}<br>` +
-        `判定: ${result.pass ? "合格水準" : "再確認が必要"}`;
+      // 1回目選択
+      if(!selectedTerminal){
+        term.setAttribute("fill", "#2196f3");
+        selectedTerminal = term;
+        return;
+      }
 
-      resultBox.style.background =
-        result.pass ? "#2e7d32" : "#c62828";
+      // 別端子タップ → 接続ログ
+      console.log("connect:", selectedTerminal.dataset.id, "→", id);
+
+      selectedTerminal.setAttribute("fill", "#fff");
+      selectedTerminal = null;
+
+    });
+
   });
-
-  function updateLamp(){
-    if(graph.isLampOn()){
-      lamp.setAttribute("fill","yellow");
-    } else {
-      lamp.setAttribute("fill","gray");
-    }
-  }
 
 }
