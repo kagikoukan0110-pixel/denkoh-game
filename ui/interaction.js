@@ -4,42 +4,84 @@ export function setupInteraction(){
   let selectedColor = "black";
   let wireCount = 0;
 
+  let s1State = 0;
+  let s2State = 0;
+
   const colorMap = {
     black: "#000",
     white: "#eee",
     red: "#d32f2f"
   };
 
-  // 色選択
+  /* 色選択 */
   document.querySelectorAll("#colorBar button").forEach(btn=>{
     btn.addEventListener("click",()=>{
       selectedColor = btn.dataset.color;
     });
   });
 
-  // 端子クリック
+  /* 三路切替 */
+
+  document.getElementById("s1_body")
+    .addEventListener("click",()=>{
+      s1State = s1State === 0 ? 1 : 0;
+      updateInternal("s1", s1State);
+    });
+
+  document.getElementById("s2_body")
+    .addEventListener("click",()=>{
+      s2State = s2State === 0 ? 1 : 0;
+      updateInternal("s2", s2State);
+    });
+
+  function updateInternal(sw, state){
+
+    const line = document.getElementById(sw + "_internal");
+
+    if(sw === "s1"){
+
+      if(state === 0){
+        line.setAttribute("x2","300");
+        line.setAttribute("y2","130");
+      } else {
+        line.setAttribute("x2","300");
+        line.setAttribute("y2","190");
+      }
+
+    } else {
+
+      if(state === 0){
+        line.setAttribute("x2","520");
+        line.setAttribute("y2","130");
+      } else {
+        line.setAttribute("x2","520");
+        line.setAttribute("y2","190");
+      }
+
+    }
+
+  }
+
+  /* 外部配線（前回と同じ） */
+
   document.querySelectorAll(".terminal").forEach(term=>{
 
     term.addEventListener("click",()=>{
 
-      // 同じ端子2回 → 解除
       if(selectedTerminal === term){
         term.setAttribute("fill","#fff");
         selectedTerminal = null;
         return;
       }
 
-      // 1回目選択
       if(!selectedTerminal){
         term.setAttribute("fill","#2196f3");
         selectedTerminal = term;
         return;
       }
 
-      // 2回目 → 接続
       const x1 = +selectedTerminal.getAttribute("cx");
       const y1 = +selectedTerminal.getAttribute("cy");
-
       const x2 = +term.getAttribute("cx");
       const y2 = +term.getAttribute("cy");
 
