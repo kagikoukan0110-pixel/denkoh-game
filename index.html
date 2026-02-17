@@ -2,40 +2,36 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>俺らの電工 β</title>
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div id="app">
-
-  <div id="hud">
-    <div>
-      <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
-      <div id="stageInfo">STAGE 1-1</div>
-    </div>
-
-    <div id="hudRight">
-      <div id="titleInfo">一般人</div>
-      <div id="xpInfo">XP: 0</div>
-    </div>
+<div id="hud">
+  <div>
+    <div id="gameTitle">俺らの電工 <span class="beta">β</span></div>
+    <div id="stageInfo">STAGE 1-1</div>
   </div>
-
-  <div id="mainArea">
-    <div id="workspace">
-      <svg id="wireLayer"></svg>
-    </div>
-
-    <div id="sidePanel">
-      <button id="stageSelectBtn">STAGE</button>
-      <button id="breakerBtn">BREAKER</button>
-    </div>
+  <div id="playerInfo">
+    <div>一般人</div>
+    <div>XP: 0</div>
   </div>
-
 </div>
 
-<script type="module" src="./main.js"></script>
+<div id="workspace">
+  <svg id="wireLayer"></svg>
+</div>
+
+<div id="controls">
+  <button id="breakerBtn">BREAKER</button>
+</div>
+
+<div id="result" class="hidden">
+  <div id="resultText">CLEAR</div>
+  <button onclick="location.reload()">RETRY</button>
+</div>
+
+<script type="module" src="main.js"></script>
 </body>
 </html>
