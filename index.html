@@ -1,72 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
-  <title>俺らの電工 β</title>
-
-  <!-- フォント -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="./style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>俺らの電工 β</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- ===== HUD ===== -->
-  <div id="hud">
-    <div id="hudLeft">
-      <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
-      <div id="stageInfo">STAGE 1-1</div>
-    </div>
-
-    <div id="hudRight">
-      <div id="titleInfo">一般人</div>
-      <div id="xpInfo">XP: 0</div>
-    </div>
+<!-- ===== HUD ===== -->
+<div id="hud">
+  <div id="hudLeft">
+    <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
+    <div id="stageInfo">STAGE 1-1</div>
   </div>
 
-  <!-- ===== ワークスペース ===== -->
-  <div id="workspace">
-    <!-- SVG配線レイヤー -->
-    <svg id="wireLayer"></svg>
+  <div id="hudRight">
+    <div id="titleInfo">一般人</div>
+    <div id="xpInfo">XP: 0</div>
   </div>
+</div>
 
-  <!-- ===== 下部バー ===== -->
-  <div id="bottomBar">
-    <button id="stageSelectBtn">STAGE</button>
-    <button id="breakerBtn">BREAKER</button>
-  </div>
+<!-- ===== ワークスペース ===== -->
+<div id="workspace">
+  <svg id="wireLayer"></svg>
+</div>
 
-  <!-- ===== ステージ選択画面 ===== -->
-  <div id="stageSelect" class="screen hidden">
-    <h2>WORLD 1</h2>
-    <div id="stageGrid"></div>
-    <button id="closeStageSelect">閉じる</button>
-  </div>
+<!-- ===== 右サイドUI ===== -->
+<div id="sideBar">
+  <button id="stageSelectBtn">STAGE</button>
+  <button id="breakerBtn">BREAKER</button>
+</div>
 
-  <!-- ===== リザルト画面 ===== -->
-  <div id="resultScreen" class="screen hidden">
-    <div id="resultRank">S</div>
-    <div id="resultDetails"></div>
-    <button id="nextStageBtn">NEXT</button>
-  </div>
-
-  <!-- ===== オーバーレイ（ボス/演出用） ===== -->
-  <div id="overlay" class="hidden"></div>
-
-  <!-- ===== ボスUI ===== -->
-  <div id="bossUI" class="hidden">
-    <div id="bossName">ショート・デーモン</div>
-    <div id="bossHPBar">
-      <div id="bossHP"></div>
-    </div>
-  </div>
-
-  <!-- ===== JS ===== -->
-  <script type="module" src="./main.js"></script>
+<script type="module" src="./main.js"></script>
 
 </body>
 </html>
