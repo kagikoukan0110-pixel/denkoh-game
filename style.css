@@ -1,5 +1,5 @@
 /* ===============================
-   俺らの電工 β - 最新UI
+   俺らの電工 β - GOD MODE UI
 =============================== */
 
 * {
@@ -31,25 +31,6 @@ body {
   background: linear-gradient(90deg, #1c2f48, #243b5c);
 }
 
-#gameTitle {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.betaTag {
-  color: gold;
-}
-
-#stageInfo {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-#titleInfo,
-#xpInfo {
-  font-size: 12px;
-}
-
 /* ===============================
    ワークスペース
 =============================== */
@@ -60,6 +41,12 @@ body {
   background: radial-gradient(circle at center, #0d1f36, #071423);
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+#deviceLayer {
+  position: relative;
+  width: 800px;
+  height: 100%;
 }
 
 /* グリッド */
@@ -74,44 +61,8 @@ body {
   pointer-events: none;
 }
 
-/* 横に広いレイヤー */
-#deviceLayer {
-  position: relative;
-  width: 700px;   /* 横スクロール余裕 */
-  height: 100%;
-}
-
 /* ===============================
-   下部バー
-=============================== */
-
-#bottomBar {
-  height: 60px;
-  background: #1c2f48;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-}
-
-#bottomBar button {
-  width: 70px;
-  height: 28px;
-  border-radius: 10px;
-  background: transparent;
-  border: 2px solid #3fa3ff;
-  color: #3fa3ff;
-  font-weight: bold;
-  font-size: 11px;
-}
-
-#bottomBar button:active {
-  background: #3fa3ff;
-  color: black;
-}
-
-/* ===============================
-   デバイス（小型化）
+   デバイス
 =============================== */
 
 .device {
@@ -126,10 +77,20 @@ body {
   font-weight: bold;
   font-size: 11px;
   color: black;
+  transition: 0.2s;
+}
+
+/* スイッチ物理アニメ */
+.switch-on {
+  transform: translateX(4px);
+}
+
+.switch-off {
+  transform: translateX(-4px);
 }
 
 /* ===============================
-   端子（内側配置）
+   端子
 =============================== */
 
 .terminal {
@@ -146,58 +107,34 @@ body {
   transition: 0.2s;
 }
 
-.terminal:active {
-  transform: scale(1.2);
-}
-
 /* ===============================
-   ランプ点灯
+   ランプ
 =============================== */
 
 .on {
   background: radial-gradient(circle, #ffff99, #ffcc00);
-  box-shadow: 0 0 20px gold;
-  transition: 0.3s;
+  box-shadow: 0 0 25px gold;
 }
 
 /* ===============================
-   電流アニメーション
+   電流アニメ
 =============================== */
 
 @keyframes flow {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: -20;
-  }
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -20; }
 }
 
 /* ===============================
-   CLEAR表示
+   短絡フラッシュ
 =============================== */
 
-#clearOverlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  color: gold;
-  font-size: 36px;
-  font-weight: bold;
-  z-index: 100;
+@keyframes flash {
+  0% { background: #071423; }
+  50% { background: #ff0000; }
+  100% { background: #071423; }
 }
 
-#clearOverlay button {
-  margin-top: 20px;
-  width: 90px;
-  height: 30px;
-  border-radius: 10px;
-  border: 2px solid #3fa3ff;
-  background: transparent;
-  color: #3fa3ff;
-  font-weight: bold;
+.short {
+  animation: flash 0.3s ease 2;
 }
