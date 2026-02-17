@@ -1,3 +1,7 @@
+/* ===============================
+   俺らの電工 β - 最新UI
+=============================== */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -13,7 +17,9 @@ body {
   overflow: hidden;
 }
 
-/* ===== HUD ===== */
+/* ===============================
+   HUD
+=============================== */
 
 #hud {
   height: 60px;
@@ -30,29 +36,30 @@ body {
   font-weight: bold;
 }
 
-.betaTag { color: gold; }
+.betaTag {
+  color: gold;
+}
 
 #stageInfo {
   font-size: 12px;
   opacity: 0.7;
 }
 
-/* ===== ワークスペース ===== */
+#titleInfo,
+#xpInfo {
+  font-size: 12px;
+}
+
+/* ===============================
+   ワークスペース
+=============================== */
 
 #workspace {
   flex: 1;
   position: relative;
   background: radial-gradient(circle at center, #0d1f36, #071423);
-
-  overflow-x: auto;     /* ← 横スクロール有効 */
+  overflow-x: auto;
   overflow-y: hidden;
-}
-
-/* 横に広げるレイヤー */
-#deviceLayer {
-  position: relative;
-  width: 600px;         /* ← 横幅固定（広め） */
-  height: 100%;
 }
 
 /* グリッド */
@@ -67,7 +74,16 @@ body {
   pointer-events: none;
 }
 
-/* ===== 下部バー ===== */
+/* 横に広いレイヤー */
+#deviceLayer {
+  position: relative;
+  width: 700px;   /* 横スクロール余裕 */
+  height: 100%;
+}
+
+/* ===============================
+   下部バー
+=============================== */
 
 #bottomBar {
   height: 60px;
@@ -89,7 +105,14 @@ body {
   font-size: 11px;
 }
 
-/* ===== デバイス ===== */
+#bottomBar button:active {
+  background: #3fa3ff;
+  color: black;
+}
+
+/* ===============================
+   デバイス（小型化）
+=============================== */
 
 .device {
   position: absolute;
@@ -105,7 +128,9 @@ body {
   color: black;
 }
 
-/* ===== 端子（完全内側） ===== */
+/* ===============================
+   端子（内側配置）
+=============================== */
 
 .terminal {
   position: absolute;
@@ -118,4 +143,61 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: 0.2s;
+}
+
+.terminal:active {
+  transform: scale(1.2);
+}
+
+/* ===============================
+   ランプ点灯
+=============================== */
+
+.on {
+  background: radial-gradient(circle, #ffff99, #ffcc00);
+  box-shadow: 0 0 20px gold;
+  transition: 0.3s;
+}
+
+/* ===============================
+   電流アニメーション
+=============================== */
+
+@keyframes flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* ===============================
+   CLEAR表示
+=============================== */
+
+#clearOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: gold;
+  font-size: 36px;
+  font-weight: bold;
+  z-index: 100;
+}
+
+#clearOverlay button {
+  margin-top: 20px;
+  width: 90px;
+  height: 30px;
+  border-radius: 10px;
+  border: 2px solid #3fa3ff;
+  background: transparent;
+  color: #3fa3ff;
+  font-weight: bold;
 }
