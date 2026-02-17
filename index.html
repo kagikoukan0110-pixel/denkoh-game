@@ -1,78 +1,105 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>電工サンドボックス</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>電工シミュレーター</title>
 
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  overflow:hidden;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #222;
+      color: white;
+      overflow: hidden;
+    }
 
-/* ワークスペース */
-#workspace{
-  height:65vh;
-  background:
-    linear-gradient(90deg,#caa472 25%,#c19560 25%,#c19560 50%,#caa472 50%,#caa472 75%,#c19560 75%);
-  background-size:80px 80px;
-  position:relative;
-}
+    /* 作業エリア */
+    #workspace {
+      position: relative;
+      width: 100vw;
+      height: 70vh;
+      background: repeating-linear-gradient(
+        90deg,
+        #caa36a,
+        #caa36a 20px,
+        #d9b77a 20px,
+        #d9b77a 40px
+      );
+    }
 
-/* パレット */
-#palette{
-  height:20vh;
-  display:flex;
-  gap:12px;
-  padding:10px;
-  background:#222;
-  overflow-x:auto;
-}
+    /* パレット */
+    #palette {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: #111;
+      overflow-x: auto;
+    }
 
-.item{
-  min-width:100px;
-  background:#eee;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
-  flex-shrink:0;
-}
+    .palette-item {
+      min-width: 120px;
+      padding: 20px;
+      background: #ddd;
+      color: black;
+      text-align: center;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-#controls{
-  height:15vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#111;
-}
+    /* セットボタン */
+    #control {
+      text-align: center;
+      padding: 20px;
+      background: black;
+    }
 
-button{
-  padding:12px 30px;
-  font-size:18px;
-}
-</style>
+    #setBtn {
+      padding: 12px 40px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      background: #ddd;
+      cursor: pointer;
+    }
+
+    /* 配置された機器 */
+    .device {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: #eee;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: black;
+      font-weight: bold;
+      touch-action: none; /* スマホドラッグ用 */
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="workspace">
-  <svg id="board" width="100%" height="100%"></svg>
-</div>
+  <!-- 作業スペース -->
+  <div id="workspace"></div>
 
-<div id="palette">
-  <div class="item" data-type="threeWay_L0">三路 左0</div>
-  <div class="item" data-type="threeWay_R0">三路 右0</div>
-</div>
+  <!-- 機器パレット -->
+  <div id="palette">
+    <div class="palette-item" data-type="switch-left">三路 左0</div>
+    <div class="palette-item" data-type="switch-right">三路 右0</div>
+    <div class="palette-item" data-type="lamp">ランプ</div>
+    <div class="palette-item" data-type="power">電源</div>
+  </div>
 
-<div id="controls">
-  <button id="setBtn">セット</button>
-</div>
+  <!-- セットボタン -->
+  <div id="control">
+    <button id="setBtn">セット</button>
+  </div>
 
-<script type="module" src="./main.js"></script>
+  <script type="module" src="./main.js"></script>
 
 </body>
 </html>
