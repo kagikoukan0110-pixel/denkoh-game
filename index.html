@@ -2,14 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no,
+               viewport-fit=cover">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <title>俺らの電工 β</title>
+
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- ===== HUD ===== -->
 <div id="hud">
   <div id="hudLeft">
     <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
@@ -22,18 +32,16 @@
   </div>
 </div>
 
-<!-- ===== ワークスペース ===== -->
 <div id="workspace">
   <svg id="wireLayer"></svg>
 </div>
 
-<!-- ===== 右サイドUI ===== -->
-<div id="sideBar">
-  <button id="stageSelectBtn">STAGE</button>
+<div id="sidePanel">
+  <button id="stageBtn">STAGE</button>
   <button id="breakerBtn">BREAKER</button>
 </div>
 
-<script type="module" src="./main.js"></script>
+<script type="module" src="main.js"></script>
 
 </body>
 </html>
