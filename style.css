@@ -18,7 +18,6 @@ html, body {
   height: 100%;
 }
 
-/* ===== HUD ===== */
 #hud {
   height: 70px;
   padding: 12px 20px;
@@ -42,13 +41,11 @@ html, body {
   opacity: 0.7;
 }
 
-/* ===== メインエリア ===== */
 #mainArea {
   flex: 1;
   display: flex;
 }
 
-/* ===== ワークスペース ===== */
 #workspace {
   flex: 1;
   position: relative;
@@ -66,7 +63,6 @@ html, body {
   background-size: 60px 60px;
 }
 
-/* ===== サイドパネル ===== */
 #sidePanel {
   width: 180px;
   background: #0a2134;
@@ -91,32 +87,4 @@ html, body {
 #sidePanel button:active {
   background: #3fa3ff;
   color: black;
-}
-
-/* ===== デバイス ===== */
-.device {
-  position: absolute;
-  width: 120px;
-  height: 80px;
-  background: #d9d9d9;
-  border-radius: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: black;
-  font-weight: bold;
-}
-
-/* ===== 端子 ===== */
-.terminal {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background: #21a8d8;
-  border-radius: 50%;
-  color: white;
-  font-size: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
