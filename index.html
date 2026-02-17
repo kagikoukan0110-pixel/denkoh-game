@@ -3,95 +3,91 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Denko Game</title>
+<title>俺らの電工</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #ddd;
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#c8a86c;
+  overflow:hidden;
 }
 
-/* 作業スペース */
-#workspace {
-  height: 60vh;
-  background: repeating-linear-gradient(
-    90deg,
-    #caa472,
-    #caa472 20px,
-    #b8905c 20px,
-    #b8905c 40px
-  );
-  position: relative;
-  overflow: hidden;
+#app{
+  display:flex;
+  height:100vh;
+}
+
+/* 作業エリア */
+#workspace{
+  flex:1;
+  position:relative;
+  background:#d2b47c;
+}
+
+/* 右パネル */
+#sidePanel{
+  width:120px;
+  background:#111;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:10px 5px;
+  gap:10px;
+}
+
+/* デバイス */
+.device{
+  position:absolute;
+  width:80px;
+  height:60px;
+  background:#eee;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  user-select:none;
+  touch-action:none;
 }
 
 /* パレット */
-#palette {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: #222;
+.palette-item{
+  width:70px;
+  height:40px;
+  background:white;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:bold;
 }
 
-.palette-item {
-  width: 100px;
-  height: 100px;
-  background: #eee;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  cursor: pointer;
+/* ボタン */
+button{
+  width:80px;
+  height:40px;
+  border-radius:8px;
+  border:none;
+  font-weight:bold;
 }
 
-/* セットボタン */
-#control {
-  padding: 20px;
-  text-align: center;
-  background: #111;
-}
-
-#control button {
-  padding: 15px 40px;
-  font-size: 18px;
-  border-radius: 10px;
-}
-
-/* 作業デバイス */
-.device {
-  width: 100px;
-  height: 100px;
-  background: #eee;
-  border-radius: 10px;
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  touch-action: none; /* スマホドラッグ用 */
-  user-select: none;
-}
 </style>
 </head>
 
 <body>
 
-<!-- 作業スペース -->
-<div id="workspace"></div>
+<div id="app">
+  <div id="workspace"></div>
 
-<!-- 機器パレット -->
-<div id="palette">
-  <div class="palette-item" data-type="switch-left">三路 左0</div>
-  <div class="palette-item" data-type="switch-right">三路 右0</div>
-  <div class="palette-item" data-type="lamp">ランプ</div>
-  <div class="palette-item" data-type="power">電源</div>
-</div>
-
-<!-- セットボタン -->
-<div id="control">
-  <button id="setBtn">セット</button>
+  <div id="sidePanel">
+    <div class="palette-item" data-type="switch-left">三路左</div>
+    <div class="palette-item" data-type="switch-right">三路右</div>
+    <div class="palette-item" data-type="lamp">ランプ</div>
+    <div class="palette-item" data-type="power">電源</div>
+    <button id="setBtn">セット</button>
+  </div>
 </div>
 
 <script type="module" src="./main.js"></script>
