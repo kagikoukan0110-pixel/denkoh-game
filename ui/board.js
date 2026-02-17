@@ -17,5 +17,12 @@ export function initBoard(){
       style="position:absolute; bottom:20px; left:20px;">
       採点
     </button>
+
+    <div id="result"
+      style="position:absolute; bottom:20px; right:20px;
+             background:#222; color:#fff;
+             padding:10px 15px; border-radius:8px;">
+      ---
+    </div>
   `;
 }
