@@ -1,3 +1,4 @@
+alert("MAIN LOADED");
 import { state } from "./core/state.js";
 import { createDevice } from "./ui/deviceFactory.js";
 
