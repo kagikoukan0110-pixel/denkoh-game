@@ -1,9 +1,10 @@
-alert("MAIN LOADED");
 import { state } from "./core/state.js";
-import { createDevice } from "./ui/deviceFactory.js";
+import { createDevice } from "./ui/device.js";
+
+console.log("MAIN LOADED");
 
 const workspace = document.getElementById("workspace");
-const paletteItems = document.querySelectorAll(".item");
+const paletteItems = document.querySelectorAll(".palette-item");
 const setBtn = document.getElementById("setBtn");
 
 let draggingDevice = null;
@@ -12,54 +13,60 @@ let offsetY = 0;
 
 const MARGIN = 20;
 
-/* パレットから生成 */
-paletteItems.forEach(item=>{
-  item.addEventListener("pointerdown",(e)=>{
+/* =========================
+   パレット → デバイス生成
+========================= */
+paletteItems.forEach(item => {
+  item.addEventListener("click", () => {
+    const type = item.dataset.type;
+    const device = createDevice(type);
 
-    if(state.mode !== "placement") return;
+    device.style.left = "100px";
+    device.style.top = "100px";
 
-    const rect = workspace.getBoundingClientRect();
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    draggingDevice = createDevice(item.dataset.type,x,y);
-
-    offsetX = 35;
-    offsetY = 50;
-
+    workspace.appendChild(device);
+    state.devices.push({
+      id: device.dataset.id,
+      type,
+      x: 100,
+      y: 100
+    });
   });
 });
 
-/* ドラッグ移動 */
-workspace.addEventListener("pointermove",(e)=>{
+/* =========================
+   ドラッグ処理（スマホ対応）
+========================= */
+workspace.addEventListener("pointerdown", (e) => {
+  const target = e.target.closest(".device");
+  if (!target) return;
 
-  if(!draggingDevice) return;
-  if(draggingDevice.locked) return;
+  draggingDevice = target;
 
-  const rect = workspace.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
 
-  let x = e.clientX - rect.left - offsetX;
-  let y = e.clientY - rect.top - offsetY;
-
-  const maxX = rect.width - draggingDevice.width - MARGIN;
-  const maxY = rect.height - draggingDevice.height - MARGIN;
-
-  x = Math.max(MARGIN, Math.min(x,maxX));
-  y = Math.max(MARGIN, Math.min(y,maxY));
-
-  draggingDevice.x = x;
-  draggingDevice.y = y;
-  draggingDevice.group.setAttribute("transform",`translate(${x},${y})`);
-
+  target.setPointerCapture(e.pointerId);
 });
 
-window.addEventListener("pointerup",()=>{
+workspace.addEventListener("pointermove", (e) => {
+  if (!draggingDevice) return;
+
+  const x = e.clientX - offsetX;
+  const y = e.clientY - offsetY;
+
+  draggingDevice.style.left = x + "px";
+  draggingDevice.style.top = y + "px";
+});
+
+workspace.addEventListener("pointerup", () => {
   draggingDevice = null;
 });
 
-setBtn.addEventListener("click",()=>{
-  state.mode = "wiring";
-  state.devices.forEach(d=> d.locked = true);
-  alert("施工モード開始");
+/* =========================
+   セットボタン
+========================= */
+setBtn.addEventListener("click", () => {
+  alert("セット完了（仮）");
 });
