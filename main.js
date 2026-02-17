@@ -1,8 +1,6 @@
 import { state } from "./core/state.js";
 import { createDevice } from "./ui/device.js";
 
-console.log("MAIN LOADED");
-
 const workspace = document.getElementById("workspace");
 const paletteItems = document.querySelectorAll(".palette-item");
 const setBtn = document.getElementById("setBtn");
@@ -25,6 +23,7 @@ paletteItems.forEach(item => {
     device.style.top = "100px";
 
     workspace.appendChild(device);
+
     state.devices.push({
       id: device.dataset.id,
       type,
