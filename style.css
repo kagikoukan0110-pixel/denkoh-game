@@ -1,41 +1,40 @@
-html, body {
-  width: 100%;
-  height: 100%;
-}
-
+/* ===== 全体リセット ===== */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
   -webkit-user-select: none;
   user-select: none;
 }
 
-body {
-  background: radial-gradient(circle at center, #0d1b2a, #000814);
-  color: white;
-  font-family: sans-serif;
+html, body {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  background: #071423;
+  font-family: sans-serif;
+  color: white;
+}
+
+/* ===== レイアウト ===== */
+body {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== HUD ===== */
-
 #hud {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 90px;
-  background: linear-gradient(90deg, #0f2a44, #1b2f4f);
+  height: 70px;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #1c2f48, #243b5c);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
-  z-index: 1000;
+  flex-shrink: 0;
 }
 
 #gameTitle {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
 }
 
@@ -48,73 +47,94 @@ body {
   opacity: 0.7;
 }
 
-#hudRight {
+#titleInfo,
+#xpInfo {
   text-align: right;
+  font-size: 14px;
 }
 
-/* ===== レイアウト全体 ===== */
-
+/* ===== メインエリア ===== */
 #workspace {
-  position: fixed;
-  top: 90px;
-  left: 0;
-  right: 200px;
-  bottom: 0;
-  background:
-    linear-gradient(#1b263b 1px, transparent 1px),
-    linear-gradient(90deg, #1b263b 1px, transparent 1px);
-  background-size: 60px 60px;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #0d1f36, #071423);
 }
 
-#sidePanel {
-  position: fixed;
-  top: 90px;
+/* グリッド */
+#workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* ===== 右パネル ===== */
+#bottomBar {
+  position: absolute;
   right: 0;
-  width: 200px;
+  top: 70px;
+  width: 180px;
   bottom: 0;
-  background: #0b1c2d;
+  background: #0a2134;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 40px;
-  gap: 30px;
+  gap: 20px;
 }
 
-#sidePanel button {
-  width: 120px;
-  height: 45px;
-  border-radius: 10px;
-  border: 2px solid #3a86ff;
+/* ===== ボタン ===== */
+#bottomBar button {
+  width: 130px;
+  padding: 12px 0;
+  border-radius: 12px;
   background: transparent;
-  color: white;
+  border: 2px solid #3fa3ff;
+  color: #3fa3ff;
   font-weight: bold;
+  font-size: 14px;
+}
+
+#bottomBar button:active {
+  background: #3fa3ff;
+  color: black;
+}
+
+/* ===== SVG配線レイヤー ===== */
+#wireLayer {
+  position: absolute;
+  inset: 0;
 }
 
 /* ===== デバイス ===== */
-
 .device {
   position: absolute;
-  width: 160px;
-  height: 120px;
-  background: #e0e0e0;
+  width: 120px;
+  height: 80px;
+  background: #d9d9d9;
   border-radius: 16px;
-  color: black;
   display: flex;
   justify-content: center;
   align-items: center;
+  color: black;
   font-weight: bold;
 }
 
+/* ===== 端子 ===== */
 .terminal {
   position: absolute;
-  width: 26px;
-  height: 26px;
-  background: #00c3ff;
+  width: 24px;
+  height: 24px;
+  background: #21a8d8;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
+  color: white;
   font-size: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
 }
