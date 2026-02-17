@@ -1,23 +1,11 @@
-// 三路スイッチ内部ロジック
+export function getThreeWayConnections(device){
 
-/**
- * 三路スイッチの内部導通を返す
- * @param {string} position  "left" or "right"
- * @returns {Array} 接続されている端子ペア
- */
-export function getThreeWayConnections(position) {
-  if (position === "left") {
-    return [
-      ["0", "1"],
-      ["1", "0"]
-    ];
+  if(device.dataset.type === "switch-left"){
+    return [["common","L"]];
   }
 
-  if (position === "right") {
-    return [
-      ["0", "3"],
-      ["3", "0"]
-    ];
+  if(device.dataset.type === "switch-right"){
+    return [["common","R"]];
   }
 
   return [];
