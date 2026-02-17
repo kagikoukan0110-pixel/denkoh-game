@@ -1,5 +1,5 @@
 // ===============================
-// 俺らの電工 β - 配線アニメ版
+// 俺らの電工 β - 超強化版
 // ===============================
 
 const workspace = document.getElementById("workspace");
@@ -29,11 +29,12 @@ function terminalClick(device, terminal, element) {
         return;
     }
 
-    drawAnimatedWire(selected.element, element);
+    const wire = drawAnimatedWire(selected.element, element);
 
     wires.push({
         a: selected.device + "-" + selected.terminal,
-        b: device + "-" + terminal
+        b: device + "-" + terminal,
+        svg: wire
     });
 
     selected.element.style.background = "#21a8d8";
@@ -43,7 +44,7 @@ function terminalClick(device, terminal, element) {
 }
 
 // ===============================
-// 🔥 ゆっくり伸びる配線
+// 🔥 折れ線＋アニメーション
 // ===============================
 
 function drawAnimatedWire(el1, el2) {
@@ -57,32 +58,26 @@ function drawAnimatedWire(el1, el2) {
     const x2 = rect2.left - base.left + rect2.width/2;
     const y2 = rect2.top - base.top + rect2.height/2;
 
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    const midX = x2;
 
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
+    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
 
-    line.setAttribute("stroke", "red");
-    line.setAttribute("stroke-width", "4");
-    line.setAttribute("stroke-linecap", "round");
+    poly.setAttribute("points", `${x1},${y1} ${midX},${y1} ${x2},${y2}`);
+    poly.setAttribute("fill", "none");
+    poly.setAttribute("stroke", "#222");
+    poly.setAttribute("stroke-width", "4");
+    poly.setAttribute("stroke-linecap", "round");
 
-    wireLayer.appendChild(line);
+    wireLayer.appendChild(poly);
 
-    // 線の長さ計算
-    const length = Math.hypot(x2 - x1, y2 - y1);
+    const length = poly.getTotalLength();
+    poly.style.strokeDasharray = length;
+    poly.style.strokeDashoffset = length;
+    poly.getBoundingClientRect();
+    poly.style.transition = "stroke-dashoffset 0.4s ease";
+    poly.style.strokeDashoffset = "0";
 
-    // 初期状態：見えない
-    line.style.strokeDasharray = length;
-    line.style.strokeDashoffset = length;
-
-    // 強制再描画
-    line.getBoundingClientRect();
-
-    // アニメーション
-    line.style.transition = "stroke-dashoffset 0.4s ease";
-    line.style.strokeDashoffset = "0";
+    return poly;
 }
 
 // ===============================
@@ -141,7 +136,7 @@ function dfs(graph, start) {
 }
 
 // ===============================
-// 通電判定
+// 通電チェック
 // ===============================
 
 function checkPower() {
@@ -157,7 +152,29 @@ function checkPower() {
 
     if (lampOn) {
         lamp.classList.add("on");
+
+        wires.forEach(w => {
+            w.svg.setAttribute("stroke", "red");
+            animateCurrent(w.svg);
+        });
+
     } else {
         lamp.classList.remove("on");
+
+        wires.forEach(w => {
+            w.svg.setAttribute("stroke", "#222");
+        });
     }
+}
+
+// ===============================
+// 🔥 電流粒子エフェクト
+// ===============================
+
+function animateCurrent(svgLine) {
+
+    const length = svgLine.getTotalLength();
+
+    svgLine.style.strokeDasharray = "6 6";
+    svgLine.style.animation = "flow 1s linear infinite";
 }
