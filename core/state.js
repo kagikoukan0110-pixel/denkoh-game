@@ -1,4 +1,6 @@
 export const state = {
   devices: [],
-  wires: []
+  wires: [],
+  currentStage: null,
+  level: 1
 };
