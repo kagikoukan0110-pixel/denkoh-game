@@ -5,7 +5,10 @@ export class Graph {
     this.s2State = 0;
     this.breakerOn = false;
 
-    this.crimpOK = false; // 🔥 圧着状態
+    this.crimpDone = false;
+    this.crimpSize = null; // "small" | "medium" | "large"
+
+    this.wireCount = 2; // 今回の問題は2本接続
   }
 
   toggleBreaker(){
@@ -20,8 +23,9 @@ export class Graph {
     this.s2State = this.s2State === 0 ? 1 : 0;
   }
 
-  toggleCrimp(){
-    this.crimpOK = !this.crimpOK;
+  setCrimp(size){
+    this.crimpDone = true;
+    this.crimpSize = size;
   }
 
   isLampOn(){
@@ -33,8 +37,7 @@ export class Graph {
 
     const circuitComplete = s1Output === s2Input;
 
-    // 🔥 圧着がOKでないと導通しない
-    return circuitComplete && this.crimpOK;
+    return circuitComplete && this.crimpDone && this.crimpSize === "small";
   }
 
 }
