@@ -3,6 +3,12 @@ export function initBoard(){
   const app = document.getElementById("app");
 
   app.innerHTML = `
+  <div id="colorBar" style="margin:10px;">
+    <button data-color="black">黒</button>
+    <button data-color="white">白</button>
+    <button data-color="red">赤</button>
+  </div>
+
   <svg viewBox="0 0 900 400">
 
     <g id="wires"></g>
