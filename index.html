@@ -1,105 +1,100 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>電工シミュレーター</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Denko Game</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #222;
-      color: white;
-      overflow: hidden;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #ddd;
+}
 
-    /* 作業エリア */
-    #workspace {
-      position: relative;
-      width: 100vw;
-      height: 70vh;
-      background: repeating-linear-gradient(
-        90deg,
-        #caa36a,
-        #caa36a 20px,
-        #d9b77a 20px,
-        #d9b77a 40px
-      );
-    }
+/* 作業スペース */
+#workspace {
+  height: 60vh;
+  background: repeating-linear-gradient(
+    90deg,
+    #caa472,
+    #caa472 20px,
+    #b8905c 20px,
+    #b8905c 40px
+  );
+  position: relative;
+  overflow: hidden;
+}
 
-    /* パレット */
-    #palette {
-      display: flex;
-      gap: 16px;
-      padding: 16px;
-      background: #111;
-      overflow-x: auto;
-    }
+/* パレット */
+#palette {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: #222;
+}
 
-    .palette-item {
-      min-width: 120px;
-      padding: 20px;
-      background: #ddd;
-      color: black;
-      text-align: center;
-      border-radius: 12px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+.palette-item {
+  width: 100px;
+  height: 100px;
+  background: #eee;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    /* セットボタン */
-    #control {
-      text-align: center;
-      padding: 20px;
-      background: black;
-    }
+/* セットボタン */
+#control {
+  padding: 20px;
+  text-align: center;
+  background: #111;
+}
 
-    #setBtn {
-      padding: 12px 40px;
-      font-size: 18px;
-      border-radius: 10px;
-      border: none;
-      background: #ddd;
-      cursor: pointer;
-    }
+#control button {
+  padding: 15px 40px;
+  font-size: 18px;
+  border-radius: 10px;
+}
 
-    /* 配置された機器 */
-    .device {
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      background: #eee;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: black;
-      font-weight: bold;
-      touch-action: none; /* スマホドラッグ用 */
-    }
-  </style>
+/* 作業デバイス */
+.device {
+  width: 100px;
+  height: 100px;
+  background: #eee;
+  border-radius: 10px;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  touch-action: none; /* スマホドラッグ用 */
+  user-select: none;
+}
+</style>
 </head>
 
 <body>
 
-  <!-- 作業スペース -->
-  <div id="workspace"></div>
+<!-- 作業スペース -->
+<div id="workspace"></div>
 
-  <!-- 機器パレット -->
-  <div id="palette">
-    <div class="palette-item" data-type="switch-left">三路 左0</div>
-    <div class="palette-item" data-type="switch-right">三路 右0</div>
-    <div class="palette-item" data-type="lamp">ランプ</div>
-    <div class="palette-item" data-type="power">電源</div>
-  </div>
+<!-- 機器パレット -->
+<div id="palette">
+  <div class="palette-item" data-type="switch-left">三路 左0</div>
+  <div class="palette-item" data-type="switch-right">三路 右0</div>
+  <div class="palette-item" data-type="lamp">ランプ</div>
+  <div class="palette-item" data-type="power">電源</div>
+</div>
 
-  <!-- セットボタン -->
-  <div id="control">
-    <button id="setBtn">セット</button>
-  </div>
+<!-- セットボタン -->
+<div id="control">
+  <button id="setBtn">セット</button>
+</div>
 
-  <script type="module" src="./main.js"></script>
+<script type="module" src="./main.js"></script>
 
 </body>
 </html>
