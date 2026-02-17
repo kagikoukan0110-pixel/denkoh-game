@@ -1,66 +1,46 @@
-export class Scoring {
+export function setupInteraction(graph, scoring){
 
-  constructor(graph){
-    this.graph = graph;
-    this.deductions = [];
-  }
+  document.addEventListener("click",(e)=>{
 
-  run(){
+    const lamp = document.getElementById("lamp");
+    const breaker = document.getElementById("breaker");
 
-    let score = 100;
-
-    // 重大欠陥チェック
-    const major = this.checkMajorFault();
-
-    if(major){
-      return {
-        score: 0,
-        pass: false,
-        major: major,
-        deductions: []
-      };
+    if(e.target.id === "breaker"){
+      graph.toggleBreaker();
+      breaker.setAttribute("fill", graph.breakerOn ? "#4caf50" : "#ccc");
     }
 
-    // 減点チェック
-    score -= this.checkBreaker();
-    score -= this.checkSwitchMismatch();
-
-    return {
-      score: score,
-      pass: score >= 60,
-      major: null,
-      deductions: this.deductions
-    };
-  }
-
-  checkMajorFault(){
-
-    // ブレーカーOFFで導通があるのは重大
-    if(!this.graph.breakerOn && this.graph.isLampOn()){
-      return "重大欠陥：ブレーカー未投入で導通";
+    if(e.target.id === "s1"){
+      graph.toggleS1();
     }
 
-    return null;
-  }
-
-  checkBreaker(){
-
-    if(!this.graph.breakerOn){
-      this.deductions.push("ブレーカー未投入");
-      return 10;
+    if(e.target.id === "s2"){
+      graph.toggleS2();
     }
 
-    return 0;
-  }
+    // 🔥 採点ボタン
+    if(e.target.id === "checkBtn"){
 
-  checkSwitchMismatch(){
+      const result = scoring.run();
 
-    if(!this.graph.isLampOn()){
-      this.deductions.push("回路未完成");
-      return 20;
+      if(result.major){
+        alert(result.major);
+        return;
+      }
+
+      alert(
+        `得点: ${result.score}\n` +
+        `判定: ${result.pass ? "合格水準" : "再確認が必要"}`
+      );
     }
 
-    return 0;
-  }
+    // ランプ更新
+    if(graph.isLampOn()){
+      lamp.setAttribute("fill","yellow");
+    } else {
+      lamp.setAttribute("fill","gray");
+    }
+
+  });
 
 }
