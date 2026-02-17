@@ -1,145 +1,164 @@
-import { state } from "./core/state.js";
-import { buildCircuitGraph } from "./engine/circuitEngine.js";
-import { calculateScore } from "./engine/scoring.js";
-
-/* ================================
-   DOM取得
-================================ */
+/* =========================================
+   俺らの電工 β ver 0.5
+   固定ステージ版（1-1）
+========================================= */
 
 const workspace = document.getElementById("workspace");
-const paletteItems = document.querySelectorAll(".palette-item");
-const setBtn = document.getElementById("setBtn");
-const freezeOverlay = document.getElementById("freezeOverlay");
-const bossBanner = document.getElementById("bossBanner");
 
-let dragging = null;
-let offsetX = 0;
-let offsetY = 0;
-let selectedTerminal = null;
+const state = {
+  devices: [],
+  wires: []
+};
 
-/* ================================
-   パレット → デバイス生成
-================================ */
+let selectedDevice = null;
 
-paletteItems.forEach(item => {
-  item.addEventListener("click", () => {
-    const type = item.dataset.type;
-    createDevice(type);
-  });
-});
+/* =========================================
+   初期ステージ読み込み（固定）
+========================================= */
 
-function createDevice(type) {
+function loadBetaStage() {
+
+  workspace.innerHTML = "";
+  state.devices = [];
+  state.wires = [];
+
+  // SVGレイヤー作成
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.id = "wireLayer";
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  workspace.appendChild(svg);
+
+  // 固定配置
+  createDevice("power", 80, 220);
+  createDevice("switch-left", 300, 180);
+  createDevice("switch-right", 500, 180);
+  createDevice("lamp", 720, 220);
+}
+
+/* =========================================
+   デバイス生成（固定座標）
+========================================= */
+
+function createDevice(type, x, y) {
+
   const el = document.createElement("div");
   el.className = "device";
   el.dataset.type = type;
   el.dataset.id = crypto.randomUUID();
 
-  if (type === "lamp") {
-    el.classList.add("lamp");
-    el.textContent = "ランプ";
-  } else if (type === "switch-left") {
-    el.textContent = "三路 左0";
-    el.dataset.position = "left";
-    el.dataset.mode = "0";
-  } else if (type === "switch-right") {
-    el.textContent = "三路 右0";
-    el.dataset.position = "right";
-    el.dataset.mode = "0";
-  } else if (type === "power") {
+  if (type === "power") {
     el.textContent = "電源";
   }
 
-  el.style.left = "100px";
-  el.style.top = "100px";
+  if (type === "switch-left") {
+    el.textContent = "三路 左0";
+    el.dataset.position = "left";
+    el.dataset.mode = "0";
+  }
+
+  if (type === "switch-right") {
+    el.textContent = "三路 右0";
+    el.dataset.position = "right";
+    el.dataset.mode = "0";
+  }
+
+  if (type === "lamp") {
+    el.textContent = "ランプ";
+    el.classList.add("lamp");
+  }
+
+  el.style.position = "absolute";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
 
   workspace.appendChild(el);
   state.devices.push(el);
 
-  attachDeviceEvents(el);
+  attachEvents(el);
 }
 
-/* ================================
-   デバイス操作
-================================ */
+/* =========================================
+   デバイスイベント
+========================================= */
 
-function attachDeviceEvents(device) {
+function attachEvents(device) {
 
-  /* ドラッグ開始 */
-  device.addEventListener("pointerdown", e => {
-    dragging = device;
-    const rect = device.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-    device.setPointerCapture(e.pointerId);
-  });
-
-  /* 三路スイッチ切替 */
+  // 三路スイッチ切替（ダブルクリック）
   device.addEventListener("dblclick", () => {
+
     if (!device.dataset.position) return;
 
-    device.dataset.mode = device.dataset.mode === "0" ? "1" : "0";
+    device.dataset.mode =
+      device.dataset.mode === "0" ? "1" : "0";
 
     if (device.dataset.position === "left") {
-      device.textContent = device.dataset.mode === "0" ? "三路 左0" : "三路 左1";
+      device.textContent =
+        device.dataset.mode === "0"
+          ? "三路 左0"
+          : "三路 左1";
     } else {
-      device.textContent = device.dataset.mode === "0" ? "三路 右0" : "三路 右1";
+      device.textContent =
+        device.dataset.mode === "0"
+          ? "三路 右0"
+          : "三路 右1";
     }
 
     updateCircuit();
   });
 
-  /* 端子クリック（簡易：デバイス中央同士接続） */
-  device.addEventListener("click", e => {
-    if (e.detail > 1) return; // ダブルクリック除外
+  // 配線クリック
+  device.addEventListener("click", () => {
 
-    if (!selectedTerminal) {
-      selectedTerminal = device;
+    if (!selectedDevice) {
+      selectedDevice = device;
       device.classList.add("active");
-    } else if (selectedTerminal !== device) {
-      createWire(selectedTerminal, device);
-      selectedTerminal.classList.remove("active");
-      selectedTerminal = null;
-      updateCircuit();
+      return;
     }
+
+    if (selectedDevice === device) {
+      selectedDevice.classList.remove("active");
+      selectedDevice = null;
+      return;
+    }
+
+    createWire(selectedDevice, device);
+    selectedDevice.classList.remove("active");
+    selectedDevice = null;
+
+    updateCircuit();
   });
 }
 
-/* ================================
-   ドラッグ処理
-================================ */
-
-workspace.addEventListener("pointermove", e => {
-  if (!dragging) return;
-
-  dragging.style.left = e.clientX - offsetX + "px";
-  dragging.style.top = e.clientY - offsetY + "px";
-
-  redrawWires();
-});
-
-workspace.addEventListener("pointerup", () => {
-  dragging = null;
-});
-
-/* ================================
+/* =========================================
    ワイヤー処理
-================================ */
-
-const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-svg.id = "wires";
-svg.setAttribute("width", "100%");
-svg.setAttribute("height", "100%");
-workspace.appendChild(svg);
+========================================= */
 
 function createWire(a, b) {
-  state.wires.push({ from: a.dataset.id, to: b.dataset.id });
+
+  // 二重接続防止
+  const exists = state.wires.find(w =>
+    (w.from === a.dataset.id && w.to === b.dataset.id) ||
+    (w.from === b.dataset.id && w.to === a.dataset.id)
+  );
+
+  if (exists) return;
+
+  state.wires.push({
+    from: a.dataset.id,
+    to: b.dataset.id
+  });
+
   redrawWires();
 }
 
 function redrawWires() {
+
+  const svg = document.getElementById("wireLayer");
   svg.innerHTML = "";
 
   state.wires.forEach(wire => {
+
     const a = state.devices.find(d => d.dataset.id === wire.from);
     const b = state.devices.find(d => d.dataset.id === wire.to);
 
@@ -159,62 +178,39 @@ function redrawWires() {
     line.setAttribute("y1", y1);
     line.setAttribute("x2", x2);
     line.setAttribute("y2", y2);
-    line.setAttribute("class", "wire-line");
+    line.setAttribute("stroke", "#ff3b3b");
+    line.setAttribute("stroke-width", "4");
+    line.setAttribute("stroke-linecap", "round");
 
     svg.appendChild(line);
   });
 }
 
-/* ================================
-   回路更新
-================================ */
+/* =========================================
+   回路判定（簡易版β）
+========================================= */
 
 function updateCircuit() {
-  const graph = buildCircuitGraph(state.devices, state.wires);
 
-  state.devices.forEach(device => {
-    if (device.dataset.type === "lamp") {
-      const isOn = graph.powered?.includes(device.dataset.id);
-      device.classList.toggle("on", isOn);
+  const lamp = state.devices.find(d => d.dataset.type === "lamp");
+  const power = state.devices.find(d => d.dataset.type === "power");
 
-      if (isOn) triggerFreeze();
-    }
-  });
-}
+  if (!lamp || !power) return;
 
-/* ================================
-   プチュン演出
-================================ */
+  const connected = state.wires.some(w =>
+    (w.from === power.dataset.id && w.to === lamp.dataset.id) ||
+    (w.from === lamp.dataset.id && w.to === power.dataset.id)
+  );
 
-function triggerFreeze() {
-  freezeOverlay.classList.add("active");
-
-  setTimeout(() => {
-    freezeOverlay.classList.remove("active");
-  }, 200);
-}
-
-/* ================================
-   セットボタン
-================================ */
-
-setBtn.addEventListener("click", () => {
-  const score = calculateScore(state);
-  console.log("Score:", score);
-
-  if (score >= 100) {
-    triggerBoss();
+  if (connected) {
+    lamp.classList.add("on");
+  } else {
+    lamp.classList.remove("on");
   }
-});
-
-/* ================================
-   ボス演出
-================================ */
-
-function triggerBoss() {
-  bossBanner.classList.add("active");
-
-  setTimeout(() => {
-    bossBanner.classList.remove("active");
-  }, 2000);
 }
+
+/* =========================================
+   起動
+========================================= */
+
+loadBetaStage();
