@@ -3,35 +3,70 @@ const wireLayer = document.getElementById("wireLayer");
 
 let devices = [];
 let wires = [];
+let selectedDevice = null;
 
-let selectedTerminal = null;
+/* ==========================
+   デバイス生成
+========================== */
 
-/* ===== デバイス生成 ===== */
+function createDevice(id, label, type, x, y) {
 
-function createDevice(id, label, x, y, terminals) {
   const div = document.createElement("div");
   div.className = "device";
   div.innerText = label;
   div.style.left = x + "px";
   div.style.top = y + "px";
   div.dataset.id = id;
+  div.dataset.type = type;
 
   workspace.appendChild(div);
 
-  devices.push({ id, x, y, terminals });
+  devices.push({ id, type, x, y });
 
   div.addEventListener("click", () => {
-    if (!selectedTerminal) {
-      selectedTerminal = id;
-      div.style.background = "#ffd54f";
-    } else {
-      if (selectedTerminal !== id) {
-        createWire(selectedTerminal, id);
-      }
-      resetDeviceColors();
-      selectedTerminal = null;
-    }
+    handleDeviceClick(id, div);
   });
+}
+
+/* ==========================
+   接続ロジック制限
+========================== */
+
+function canConnect(a, b) {
+
+  const A = devices.find(d => d.id === a);
+  const B = devices.find(d => d.id === b);
+
+  if (!A || !B) return false;
+
+  // 同じものは不可
+  if (A.id === B.id) return false;
+
+  // 電源→三路右 直結禁止
+  if (A.type === "power" && B.id === "sw2") return false;
+  if (B.type === "power" && A.id === "sw2") return false;
+
+  return true;
+}
+
+/* ==========================
+   クリック処理
+========================== */
+
+function handleDeviceClick(id, element) {
+
+  if (!selectedDevice) {
+    selectedDevice = id;
+    element.style.background = "#ffd54f";
+  } else {
+
+    if (canConnect(selectedDevice, id)) {
+      createWire(selectedDevice, id);
+    }
+
+    resetDeviceColors();
+    selectedDevice = null;
+  }
 }
 
 function resetDeviceColors() {
@@ -40,9 +75,12 @@ function resetDeviceColors() {
   });
 }
 
-/* ===== 配線描画 ===== */
+/* ==========================
+   配線描画
+========================== */
 
 function createWire(fromId, toId) {
+
   const from = devices.find(d => d.id === fromId);
   const to = devices.find(d => d.id === toId);
 
@@ -57,21 +95,24 @@ function createWire(fromId, toId) {
   line.setAttribute("y1", y1);
   line.setAttribute("x2", x2);
   line.setAttribute("y2", y2);
-  line.setAttribute("stroke", "#4da3ff");
+  line.setAttribute("stroke", "#ff3b3b");
   line.setAttribute("stroke-width", "4");
 
   wireLayer.appendChild(line);
   wires.push({fromId,toId});
 }
 
-/* ===== ステージ1-1固定 ===== */
+/* ==========================
+   ステージ1-1固定
+========================== */
 
 function loadStage() {
 
-  createDevice("power","電源",80,250);
-  createDevice("sw1","三路 左0",350,200);
-  createDevice("sw2","三路 右0",600,200);
-  createDevice("lamp","ランプ",850,250);
+  // 少し左に寄せて全体見えるように
+  createDevice("power","電源","power",80,250);
+  createDevice("sw1","三路","switch",350,200);
+  createDevice("sw2","三路","switch",600,200);
+  createDevice("lamp","ランプ","lamp",850,250);
 
 }
 
