@@ -7,10 +7,10 @@
 
 body {
   background: #071423;
-  overflow: hidden;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ===== HUD ===== */
@@ -43,9 +43,19 @@ body {
   flex: 1;
   position: relative;
   background: radial-gradient(circle at center, #0d1f36, #071423);
-  overflow: hidden;
+
+  overflow-x: auto;     /* ← 横スクロール有効 */
+  overflow-y: hidden;
 }
 
+/* 横に広げるレイヤー */
+#deviceLayer {
+  position: relative;
+  width: 600px;         /* ← 横幅固定（広め） */
+  height: 100%;
+}
+
+/* グリッド */
 #workspace::before {
   content: "";
   position: absolute;
@@ -54,6 +64,7 @@ body {
     linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
   background-size: 35px 35px;
+  pointer-events: none;
 }
 
 /* ===== 下部バー ===== */
@@ -68,8 +79,8 @@ body {
 }
 
 #bottomBar button {
-  width: 75px;
-  height: 30px;
+  width: 70px;
+  height: 28px;
   border-radius: 10px;
   background: transparent;
   border: 2px solid #3fa3ff;
@@ -78,11 +89,11 @@ body {
   font-size: 11px;
 }
 
-/* ===== デバイス（さらに縮小） ===== */
+/* ===== デバイス ===== */
 
 .device {
   position: absolute;
-  width: 75px;
+  width: 70px;
   height: 45px;
   background: #d9d9d9;
   border-radius: 12px;
@@ -90,20 +101,20 @@ body {
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
   color: black;
 }
 
-/* ===== 端子（内側配置） ===== */
+/* ===== 端子（完全内側） ===== */
 
 .terminal {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   background: #21a8d8;
   border-radius: 50%;
   color: white;
-  font-size: 9px;
+  font-size: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
