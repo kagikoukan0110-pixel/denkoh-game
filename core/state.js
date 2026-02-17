@@ -1,3 +1,4 @@
 export const state = {
-  devices: []
+  devices: [],
+  wires: []
 };
