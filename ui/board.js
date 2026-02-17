@@ -3,40 +3,58 @@ export function initBoard(){
   const app = document.getElementById("app");
 
   app.innerHTML = `
-    <svg viewBox="0 0 800 500">
+  <svg viewBox="0 0 900 400">
 
-      <rect id="breaker" x="100" y="80" width="60" height="60" fill="#ccc"/>
-      <text x="100" y="70">ブレーカー</text>
+    <g id="wires"></g>
 
-      <rect id="s1" x="250" y="150" width="60" height="60" fill="#ddd"/>
-      <text x="250" y="140">三路1</text>
+    <g id="devices">
 
-      <rect id="s2" x="400" y="150" width="60" height="60" fill="#ddd"/>
-      <text x="400" y="140">三路2</text>
+      <!-- ブレーカー -->
+      <circle cx="120" cy="120" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="breaker_L"/>
+      <text x="135" y="125" font-size="12">L</text>
 
-      <circle id="lamp" cx="650" cy="200" r="20" fill="gray"/>
+      <circle cx="120" cy="160" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="breaker_N"/>
+      <text x="135" y="165" font-size="12">N</text>
 
-      <rect id="crimpSmall" x="200" y="300" width="60" height="40" fill="#999"/>
-      <text x="210" y="325">小</text>
+      <!-- 三路1 -->
+      <circle cx="260" cy="160" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s1_0"/>
+      <text x="240" y="165" font-size="12">0</text>
 
-      <rect id="crimpMedium" x="280" y="300" width="60" height="40" fill="#999"/>
-      <text x="290" y="325">中</text>
+      <circle cx="300" cy="130" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s1_1"/>
+      <text x="315" y="135" font-size="12">1</text>
 
-      <rect id="crimpLarge" x="360" y="300" width="60" height="40" fill="#999"/>
-      <text x="370" y="325">大</text>
+      <circle cx="300" cy="190" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s1_3"/>
+      <text x="315" y="195" font-size="12">3</text>
 
-    </svg>
+      <!-- 三路2 -->
+      <circle cx="520" cy="130" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s2_1"/>
+      <text x="500" y="135" font-size="12">1</text>
 
-    <button id="checkBtn"
-      style="position:absolute; bottom:20px; left:20px;">
-      採点
-    </button>
+      <circle cx="520" cy="190" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s2_3"/>
+      <text x="500" y="195" font-size="12">3</text>
 
-    <div id="result"
-      style="position:absolute; bottom:20px; right:20px;
-             background:#222; color:#fff;
-             padding:10px 15px; border-radius:8px;">
-      ---
-    </div>
+      <circle cx="560" cy="160" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="s2_0"/>
+      <text x="575" y="165" font-size="12">0</text>
+
+      <!-- ランプ -->
+      <circle cx="720" cy="150" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="lamp_L"/>
+      <text x="735" y="155" font-size="12">L</text>
+
+      <circle cx="720" cy="190" r="9" fill="#fff" stroke="#000" stroke-width="2"
+        class="terminal" data-id="lamp_N"/>
+      <text x="735" y="195" font-size="12">N</text>
+
+    </g>
+
+  </svg>
   `;
 }
