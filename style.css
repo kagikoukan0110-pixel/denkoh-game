@@ -1,225 +1,181 @@
-/* ================================
-   俺らの電工 β UI
-================================ */
-
-/* リセット */
+/* ===== 全体リセット ===== */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0f14;
+  font-family: sans-serif;
+  color: white;
+}
+
+/* ===== 横画面強制想定レイアウト ===== */
 body {
-  background: linear-gradient(135deg, #111 0%, #1b1b1b 100%);
-  color: #fff;
-  overflow: hidden;
-}
-
-/* ================================
-   レイアウト（横画面前提）
-================================ */
-
-#gameRoot {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-}
-
-/* 作業エリア */
-#workspace {
-  flex: 1;
-  background: linear-gradient(180deg, #2a2a2a 0%, #1c1c1c 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-/* 右パレット */
-#sidePanel {
-  width: 220px;
-  background: #0f0f0f;
-  border-left: 2px solid #222;
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  gap: 10px;
 }
 
-/* ================================
-   タイトル
-================================ */
+/* ===== HUD ===== */
+#hud {
+  height: 70px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #111, #1a1f28);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 10;
+}
 
-#titleBar {
-  position: absolute;
-  top: 10px;
-  left: 20px;
-  font-size: 20px;
+#gameTitle {
   font-weight: bold;
-  letter-spacing: 2px;
+  font-size: 18px;
+}
+
+.betaTag {
+  font-size: 12px;
+  color: gold;
+}
+
+#stageInfo {
+  font-size: 14px;
   opacity: 0.8;
 }
 
-/* ================================
-   デバイス表示
-================================ */
-
-.device {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  background: #eaeaea;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #111;
-  font-weight: bold;
+#titleInfo {
   font-size: 14px;
-  cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-.device:active {
-  transform: scale(0.95);
-}
-
-.device.active {
-  box-shadow: 0 0 20px #00d4ff;
-}
-
-/* ランプON */
-.device.lamp.on {
-  background: radial-gradient(circle, #fff95e 0%, #f7c600 70%);
-  box-shadow: 0 0 25px #ffd900;
-}
-
-/* ================================
-   パレットアイテム
-================================ */
-
-.palette-item {
-  background: #ffffff;
-  color: #111;
-  padding: 10px;
-  border-radius: 8px;
-  text-align: center;
+#xpInfo {
   font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  opacity: 0.7;
 }
 
-.palette-item:hover {
-  transform: scale(1.05);
-  background: #f5f5f5;
+/* ===== ワークスペース ===== */
+#workspace {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(180deg, #1b2230, #10141d);
+  overflow: hidden;
 }
 
-/* ================================
-   セットボタン
-================================ */
-
-#setBtn {
-  margin-top: auto;
-  padding: 12px;
-  background: linear-gradient(135deg, #00c6ff, #0072ff);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-#setBtn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px #00c6ff;
-}
-
-/* ================================
-   ワイヤーSVG
-================================ */
-
-#wires {
+/* SVG配線 */
+#wireLayer {
   position: absolute;
-  top: 0;
-  left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
-.wire-line {
-  stroke: #ff3b3b;
-  stroke-width: 4;
-  fill: none;
-  stroke-linecap: round;
-  animation: wireGrow 0.3s ease forwards;
+/* ===== 下部バー ===== */
+#bottomBar {
+  height: 70px;
+  flex-shrink: 0;
+  background: #0f1218;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
 }
 
-@keyframes wireGrow {
-  from {
-    stroke-dasharray: 200;
-    stroke-dashoffset: 200;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
+/* ボタン共通 */
+button {
+  background: #1f2635;
+  border: 2px solid #3b82f6;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-/* ================================
-   フリーズ演出
-================================ */
+button:hover {
+  background: #3b82f6;
+}
 
-#freezeOverlay {
+/* ===== モーダル共通 ===== */
+.screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===== ステージ選択 ===== */
+#stageSelect h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+#stageGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 80px);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+/* ===== リザルト ===== */
+#resultRank {
+  font-size: 80px;
+  color: gold;
+  margin-bottom: 20px;
+}
+
+#resultDetails {
+  margin-bottom: 30px;
+}
+
+/* ===== ボスUI ===== */
+#bossUI {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  text-align: center;
+  z-index: 40;
+}
+
+#bossName {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+#bossHPBar {
+  width: 100%;
+  height: 20px;
+  background: #222;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#bossHP {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, red, orange);
+  transition: width 0.3s ease;
+}
+
+/* ===== 演出オーバーレイ ===== */
+#overlay {
   position: fixed;
   inset: 0;
   background: black;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.1s;
-  z-index: 9999;
-}
-
-#freezeOverlay.active {
-  opacity: 1;
-}
-
-/* ================================
-   ボスUI
-================================ */
-
-#bossBanner {
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 40px;
-  font-weight: bold;
-  letter-spacing: 4px;
-  color: #ff0040;
-  text-shadow: 0 0 20px #ff0040;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-#bossBanner.active {
-  opacity: 1;
-}
-
-/* ================================
-   横画面強制
-================================ */
-
-@media screen and (orientation: portrait) {
-  body::before {
-    content: "横画面でプレイしてください";
-    position: fixed;
-    inset: 0;
-    background: #000;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    z-index: 99999;
-  }
+  z-index: 100;
 }
