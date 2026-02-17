@@ -1,4 +1,7 @@
-/* ===== 全体リセット ===== */
+/* =====================================
+   俺らの電工 β 安定レイアウト版
+===================================== */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,32 +12,38 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0d0f14;
-  font-family: sans-serif;
+  background: #0f1117;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   color: white;
 }
 
-/* ===== 横画面強制想定レイアウト ===== */
+/* =====================================
+   全体構造（縦並びベース）
+===================================== */
+
 body {
   display: flex;
   flex-direction: column;
 }
 
-/* ===== HUD ===== */
+/* =====================================
+   HUD（上部固定）
+===================================== */
+
 #hud {
-  height: 70px;
+  height: 60px;
   flex-shrink: 0;
   background: linear-gradient(90deg, #111, #1a1f28);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 16px;
   z-index: 10;
 }
 
 #gameTitle {
   font-weight: bold;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .betaTag {
@@ -43,20 +52,23 @@ body {
 }
 
 #stageInfo {
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.8;
 }
 
 #titleInfo {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 #xpInfo {
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.7;
 }
 
-/* ===== ワークスペース ===== */
+/* =====================================
+   ワークスペース（中央）
+===================================== */
+
 #workspace {
   flex: 1;
   position: relative;
@@ -72,15 +84,18 @@ body {
   pointer-events: none;
 }
 
-/* ===== 下部バー ===== */
+/* =====================================
+   下部バー（縦画面時）
+===================================== */
+
 #bottomBar {
-  height: 70px;
+  height: 60px;
   flex-shrink: 0;
   background: #0f1218;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
 }
 
 /* ボタン共通 */
@@ -88,7 +103,7 @@ button {
   background: #1f2635;
   border: 2px solid #3b82f6;
   color: white;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
@@ -99,7 +114,46 @@ button:hover {
   background: #3b82f6;
 }
 
-/* ===== モーダル共通 ===== */
+/* =====================================
+   横画面最適化
+===================================== */
+
+@media screen and (orientation: landscape) {
+
+  body {
+    flex-direction: column;
+  }
+
+  #hud {
+    height: 60px;
+  }
+
+  #workspace {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    right: 120px;
+  }
+
+  #bottomBar {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    width: 120px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 20px;
+    gap: 15px;
+  }
+}
+
+/* =====================================
+   モーダル共通
+===================================== */
+
 .screen {
   position: fixed;
   inset: 0;
@@ -115,51 +169,60 @@ button:hover {
   display: none !important;
 }
 
-/* ===== ステージ選択 ===== */
+/* =====================================
+   ステージ選択
+===================================== */
+
 #stageSelect h2 {
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 20px;
 }
 
 #stageGrid {
   display: grid;
-  grid-template-columns: repeat(5, 80px);
+  grid-template-columns: repeat(4, 70px);
   gap: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
-/* ===== リザルト ===== */
+/* =====================================
+   リザルト
+===================================== */
+
 #resultRank {
-  font-size: 80px;
+  font-size: 70px;
   color: gold;
   margin-bottom: 20px;
 }
 
 #resultDetails {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
-/* ===== ボスUI ===== */
+/* =====================================
+   ボスUI
+===================================== */
+
 #bossUI {
   position: fixed;
-  top: 80px;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
-  width: 60%;
+  width: 70%;
   text-align: center;
   z-index: 40;
 }
 
 #bossName {
-  font-size: 22px;
-  margin-bottom: 10px;
+  font-size: 18px;
+  margin-bottom: 8px;
 }
 
 #bossHPBar {
   width: 100%;
-  height: 20px;
+  height: 16px;
   background: #222;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -170,7 +233,10 @@ button:hover {
   transition: width 0.3s ease;
 }
 
-/* ===== 演出オーバーレイ ===== */
+/* =====================================
+   演出オーバーレイ
+===================================== */
+
 #overlay {
   position: fixed;
   inset: 0;
