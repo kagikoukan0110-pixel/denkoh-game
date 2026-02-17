@@ -1,47 +1,51 @@
-<style>
+/* ===================================================
+   俺らの電工 β - STABLE CSS
+   iPhone Safari完全対策版
+=================================================== */
 
-/* ===============================
-   iOS Safari 完全安定化ベース
-================================= */
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #0b1220;
-  overflow: hidden;                /* スクロール完全禁止 */
-  -webkit-user-select: none;       /* テキスト選択禁止 */
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
+/* ===== 基本リセット ===== */
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ===============================
-   レイアウト構造
-================================= */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;                 /* スクロール禁止 */
+  background: #0b1220;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color: white;
 
+  -webkit-user-select: none;        /* テキスト選択禁止 */
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Safari描画安定化 */
 body {
   display: flex;
   flex-direction: column;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  color: white;
+  isolation: isolate;
+  will-change: transform;
 }
 
-/* ===== HUD ===== */
+/* ===================================================
+   HUD
+=================================================== */
 
 #hud {
   height: 70px;
+  background: linear-gradient(90deg, #0f1b2f, #15243f);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
-  background: linear-gradient(to right, #0f1b2f, #15243f);
+  padding: 0 18px;
   flex-shrink: 0;
-  z-index: 10;
+  z-index: 20;
 }
 
 #gameTitle {
@@ -51,6 +55,7 @@ body {
 
 .betaTag {
   color: gold;
+  margin-left: 6px;
 }
 
 #stageInfo {
@@ -60,41 +65,42 @@ body {
 
 #titleInfo,
 #xpInfo {
-  text-align: right;
   font-size: 14px;
+  text-align: right;
 }
 
-/* ===== メイン領域 ===== */
+/* ===================================================
+   ワークスペース
+=================================================== */
 
 #workspace {
   flex: 1;
   position: relative;
   overflow: hidden;
-  isolation: isolate; /* Safari描画バグ対策 */
   background:
     linear-gradient(#15243f 1px, transparent 1px),
     linear-gradient(90deg, #15243f 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-/* ===== SVG配線レイヤー ===== */
+/* SVG配線レイヤー */
 
 #wireLayer {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
   z-index: 1;
-  will-change: transform; /* Safari対策 */
 }
 
-/* ===== デバイス ===== */
+/* ===================================================
+   デバイス
+=================================================== */
 
 .device {
   position: absolute;
   width: 90px;
   height: 70px;
-  background: #d9d9d9;
+  background: #e0e0e0;
   border-radius: 12px;
   display: flex;
   justify-content: center;
@@ -104,17 +110,19 @@ body {
   z-index: 5;
 }
 
-/* ===== 端子 ===== */
+/* 端子 */
 
 .terminal {
+  position: absolute;
   width: 14px;
   height: 14px;
   background: #4da6ff;
   border-radius: 50%;
-  position: absolute;
 }
 
-/* ===== 下部バー（横画面では右側固定） ===== */
+/* ===================================================
+   右サイドUI（横画面）
+=================================================== */
 
 #bottomBar {
   position: absolute;
@@ -127,7 +135,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 25px;
   z-index: 10;
 }
 
@@ -142,12 +150,14 @@ body {
   font-size: 14px;
 }
 
-/* ===== スクリーン系 ===== */
+/* ===================================================
+   スクリーン系
+=================================================== */
 
 .screen {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.9);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -159,15 +169,17 @@ body {
   display: none;
 }
 
-/* ===== リザルト ===== */
+/* リザルト */
 
 #resultRank {
-  font-size: 60px;
+  font-size: 64px;
   font-weight: bold;
   margin-bottom: 20px;
 }
 
-/* ===== ボスUI ===== */
+/* ===================================================
+   ボスUI
+=================================================== */
 
 #bossUI {
   position: absolute;
@@ -175,7 +187,7 @@ body {
   left: 0;
   width: 100%;
   padding: 10px 20px;
-  z-index: 20;
+  z-index: 30;
 }
 
 #bossName {
@@ -197,20 +209,22 @@ body {
   background: linear-gradient(to right, #ff4d4d, #ff0000);
 }
 
-/* ===== オーバーレイ演出 ===== */
+/* ===================================================
+   演出オーバーレイ
+=================================================== */
 
 #overlay {
   position: absolute;
   inset: 0;
   background: black;
   opacity: 0;
-  z-index: 100;
   pointer-events: none;
+  z-index: 100;
 }
 
-/* ===============================
-   横画面強制最適化
-================================= */
+/* ===================================================
+   iPhone横画面強制
+=================================================== */
 
 @media screen and (orientation: portrait) {
   body::before {
@@ -222,9 +236,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 999;
     font-size: 20px;
+    z-index: 999;
   }
 }
-
-</style>
