@@ -1,47 +1,122 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1,
-               maximum-scale=1,
-               user-scalable=no,
-               viewport-fit=cover">
+html, body {
+  height: 100%;
+  background: #071423;
+  font-family: sans-serif;
+  overflow: hidden;
+  color: white;
+}
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
-<title>俺らの電工 β</title>
+/* ===== HUD ===== */
+#hud {
+  height: 70px;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #1c2f48, #243b5c);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-<link rel="stylesheet" href="style.css">
-</head>
+#gameTitle {
+  font-size: 20px;
+  font-weight: bold;
+}
 
-<body>
+.betaTag {
+  color: gold;
+}
 
-<div id="hud">
-  <div id="hudLeft">
-    <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
-    <div id="stageInfo">STAGE 1-1</div>
-  </div>
+#stageInfo {
+  font-size: 14px;
+  opacity: 0.7;
+}
 
-  <div id="hudRight">
-    <div id="titleInfo">一般人</div>
-    <div id="xpInfo">XP: 0</div>
-  </div>
-</div>
+/* ===== メインエリア ===== */
+#mainArea {
+  flex: 1;
+  display: flex;
+}
 
-<div id="workspace">
-  <svg id="wireLayer"></svg>
-</div>
+/* ===== ワークスペース ===== */
+#workspace {
+  flex: 1;
+  position: relative;
+  background: radial-gradient(circle at center, #0d1f36, #071423);
+  overflow: hidden;
+}
 
-<div id="sidePanel">
-  <button id="stageBtn">STAGE</button>
-  <button id="breakerBtn">BREAKER</button>
-</div>
+#workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
 
-<script type="module" src="main.js"></script>
+/* ===== サイドパネル ===== */
+#sidePanel {
+  width: 180px;
+  background: #0a2134;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+  gap: 20px;
+}
 
-</body>
-</html>
+#sidePanel button {
+  width: 130px;
+  padding: 12px 0;
+  border-radius: 12px;
+  background: transparent;
+  border: 2px solid #3fa3ff;
+  color: #3fa3ff;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#sidePanel button:active {
+  background: #3fa3ff;
+  color: black;
+}
+
+/* ===== デバイス ===== */
+.device {
+  position: absolute;
+  width: 120px;
+  height: 80px;
+  background: #d9d9d9;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-weight: bold;
+}
+
+/* ===== 端子 ===== */
+.terminal {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: #21a8d8;
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
