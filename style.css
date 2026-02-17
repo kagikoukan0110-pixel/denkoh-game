@@ -16,8 +16,8 @@ body {
 /* ===== HUD ===== */
 
 #hud {
-  height: 70px;
-  padding: 10px 15px;
+  height: 60px;
+  padding: 8px 12px;
   color: white;
   display: flex;
   justify-content: space-between;
@@ -26,16 +26,14 @@ body {
 }
 
 #gameTitle {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
 }
 
-.betaTag {
-  color: gold;
-}
+.betaTag { color: gold; }
 
 #stageInfo {
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.7;
 }
 
@@ -55,57 +53,57 @@ body {
   background-image:
     linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size: 35px 35px;
 }
 
 /* ===== 下部バー ===== */
 
 #bottomBar {
-  height: 70px;
+  height: 60px;
   background: #1c2f48;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 25px;
+  gap: 20px;
 }
 
 #bottomBar button {
-  width: 90px;
-  height: 35px;
-  border-radius: 12px;
+  width: 75px;
+  height: 30px;
+  border-radius: 10px;
   background: transparent;
   border: 2px solid #3fa3ff;
   color: #3fa3ff;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
 }
 
-/* ===== デバイス ===== */
+/* ===== デバイス（さらに縮小） ===== */
 
 .device {
   position: absolute;
-  width: 90px;
-  height: 55px;
+  width: 75px;
+  height: 45px;
   background: #d9d9d9;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
   color: black;
 }
 
-/* ===== 端子 ===== */
+/* ===== 端子（内側配置） ===== */
 
 .terminal {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   background: #21a8d8;
   border-radius: 50%;
   color: white;
-  font-size: 11px;
+  font-size: 9px;
   display: flex;
   justify-content: center;
   align-items: center;
