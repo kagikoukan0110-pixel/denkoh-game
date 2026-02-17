@@ -1,5 +1,10 @@
-export class Graph {
-  constructor(){
-    this.connections = [];
-  }
+export function buildGraph(devices){
+
+  const graph = {};
+
+  devices.forEach(d=>{
+    graph[d.dataset.id] = [];
+  });
+
+  return graph;
 }
