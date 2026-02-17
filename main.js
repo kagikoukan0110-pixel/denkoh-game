@@ -1,11 +1,4 @@
 const workspace = document.getElementById("workspace")
-const wireLayer = document.getElementById("wireLayer")
-
-let devices = []
-
-/* ===========================
-   デバイス生成
-=========================== */
 
 function createDevice(type, x, y) {
   const div = document.createElement("div")
@@ -16,35 +9,27 @@ function createDevice(type, x, y) {
 
   workspace.appendChild(div)
 
-  const device = { type, element: div }
-
   if (type === "電源") {
-    createTerminal(div, "L", 70, 10)
-    createTerminal(div, "N", 70, 30)
+    createTerminal(div, "L", 52, 8)
+    createTerminal(div, "N", 52, 24)
   }
 
   if (type === "三路") {
-    // 0 左中央
-    createTerminal(div, "0", -10, 18)
+    // 0 左内側中央
+    createTerminal(div, "0", -8, 14)
 
-    // 1 右上
-    createTerminal(div, "1", 80, 5)
+    // 1 右上内側
+    createTerminal(div, "1", 58, 4)
 
-    // 3 右下
-    createTerminal(div, "3", 80, 30)
+    // 3 右下内側
+    createTerminal(div, "3", 58, 24)
   }
 
   if (type === "ランプ") {
-    createTerminal(div, "L", 70, 10)
-    createTerminal(div, "N", 70, 30)
+    createTerminal(div, "L", 52, 8)
+    createTerminal(div, "N", 52, 24)
   }
-
-  devices.push(device)
 }
-
-/* ===========================
-   端子生成
-=========================== */
 
 function createTerminal(parent, label, x, y) {
   const t = document.createElement("div")
@@ -55,15 +40,15 @@ function createTerminal(parent, label, x, y) {
   parent.appendChild(t)
 }
 
-/* ===========================
-   初期配置（縦画面最適化）
-=========================== */
+/* ===== 横並び完全表示位置 ===== */
 
 function init() {
-  createDevice("電源", 30, 360)
-  createDevice("三路", 140, 360)
-  createDevice("三路", 250, 360)
-  createDevice("ランプ", 360, 360)
+  const baseY = 380
+
+  createDevice("電源", 15, baseY)
+  createDevice("三路", 105, baseY)
+  createDevice("三路", 195, baseY)
+  createDevice("ランプ", 285, baseY)
 }
 
 init()
