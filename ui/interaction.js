@@ -1,30 +1,62 @@
-export function setupInteraction(workspace){
+import { state } from "../core/state.js";
 
-  let dragging = null;
-  let offsetX = 0;
-  let offsetY = 0;
+let selected = null;
 
-  workspace.addEventListener("pointerdown",(e)=>{
-    const target = e.target.closest(".device");
-    if(!target) return;
+export function setupInteraction(){
 
-    dragging = target;
+  document.addEventListener("click",(e)=>{
 
-    const rect = target.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
+    if(!e.target.classList.contains("device")) return;
 
-    target.setPointerCapture(e.pointerId);
+    if(!selected){
+      selected = e.target;
+      selected.style.background = "yellow";
+    }
+    else{
+      createWire(selected, e.target);
+      selected.style.background = "";
+      selected = null;
+    }
+
+  });
+}
+
+function createWire(d1,d2){
+
+  state.wires.push({
+    from:d1.dataset.id,
+    to:d2.dataset.id
   });
 
-  workspace.addEventListener("pointermove",(e)=>{
-    if(!dragging) return;
+  checkClear();
+}
 
-    dragging.style.left = (e.clientX - offsetX) + "px";
-    dragging.style.top = (e.clientY - offsetY) + "px";
-  });
+function checkClear(){
 
-  workspace.addEventListener("pointerup",()=>{
-    dragging = null;
-  });
+  const hasConnection =
+    state.wires.find(w=>
+      (w.from==="S1" && w.to==="L1") ||
+      (w.from==="L1" && w.to==="S1")
+    );
+
+  if(hasConnection){
+    showClear();
+  }
+}
+
+function showClear(){
+
+  const overlay = document.getElementById("overlay");
+  overlay.style.display="flex";
+  overlay.innerText="CLEAR!";
+
+  setTimeout(()=>{
+    overlay.style.display="none";
+    nextStage();
+  },1500);
+}
+
+function nextStage(){
+  state.level++;
+  window.startStage(state.level);
 }
