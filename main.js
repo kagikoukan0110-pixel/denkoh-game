@@ -1,143 +1,156 @@
-const workspace = document.getElementById("workspace");
-const wireLayer = document.getElementById("wireLayer");
-const breakerBtn = document.getElementById("breakerBtn");
-const result = document.getElementById("result");
+const workspace = document.getElementById("workspace")
+const wireLayer = document.getElementById("wireLayer")
+const clearOverlay = document.getElementById("clearOverlay")
+const retryBtn = document.getElementById("retryBtn")
 
-let wires = [];
-let breakerOn = false;
-let selected = null;
+let devices = []
+let wires = []
+let currentStart = null
 
-function createDevice(label, x, y) {
-  const el = document.createElement("div");
-  el.className = "device";
-  el.style.left = x + "px";
-  el.style.top = y + "px";
-  el.innerText = label;
-  workspace.appendChild(el);
-  return el;
-}
+/* ===========================
+   デバイス生成
+=========================== */
 
-function createTerminal(device, name, dx, dy) {
-  const t = document.createElement("div");
-  t.className = "terminal";
-  t.innerText = name;
-  t.style.left = dx + "px";
-  t.style.top = dy + "px";
-  device.appendChild(t);
+function createDevice(type, x, y) {
+  const div = document.createElement("div")
+  div.className = "device"
+  div.style.left = x + "px"
+  div.style.top = y + "px"
+  div.innerText = type
 
-  t.dataset.key = device.innerText + "-" + name;
-  t.addEventListener("click", () => selectTerminal(t));
-}
+  workspace.appendChild(div)
 
-function selectTerminal(t) {
-  if (!selected) {
-    selected = t;
-    return;
+  const device = { type, element: div, terminals: {} }
+
+  if (type === "電源") {
+    createTerminal(device, "L", -10, 15)
+    createTerminal(device, "N", -10, 45)
   }
 
-  if (selected === t) {
-    selected = null;
-    return;
+  if (type === "三路") {
+    // 0 左
+    createTerminal(device, "0", -10, 30)
+    // 1 右上
+    createTerminal(device, "1", 110, 15)
+    // 3 右下
+    createTerminal(device, "3", 110, 45)
   }
 
-  drawWire(selected, t);
-  selected = null;
-}
-
-function drawWire(a, b) {
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-
-  const rectA = a.getBoundingClientRect();
-  const rectB = b.getBoundingClientRect();
-  const rectW = workspace.getBoundingClientRect();
-
-  line.setAttribute("x1", rectA.left - rectW.left + 11);
-  line.setAttribute("y1", rectA.top - rectW.top + 11);
-  line.setAttribute("x2", rectB.left - rectW.left + 11);
-  line.setAttribute("y2", rectB.top - rectW.top + 11);
-  line.setAttribute("stroke","red");
-  line.setAttribute("stroke-width","3");
-
-  wireLayer.appendChild(line);
-
-  wires.push([a.dataset.key, b.dataset.key]);
-}
-
-function buildGraph() {
-  let graph = {};
-
-  wires.forEach(([a,b])=>{
-    if(!graph[a]) graph[a] = [];
-    if(!graph[b]) graph[b] = [];
-    graph[a].push(b);
-    graph[b].push(a);
-  });
-
-  return graph;
-}
-
-function dfs(graph, start) {
-  let visited = new Set();
-  let stack = [start];
-
-  while(stack.length){
-    const node = stack.pop();
-    if(!visited.has(node)){
-      visited.add(node);
-      (graph[node] || []).forEach(n => stack.push(n));
-    }
+  if (type === "ランプ") {
+    createTerminal(device, "L", -10, 30)
+    createTerminal(device, "N", 110, 30)
   }
 
-  return visited;
+  devices.push(device)
 }
+
+/* ===========================
+   端子生成
+=========================== */
+
+function createTerminal(device, label, offsetX, offsetY) {
+  const t = document.createElement("div")
+  t.className = "terminal"
+  t.innerText = label
+
+  t.style.left = offsetX + "px"
+  t.style.top = offsetY + "px"
+
+  device.element.appendChild(t)
+
+  device.terminals[label] = t
+
+  t.addEventListener("click", (e) => {
+    e.stopPropagation()
+    handleTerminalClick(device, label)
+  })
+}
+
+/* ===========================
+   配線処理
+=========================== */
+
+function handleTerminalClick(device, label) {
+  const terminal = device.terminals[label]
+
+  if (!currentStart) {
+    currentStart = { device, label, terminal }
+    return
+  }
+
+  if (currentStart.device === device) {
+    currentStart = null
+    return
+  }
+
+  drawWire(currentStart.terminal, terminal)
+
+  wires.push({
+    from: currentStart.device.type + currentStart.label,
+    to: device.type + label
+  })
+
+  currentStart = null
+
+  checkClear()
+}
+
+function drawWire(t1, t2) {
+  const rect1 = t1.getBoundingClientRect()
+  const rect2 = t2.getBoundingClientRect()
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
+
+  line.setAttribute("x1", rect1.left + rect1.width / 2)
+  line.setAttribute("y1", rect1.top + rect1.height / 2)
+  line.setAttribute("x2", rect2.left + rect2.width / 2)
+  line.setAttribute("y2", rect2.top + rect2.height / 2)
+
+  line.setAttribute("stroke", "red")
+  line.setAttribute("stroke-width", "4")
+
+  wireLayer.appendChild(line)
+}
+
+/* ===========================
+   クリア判定（β簡易）
+=========================== */
 
 function checkClear() {
+  const hasPower = wires.some(w =>
+    w.from.includes("電源L") && w.to.includes("三路0")
+  )
 
-  if (!breakerOn) return;
+  const hasLamp = wires.some(w =>
+    w.from.includes("三路1") && w.to.includes("ランプL")
+  )
 
-  const graph = buildGraph();
-
-  // 電源Lが配線されていないなら即終了
-  if (!graph["電源-L"]) return;
-
-  const powered = dfs(graph,"電源-L");
-
-  const lampL = powered.has("ランプ-L");
-  const lampN = powered.has("ランプ-N");
-
-  if (lampL && lampN) {
-    result.classList.remove("hidden");
+  if (hasPower && hasLamp) {
+    clearOverlay.style.display = "flex"
   }
 }
 
-breakerBtn.onclick = ()=>{
-  breakerOn = !breakerOn;
-  checkClear();
-};
+/* ===========================
+   リトライ
+=========================== */
+
+retryBtn.addEventListener("click", () => {
+  location.reload()
+})
+
+/* ===========================
+   初期化
+=========================== */
 
 function init() {
+  devices = []
+  wires = []
+  wireLayer.innerHTML = ""
 
-  wires = [];
-  wireLayer.innerHTML = "";
-  result.classList.add("hidden");
-
-  const power = createDevice("電源",40,280);
-  createTerminal(power,"L",80,15);
-  createTerminal(power,"N",80,40);
-
-  const sw1 = createDevice("三路",170,280);
-  createTerminal(sw1,"0",-11,25);
-  createTerminal(sw1,"1",89,5);
-  createTerminal(sw1,"3",89,45);
-
-  const sw2 = createDevice("三路",310,280);
-  createTerminal(sw2,"0",-11,25);
-  createTerminal(sw2,"1",89,5);
-  createTerminal(sw2,"3",89,45);
-
-  const lamp = createDevice("ランプ",450,280);
-  createTerminal(lamp,"L",-11,25);
-  createTerminal(lamp,"N",89,25);
+  createDevice("電源", 40, 400)
+  createDevice("三路", 180, 400)
+  createDevice("三路", 340, 400)
+  createDevice("ランプ", 500, 400)
 }
 
-init();
+init()
