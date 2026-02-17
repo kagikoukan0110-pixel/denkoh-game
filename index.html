@@ -1,37 +1,169 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>俺らの電工 β</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>俺らの電工 β</title>
+
+  <!-- CSS（キャッシュ対策） -->
+  <link rel="stylesheet" href="./style.css?v=7" />
+
+  <style>
+    /* 縦画面専用 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0b1c2d;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== HUD ===== */
+    #hud {
+      flex-shrink: 0;
+      height: 70px;
+      padding: 10px 15px;
+      background: linear-gradient(90deg, #1c2f48, #243b5c);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    #gameTitle {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .betaTag {
+      color: gold;
+    }
+
+    #stageInfo {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    #titleInfo, #xpInfo {
+      text-align: right;
+      font-size: 12px;
+    }
+
+    /* ===== ワークスペース ===== */
+    #workspace {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at center, #0d1f36, #071423);
+      overflow: hidden;
+    }
+
+    /* グリッド */
+    #workspace::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ===== 下部バー ===== */
+    #bottomBar {
+      flex-shrink: 0;
+      height: 60px;
+      background: #132b44;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+
+    #bottomBar button {
+      width: 80px;
+      height: 30px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 2px solid #3fa3ff;
+      background: transparent;
+      color: #3fa3ff;
+      font-weight: bold;
+    }
+
+    #bottomBar button:active {
+      background: #3fa3ff;
+      color: black;
+    }
+
+    /* ===== CLEAR表示 ===== */
+    #clearOverlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: gold;
+      font-size: 48px;
+      font-weight: bold;
+      z-index: 100;
+    }
+
+    #clearOverlay button {
+      margin-top: 20px;
+      width: 100px;
+      height: 35px;
+      border-radius: 10px;
+      border: 2px solid #3fa3ff;
+      background: transparent;
+      color: #3fa3ff;
+      font-weight: bold;
+    }
+
+  </style>
 </head>
+
 <body>
 
-<div id="hud">
-  <div>
-    <div id="gameTitle">俺らの電工 <span class="beta">β</span></div>
-    <div id="stageInfo">STAGE 1-1</div>
+  <!-- ===== HUD ===== -->
+  <div id="hud">
+    <div>
+      <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
+      <div id="stageInfo">STAGE 1-1</div>
+    </div>
+    <div>
+      <div id="titleInfo">一般人</div>
+      <div id="xpInfo">XP: 0</div>
+    </div>
   </div>
-  <div id="playerInfo">
-    <div>一般人</div>
-    <div>XP: 0</div>
+
+  <!-- ===== ワークスペース ===== -->
+  <div id="workspace">
+    <svg id="wireLayer"></svg>
+
+    <!-- CLEAR表示 -->
+    <div id="clearOverlay">
+      CLEAR
+      <button id="retryBtn">RETRY</button>
+    </div>
   </div>
-</div>
 
-<div id="workspace">
-  <svg id="wireLayer"></svg>
-</div>
-<script type="module" src="./main.js?v=2"></script>
-<div id="controls">
-  <button id="breakerBtn">BREAKER</button>
-</div>
+  <!-- ===== 下部バー ===== -->
+  <div id="bottomBar">
+    <button id="stageSelectBtn">STAGE</button>
+    <button id="breakerBtn">BREAKER</button>
+  </div>
 
-<div id="result" class="hidden">
-  <div id="resultText">CLEAR</div>
-  <button onclick="location.reload()">RETRY</button>
-</div>
-
+  <!-- JS（超強制キャッシュ破壊） -->
+  <script type="module" src="./main.js?v=999"></script>
 
 </body>
 </html>
