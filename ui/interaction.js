@@ -4,8 +4,11 @@ export function setupInteraction(graph, scoring){
   const breaker = document.getElementById("breaker");
   const s1 = document.getElementById("s1");
   const s2 = document.getElementById("s2");
-  const checkBtn = document.getElementById("checkBtn");
   const resultBox = document.getElementById("result");
+
+  const small = document.getElementById("crimpSmall");
+  const medium = document.getElementById("crimpMedium");
+  const large = document.getElementById("crimpLarge");
 
   breaker.addEventListener("click", ()=>{
     graph.toggleBreaker();
@@ -23,22 +26,38 @@ export function setupInteraction(graph, scoring){
     updateLamp();
   });
 
-  checkBtn.addEventListener("click", ()=>{
+  small.addEventListener("click", ()=>{
+    graph.setCrimp("small");
+    small.setAttribute("fill","#4caf50");
+  });
 
-    const result = scoring.run();
+  medium.addEventListener("click", ()=>{
+    graph.setCrimp("medium");
+    medium.setAttribute("fill","#ff9800");
+  });
 
-    if(result.major){
-      resultBox.innerHTML = result.major;
-      resultBox.style.background = "#b00020";
-      return;
-    }
+  large.addEventListener("click", ()=>{
+    graph.setCrimp("large");
+    large.setAttribute("fill","#f44336");
+  });
 
-    resultBox.innerHTML =
-      `得点: ${result.score}<br>` +
-      `判定: ${result.pass ? "合格水準" : "再確認が必要"}`;
+  document.getElementById("checkBtn")
+    .addEventListener("click", ()=>{
 
-    resultBox.style.background =
-      result.pass ? "#2e7d32" : "#c62828";
+      const result = scoring.run();
+
+      if(result.major){
+        resultBox.innerHTML = result.major;
+        resultBox.style.background = "#b00020";
+        return;
+      }
+
+      resultBox.innerHTML =
+        `得点: ${result.score}<br>` +
+        `判定: ${result.pass ? "合格水準" : "再確認が必要"}`;
+
+      resultBox.style.background =
+        result.pass ? "#2e7d32" : "#c62828";
   });
 
   function updateLamp(){
