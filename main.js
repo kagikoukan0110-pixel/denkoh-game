@@ -1,5 +1,10 @@
 const workspace = document.getElementById("workspace")
 
+/* 横レイヤー作成 */
+const deviceLayer = document.createElement("div")
+deviceLayer.id = "deviceLayer"
+workspace.appendChild(deviceLayer)
+
 function createDevice(type, x, y) {
   const div = document.createElement("div")
   div.className = "device"
@@ -7,27 +12,22 @@ function createDevice(type, x, y) {
   div.style.top = y + "px"
   div.innerText = type
 
-  workspace.appendChild(div)
+  deviceLayer.appendChild(div)
 
   if (type === "電源") {
-    createTerminal(div, "L", 52, 8)
-    createTerminal(div, "N", 52, 24)
+    createTerminal(div, "L", 48, 6)
+    createTerminal(div, "N", 48, 24)
   }
 
   if (type === "三路") {
-    // 0 左内側中央
-    createTerminal(div, "0", -8, 14)
-
-    // 1 右上内側
-    createTerminal(div, "1", 58, 4)
-
-    // 3 右下内側
-    createTerminal(div, "3", 58, 24)
+    createTerminal(div, "0", -6, 14)
+    createTerminal(div, "1", 52, 4)
+    createTerminal(div, "3", 52, 24)
   }
 
   if (type === "ランプ") {
-    createTerminal(div, "L", 52, 8)
-    createTerminal(div, "N", 52, 24)
+    createTerminal(div, "L", 48, 6)
+    createTerminal(div, "N", 48, 24)
   }
 }
 
@@ -40,15 +40,15 @@ function createTerminal(parent, label, x, y) {
   parent.appendChild(t)
 }
 
-/* ===== 横並び完全表示位置 ===== */
+/* ===== 横並び配置 ===== */
 
 function init() {
   const baseY = 380
 
-  createDevice("電源", 15, baseY)
-  createDevice("三路", 105, baseY)
-  createDevice("三路", 195, baseY)
-  createDevice("ランプ", 285, baseY)
+  createDevice("電源", 20, baseY)
+  createDevice("三路", 110, baseY)
+  createDevice("三路", 200, baseY)
+  createDevice("ランプ", 290, baseY)
 }
 
 init()
