@@ -3,7 +3,7 @@ export function createDevice(type) {
   el.classList.add("device");
   el.dataset.type = type;
   el.dataset.id = crypto.randomUUID();
-
+  
   switch (type) {
     case "switch-left":
       el.textContent = "三路 左0";
