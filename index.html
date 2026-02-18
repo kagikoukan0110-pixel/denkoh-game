@@ -1,169 +1,114 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>俺らの電工 β</title>
+body {
+  margin:0;
+  background:#071423;
+  color:white;
+  font-family:sans-serif;
+}
 
-  <!-- CSS（キャッシュ対策） -->
-  <link rel="stylesheet" href="./style.css?v=7" />
+#hud{
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  background:#1c2f48;
+}
 
-  <style>
-    /* 縦画面専用 */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #0b1c2d;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
+#workspace{
+  position:relative;
+  height:80vh;
+  overflow-x:auto;
+  background:#071423;
+}
 
-    body {
-      display: flex;
-      flex-direction: column;
-    }
+#wiresLayer{
+  position:absolute;
+}
 
-    /* ===== HUD ===== */
-    #hud {
-      flex-shrink: 0;
-      height: 70px;
-      padding: 10px 15px;
-      background: linear-gradient(90deg, #1c2f48, #243b5c);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: white;
-      box-sizing: border-box;
-    }
+.device{
+  position:absolute;
+  width:70px;
+  height:45px;
+  background:#d9d9d9;
+  border-radius:12px;
+  text-align:center;
+  line-height:45px;
+  font-size:12px;
+  color:black;
+  font-weight:bold;
+}
 
-    #gameTitle {
-      font-size: 18px;
-      font-weight: bold;
-    }
+.terminal{
+  position:absolute;
+  width:14px;
+  height:14px;
+  background:#21a8d8;
+  border-radius:50%;
+  font-size:8px;
+  line-height:14px;
+  text-align:center;
+  color:white;
+}
 
-    .betaTag {
-      color: gold;
-    }
+.on{
+  background:radial-gradient(circle,#ffff99,#ffcc00);
+  box-shadow:0 0 25px gold;
+}
 
-    #stageInfo {
-      font-size: 12px;
-      opacity: 0.7;
-    }
+#bossUI{
+  position:absolute;
+  top:10px;
+  left:10px;
+  width:200px;
+}
 
-    #titleInfo, #xpInfo {
-      text-align: right;
-      font-size: 12px;
-    }
+#bossBar{
+  height:15px;
+  background:#333;
+  border-radius:8px;
+  overflow:hidden;
+}
 
-    /* ===== ワークスペース ===== */
-    #workspace {
-      flex: 1;
-      position: relative;
-      background: radial-gradient(circle at center, #0d1f36, #071423);
-      overflow: hidden;
-    }
+#bossHP{
+  height:100%;
+  width:100%;
+  background:red;
+}
 
-    /* グリッド */
-    #workspace::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
+#freeze{
+  position:absolute;
+  inset:0;
+  background:black;
+  opacity:0;
+  pointer-events:none;
+}
 
-    /* ===== 下部バー ===== */
-    #bottomBar {
-      flex-shrink: 0;
-      height: 60px;
-      background: #132b44;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-    }
+.freeze-blackout{
+  animation:blackout 0.4s forwards;
+}
 
-    #bottomBar button {
-      width: 80px;
-      height: 30px;
-      font-size: 12px;
-      border-radius: 8px;
-      border: 2px solid #3fa3ff;
-      background: transparent;
-      color: #3fa3ff;
-      font-weight: bold;
-    }
+@keyframes blackout{
+  0%{opacity:0;}
+  50%{opacity:1;}
+  100%{opacity:0;}
+}
 
-    #bottomBar button:active {
-      background: #3fa3ff;
-      color: black;
-    }
+.rainbow-bg{
+  animation:rainbowFlash 1s linear forwards;
+}
 
-    /* ===== CLEAR表示 ===== */
-    #clearOverlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      color: gold;
-      font-size: 48px;
-      font-weight: bold;
-      z-index: 100;
-    }
+@keyframes rainbowFlash{
+  0%{background:#000;}
+  25%{background:red;}
+  50%{background:yellow;}
+  75%{background:blue;}
+  100%{background:#071423;}
+}
 
-    #clearOverlay button {
-      margin-top: 20px;
-      width: 100px;
-      height: 35px;
-      border-radius: 10px;
-      border: 2px solid #3fa3ff;
-      background: transparent;
-      color: #3fa3ff;
-      font-weight: bold;
-    }
-
-  </style>
-</head>
-
-<body>
-
-  <!-- ===== HUD ===== -->
-  <div id="hud">
-    <div>
-      <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
-      <div id="stageInfo">STAGE 1-1</div>
-    </div>
-    <div>
-      <div id="titleInfo">一般人</div>
-      <div id="xpInfo">XP: 0</div>
-    </div>
-  </div>
-
-  <!-- ===== ワークスペース ===== -->
-  <div id="workspace">
-    <svg id="wireLayer"></svg>
-
-    <!-- CLEAR表示 -->
-    <div id="clearOverlay">
-      CLEAR
-      <button id="retryBtn">RETRY</button>
-    </div>
-  </div>
-
-  <!-- ===== 下部バー ===== -->
-  <div id="bottomBar">
-    <button id="stageSelectBtn">STAGE</button>
-    <button id="breakerBtn">BREAKER</button>
-  </div>
-
-  <!-- JS（超強制キャッシュ破壊） -->
-  <script type="module" src="./main.js?v=999"></script>
-
-</body>
-</html>
+#clearText{
+  position:absolute;
+  inset:0;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  font-size:40px;
+  color:gold;
+}
