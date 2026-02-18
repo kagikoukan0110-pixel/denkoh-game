@@ -83,7 +83,29 @@ body{
   justify-content:center;
   align-items:center;
 }
+/* ===== フリーズ用 ===== */
 
+#freeze{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:9998;
+  background:black;
+  transition:background 0.2s;
+}
+
+#clearText{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:9999;
+  color:#4dd0ff;
+  font-size:48px;
+  font-weight:bold;
+  text-align:center;
+  padding-top:40vh;
+  text-shadow:0 0 25px #4dd0ff, 0 0 60px #00f;
+}
 /* L/N 右側固定 */
 .terminal.L{
   right:-10px;
