@@ -296,3 +296,4 @@ document.addEventListener("keydown",(e)=>{
 });
 
 updateUI();
+startBossBattle();
