@@ -1,114 +1,157 @@
-body {
+/* ===== 全体 ===== */
+
+body{
   margin:0;
-  background:#071423;
-  color:white;
   font-family:sans-serif;
+  background:radial-gradient(circle at center,#0d1f36,#071423);
+  color:white;
+  overflow-x:auto;
 }
+
+/* ===== ヘッダー ===== */
 
 #hud{
-  padding:10px;
+  background:linear-gradient(90deg,#1c2f48,#243b5c);
+  padding:12px;
   display:flex;
   justify-content:space-between;
-  background:#1c2f48;
+  align-items:center;
 }
 
-#workspace{
-  position:relative;
-  height:80vh;
-  overflow-x:auto;
-  background:#071423;
-}
-
-#wiresLayer{
-  position:absolute;
-}
-
-.device{
-  position:absolute;
-  width:70px;
-  height:45px;
-  background:#d9d9d9;
-  border-radius:12px;
-  text-align:center;
-  line-height:45px;
-  font-size:12px;
-  color:black;
+#gameTitle{
+  font-size:20px;
   font-weight:bold;
 }
 
-.terminal{
-  position:absolute;
-  width:14px;
-  height:14px;
-  background:#21a8d8;
-  border-radius:50%;
-  font-size:8px;
-  line-height:14px;
-  text-align:center;
-  color:white;
+.betaTag{
+  color:gold;
 }
 
-.on{
-  background:radial-gradient(circle,#ffff99,#ffcc00);
-  box-shadow:0 0 25px gold;
+#stageInfo{
+  font-size:14px;
+  opacity:0.7;
 }
 
-#bossUI{
-  position:absolute;
-  top:10px;
-  left:10px;
-  width:200px;
+/* ===== ワークスペース ===== */
+
+#workspace{
+  min-height:60vh;
+  position:relative;
+  background:radial-gradient(circle at center,#0d1f36,#071423);
+  overflow-x:auto;
+  white-space:nowrap;
 }
 
-#bossBar{
-  height:15px;
-  background:#333;
-  border-radius:8px;
-  overflow:hidden;
-}
-
-#bossHP{
-  height:100%;
-  width:100%;
-  background:red;
-}
-
-#freeze{
+/* グリッド */
+#workspace::before{
+  content:"";
   position:absolute;
   inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+
+/* ===== デバイス ===== */
+
+.device{
+  display:inline-flex;
+  position:relative;
+  width:90px;
+  height:55px;
+  background:#d9d9d9;
+  border-radius:12px;
+  justify-content:center;
+  align-items:center;
+  color:black;
+  font-weight:bold;
+  margin:20px;
+}
+
+/* ===== 端子 ===== */
+
+.terminal{
+  position:absolute;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#21a8d8;
+  color:white;
+  font-size:11px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* L/N 右側固定 */
+.terminal.L{
+  right:-10px;
+  top:8px;
+}
+.terminal.N{
+  right:-10px;
+  bottom:8px;
+}
+
+/* 三路 */
+.terminal.t0{
+  left:-10px;
+  top:50%;
+  transform:translateY(-50%);
+}
+.terminal.t1{
+  right:-10px;
+  top:6px;
+}
+.terminal.t3{
+  right:-10px;
+  bottom:6px;
+}
+
+/* ===== 下部ボタン ===== */
+
+#bottomBar{
+  background:#1c2f48;
+  padding:15px;
+  text-align:center;
+}
+
+button{
+  width:100px;
+  height:40px;
+  border-radius:12px;
+  border:2px solid #3fa3ff;
+  background:transparent;
+  color:#3fa3ff;
+  font-weight:bold;
+  margin:5px;
+}
+
+/* ===== フリーズ演出 ===== */
+
+#freeze{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:9998;
   background:black;
-  opacity:0;
-  pointer-events:none;
-}
-
-.freeze-blackout{
-  animation:blackout 0.4s forwards;
-}
-
-@keyframes blackout{
-  0%{opacity:0;}
-  50%{opacity:1;}
-  100%{opacity:0;}
-}
-
-.rainbow-bg{
-  animation:rainbowFlash 1s linear forwards;
-}
-
-@keyframes rainbowFlash{
-  0%{background:#000;}
-  25%{background:red;}
-  50%{background:yellow;}
-  75%{background:blue;}
-  100%{background:#071423;}
 }
 
 #clearText{
-  position:absolute;
+  position:fixed;
   inset:0;
   display:none;
-  justify-content:center;
-  align-items:center;
-  font-size:40px;
+  z-index:9999;
   color:gold;
+  font-size:48px;
+  font-weight:bold;
+  text-align:center;
+  padding-top:40vh;
+  text-shadow:0 0 20px gold;
+}
+
+@keyframes rainbowMove{
+  0%{filter:hue-rotate(0deg);}
+  100%{filter:hue-rotate(360deg);}
 }
