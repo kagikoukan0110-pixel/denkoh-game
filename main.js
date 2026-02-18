@@ -1,50 +1,37 @@
-const clearText = document.getElementById("clearText");
-const freeze = document.getElementById("freeze");
+const freezeBtn = document.getElementById("freezeBtn");
+const freezeScreen = document.getElementById("freezeScreen");
 
-// ===== 音 =====
 const freezeSound = new Audio("sound/freeze.mp3");
 const impactSound = new Audio("sound/impact.mp3");
 
-freezeSound.preload = "auto";
-impactSound.preload = "auto";
+let isFreezing = false;
 
-let freezeActive = false;
+freezeBtn.addEventListener("click", () => {
 
-function titleFreeze(title = "電気神ゼウス") {
-  if (freezeActive) return;
-  freezeActive = true;
+  if (isFreezing) return;
+  isFreezing = true;
 
-  // ===== プチュン =====
-  freeze.style.display = "block";
-  freeze.style.background = "black";
+  // 画面表示
+  freezeScreen.style.display = "flex";
 
-  impactSound.currentTime = 0;
-  impactSound.play();
+  // レインボー開始
+  freezeScreen.classList.add("rainbow");
 
+  // フリーズ音
+  freezeSound.currentTime = 0;
+  freezeSound.play().catch(e => console.log(e));
+
+  // 0.8秒後 プチュン衝撃
   setTimeout(() => {
+    impactSound.currentTime = 0;
+    impactSound.play().catch(e => console.log(e));
+  }, 800);
 
-    // ===== フリーズ本編 =====
-    clearText.textContent = title;
-    clearText.style.display = "block";
-
-    freezeSound.currentTime = 0;
-    freezeSound.play();
-
-    document.body.style.animation = "rainbowMove 1s linear infinite";
-
-  }, 300); // 0.3秒プチュン
-
+  // 4秒後解除
   setTimeout(() => {
-    freeze.style.display = "none";
-    clearText.style.display = "none";
-    document.body.style.animation = "none";
-    freezeActive = false;
-  }, 4500);
-}
+    freezeScreen.style.display = "none";
+    freezeScreen.classList.remove("rainbow");
+    isFreezing = false;
+  }, 4000);
 
-function testFreeze(){
-  titleFreeze("電気神ゼウス");
-}
-
-window.titleFreeze = titleFreeze;
-window.testFreeze = testFreeze;
+});
