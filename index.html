@@ -3,31 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>俺らの電工β</title>
+<title>俺らの電工 β</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="header">
+<header id="hud">
   <div>
     <h1>俺らの電工 <span class="beta">β</span></h1>
     <p>STAGE 1-1</p>
   </div>
-  <div class="xp">
-    <p>一般人</p>
-    <p>XP: 0</p>
+  <div>
+    <p id="comboUI">COMBO: 0</p>
   </div>
 </header>
 
-<main class="main">
-
-  <div id="freezeScreen" class="freeze-screen">
-    <div class="freeze-text">電気神ゼウス</div>
+<div id="battleUI">
+  <div>
+    <p>ボスHP</p>
+    <div class="bar"><div id="bossHP" class="boss"></div></div>
   </div>
 
-  <button id="freezeBtn" class="freeze-btn">フリーズTEST</button>
+  <div>
+    <p>プレイヤーHP</p>
+    <div class="bar"><div id="playerHP" class="player"></div></div>
+  </div>
+</div>
 
+<main id="workspace">
+  <div id="freezeScreen" class="freeze-screen"></div>
+  <button id="freezeBtn" class="test-btn">フリーズTEST</button>
 </main>
 
 <script src="main.js"></script>
