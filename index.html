@@ -2,39 +2,35 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>俺らの電工 β</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header id="hud">
-  <div>
-    <h1>俺らの電工 <span class="beta">β</span></h1>
-    <p>STAGE 1-1</p>
-  </div>
-  <div>
-    <p id="comboUI">COMBO: 0</p>
-  </div>
-</header>
+<div id="hud">
+  <div>俺らの電工 β</div>
+  <div id="comboUI">COMBO: 0</div>
+</div>
 
-<div id="battleUI">
-  <div>
-    <p>ボスHP</p>
-    <div class="bar"><div id="bossHP" class="boss"></div></div>
+<div id="bossUI">
+  <div class="barWrap">
+    <div>BOSS</div>
+    <div class="bar"><div id="bossHP" class="fill red"></div></div>
   </div>
 
-  <div>
-    <p>プレイヤーHP</p>
-    <div class="bar"><div id="playerHP" class="player"></div></div>
+  <div class="barWrap">
+    <div>PLAYER</div>
+    <div class="bar"><div id="playerHP" class="fill blue"></div></div>
   </div>
 </div>
 
-<main id="workspace">
-  <div id="freezeScreen" class="freeze-screen"></div>
-  <button id="freezeBtn" class="test-btn">フリーズTEST</button>
-</main>
+<div id="workspace">
+  <svg id="wireLayer"></svg>
+</div>
+
+<div id="freezeScreen"></div>
+<button id="freezeBtn">FREEZE TEST</button>
 
 <script src="main.js"></script>
 </body>
