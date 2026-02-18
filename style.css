@@ -1,179 +1,71 @@
-/* ===== 全体 ===== */
-
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:radial-gradient(circle at center,#0d1f36,#071423);
-  color:white;
-  overflow-x:auto;
+body {
+  margin: 0;
+  background: radial-gradient(circle at center, #001b33, #000814);
+  color: white;
+  font-family: sans-serif;
+  overflow: hidden;
 }
 
-/* ===== ヘッダー ===== */
-
-#hud{
-  background:linear-gradient(90deg,#1c2f48,#243b5c);
-  padding:12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+.header {
+  background: linear-gradient(90deg, #1c2f48, #243b5c);
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-#gameTitle{
-  font-size:20px;
-  font-weight:bold;
+.beta {
+  color: gold;
 }
 
-.betaTag{
-  color:gold;
+.main {
+  height: 80vh;
+  position: relative;
 }
 
-#stageInfo{
-  font-size:14px;
-  opacity:0.7;
+.freeze-btn {
+  position: absolute;
+  bottom: 40px;
+  right: 20px;
+  padding: 10px 20px;
+  border: 2px solid #00ccff;
+  background: transparent;
+  color: #00ccff;
+  font-weight: bold;
+  border-radius: 10px;
 }
 
-/* ===== ワークスペース ===== */
-
-#workspace{
-  min-height:60vh;
-  position:relative;
-  background:radial-gradient(circle at center,#0d1f36,#071423);
-  overflow-x:auto;
-  white-space:nowrap;
+.freeze-screen {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 
-/* グリッド */
-#workspace::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size:40px 40px;
+.freeze-text {
+  font-size: 42px;
+  color: #6cf;
+  text-shadow: 0 0 25px #00ccff;
+  animation: glow 1s infinite alternate;
 }
 
-/* ===== デバイス ===== */
-
-.device{
-  display:inline-flex;
-  position:relative;
-  width:90px;
-  height:55px;
-  background:#d9d9d9;
-  border-radius:12px;
-  justify-content:center;
-  align-items:center;
-  color:black;
-  font-weight:bold;
-  margin:20px;
+@keyframes glow {
+  from { text-shadow: 0 0 10px #00ccff; }
+  to { text-shadow: 0 0 40px #00ccff; }
 }
 
-/* ===== 端子 ===== */
-
-.terminal{
-  position:absolute;
-  width:20px;
-  height:20px;
-  border-radius:50%;
-  background:#21a8d8;
-  color:white;
-  font-size:11px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-/* ===== フリーズ用 ===== */
-
-#freeze{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:9998;
-  background:black;
-  transition:background 0.2s;
+.rainbow {
+  animation: rainbowFlash 0.3s linear infinite;
 }
 
-#clearText{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:9999;
-  color:#4dd0ff;
-  font-size:48px;
-  font-weight:bold;
-  text-align:center;
-  padding-top:40vh;
-  text-shadow:0 0 25px #4dd0ff, 0 0 60px #00f;
-}
-/* L/N 右側固定 */
-.terminal.L{
-  right:-10px;
-  top:8px;
-}
-.terminal.N{
-  right:-10px;
-  bottom:8px;
-}
-
-/* 三路 */
-.terminal.t0{
-  left:-10px;
-  top:50%;
-  transform:translateY(-50%);
-}
-.terminal.t1{
-  right:-10px;
-  top:6px;
-}
-.terminal.t3{
-  right:-10px;
-  bottom:6px;
-}
-
-/* ===== 下部ボタン ===== */
-
-#bottomBar{
-  background:#1c2f48;
-  padding:15px;
-  text-align:center;
-}
-
-button{
-  width:100px;
-  height:40px;
-  border-radius:12px;
-  border:2px solid #3fa3ff;
-  background:transparent;
-  color:#3fa3ff;
-  font-weight:bold;
-  margin:5px;
-}
-
-/* ===== フリーズ演出 ===== */
-
-#freeze{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:9998;
-  background:black;
-}
-
-#clearText{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:9999;
-  color:gold;
-  font-size:48px;
-  font-weight:bold;
-  text-align:center;
-  padding-top:40vh;
-  text-shadow:0 0 20px gold;
-}
-
-@keyframes rainbowMove{
-  0%{filter:hue-rotate(0deg);}
-  100%{filter:hue-rotate(360deg);}
+@keyframes rainbowFlash {
+  0% { background: red; }
+  20% { background: orange; }
+  40% { background: yellow; }
+  60% { background: green; }
+  80% { background: blue; }
+  100% { background: purple; }
 }
