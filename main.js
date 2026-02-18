@@ -7,53 +7,89 @@ const freezeBtn = document.getElementById("freezeBtn");
 const freezeSound = new Audio("sound/freeze.mp3");
 const impactSound = new Audio("sound/impact.mp3");
 
-let bossHP = 100;
-let playerHP = 100;
-let combo = 0;
-let isFreezing = false;
+/* ===============================
+   GAME STATE
+================================= */
 
-freezeBtn.addEventListener("click", startFreeze);
+const gameState = {
+  mode: "normal",
+
+  phaseIndex: 0,
+
+  placedParts: [],
+  connections: [],
+  nodes: {},
+  switchStates: {},
+
+  timer: {
+    remaining: 0,
+    id: null
+  },
+
+  bossHP: 100,
+  playerHP: 100,
+  combo: 0,
+
+  titleIndex: 0,
+
+  isFreezing: false
+};
+
+/* ===============================
+   UI UPDATE
+================================= */
 
 function updateUI(){
-  bossBar.style.width = bossHP + "%";
-  playerBar.style.width = playerHP + "%";
-  comboUI.textContent = "COMBO: " + combo;
+  bossBar.style.width = gameState.bossHP + "%";
+  playerBar.style.width = gameState.playerHP + "%";
+  comboUI.textContent = "COMBO: " + gameState.combo;
 }
+
+/* ===============================
+   DAMAGE SYSTEM
+================================= */
 
 function damageBoss(){
 
-  combo++;
-  let attackPower = 10 + combo * 2;
+  gameState.combo++;
 
-  bossHP -= attackPower;
-  if(bossHP < 0) bossHP = 0;
+  let attackPower = 10 + gameState.combo * 2;
+
+  gameState.bossHP -= attackPower;
+  if(gameState.bossHP < 0) gameState.bossHP = 0;
 
   updateUI();
 
-  if(bossHP === 0){
+  if(gameState.bossHP === 0){
     startFreeze();
   }
 }
 
 function damagePlayer(amount){
 
-  combo = 0;
+  gameState.combo = 0;
 
-  playerHP -= amount;
-  if(playerHP < 0) playerHP = 0;
+  gameState.playerHP -= amount;
+  if(gameState.playerHP < 0) gameState.playerHP = 0;
 
   updateUI();
 
-  if(playerHP === 0){
+  if(gameState.playerHP === 0){
     alert("GAME OVER");
     location.reload();
   }
 }
 
+/* ===============================
+   FREEZE SYSTEM
+================================= */
+
+freezeBtn.addEventListener("click", startFreeze);
+
 function startFreeze(){
 
-  if(isFreezing) return;
-  isFreezing = true;
+  if(gameState.isFreezing) return;
+  gameState.isFreezing = true;
 
   freezeScreen.style.display = "block";
 
@@ -69,16 +105,20 @@ function startFreeze(){
   // さらに3秒暗転キープ（合計6秒）
   setTimeout(()=>{
     freezeScreen.style.display = "none";
-    isFreezing = false;
+    gameState.isFreezing = false;
   },6000);
 }
 
-// 仮テスト用：画面タップでボス攻撃
+/* ===============================
+   TEMP TEST
+================================= */
+
+// ダブルクリックでボス攻撃
 document.body.addEventListener("dblclick",()=>{
   damageBoss();
 });
 
-// 仮テスト用：右クリックでプレイヤー被弾
+// 右クリックで被弾
 document.body.addEventListener("contextmenu",(e)=>{
   e.preventDefault();
   damagePlayer(20);
