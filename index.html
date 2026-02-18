@@ -1,124 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>俺らの電工 β</title>
-  <link rel="stylesheet" href="./style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俺らの電工β</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <!-- ===== HUD ===== -->
-  <div id="hud">
-    <div>
-      <div id="gameTitle">俺らの電工 <span class="betaTag">β</span></div>
-      <div id="stageInfo">STAGE 1-1</div>
-    </div>
-    <div>
-      <div id="titleInfo">一般人</div>
-      <div id="xpInfo">XP:0</div>
-    </div>
+<header class="header">
+  <div>
+    <h1>俺らの電工 <span class="beta">β</span></h1>
+    <p>STAGE 1-1</p>
+  </div>
+  <div class="xp">
+    <p>一般人</p>
+    <p>XP: 0</p>
+  </div>
+</header>
+
+<main class="main">
+
+  <div id="freezeScreen" class="freeze-screen">
+    <div class="freeze-text">電気神ゼウス</div>
   </div>
 
-  <!-- ===== WORKSPACE ===== -->
-  <div id="workspace">
+  <button id="freezeBtn" class="freeze-btn">フリーズTEST</button>
 
-    <!-- 配線レイヤー -->
-    <svg id="wireLayer"></svg>
+</main>
 
-    <!-- デバイスレイヤー -->
-    <div id="deviceLayer">
-
-      <!-- 電源 -->
-      <div class="device" style="left:20px;top:300px;">
-        電源
-        <div class="terminal" style="left:48px;top:6px;"
-          onclick="terminalClick('電源','L',this)">L</div>
-        <div class="terminal" style="left:48px;top:24px;"
-          onclick="terminalClick('電源','N',this)">N</div>
-      </div>
-
-      <!-- 三路1 -->
-      <div id="sw1" class="device"
-           style="left:120px;top:300px;"
-           onclick="toggleSwitch1()">
-        三路
-        <div class="terminal"
-          style="left:-6px;top:14px;"
-          onclick="event.stopPropagation();terminalClick('三路1','0',this)">0</div>
-        <div class="terminal"
-          style="left:52px;top:4px;"
-          onclick="event.stopPropagation();terminalClick('三路1','1',this)">1</div>
-        <div class="terminal"
-          style="left:52px;top:24px;"
-          onclick="event.stopPropagation();terminalClick('三路1','3',this)">3</div>
-      </div>
-
-      <!-- 三路2 -->
-      <div id="sw2" class="device"
-           style="left:220px;top:300px;"
-           onclick="toggleSwitch2()">
-        三路
-        <div class="terminal"
-          style="left:-6px;top:14px;"
-          onclick="event.stopPropagation();terminalClick('三路2','0',this)">0</div>
-        <div class="terminal"
-          style="left:52px;top:4px;"
-          onclick="event.stopPropagation();terminalClick('三路2','1',this)">1</div>
-        <div class="terminal"
-          style="left:52px;top:24px;"
-          onclick="event.stopPropagation();terminalClick('三路2','3',this)">3</div>
-      </div>
-
-      <!-- ランプ -->
-      <div id="lamp" class="device" style="left:320px;top:300px;">
-        ランプ
-        <div class="terminal"
-          style="left:48px;top:6px;"
-          onclick="terminalClick('ランプ','L',this)">L</div>
-        <div class="terminal"
-          style="left:48px;top:24px;"
-          onclick="terminalClick('ランプ','N',this)">N</div>
-      </div>
-
-    </div>
-
-    <!-- ボスUI -->
-    <div id="bossUI">
-      <div>短絡魔王</div>
-      <div id="bossBar">
-        <div id="bossHP"></div>
-      </div>
-    </div>
-
-    <!-- フリーズ演出レイヤー -->
-    <div id="freeze"></div>
-
-    <!-- CLEAR / 称号表示 -->
-    <div id="clearText">CLEAR</div>
-
-  </div>
-
-  <!-- ===== フリーズテストボタン ===== -->
-  <button onclick="titleFreeze('電気神ゼウス')"
-    style="
-      position:fixed;
-      bottom:10px;
-      right:10px;
-      z-index:9999;
-      padding:8px 12px;
-      background:black;
-      color:gold;
-      border:2px solid gold;
-      border-radius:8px;
-      font-weight:bold;
-    ">
-    フリーズTEST
-  </button>
-
-  <!-- JS -->
-  <script type="module" src="./main.js?v=final"></script>
-
+<script src="main.js"></script>
 </body>
 </html>
