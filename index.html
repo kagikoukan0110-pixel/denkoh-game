@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>俺らの電工 WORLD1</title>
+<title>俺らの電工 - WORLD1</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,32 +19,25 @@
 
 <div id="board">
 
-  <!-- 配線レイヤー -->
-  <svg id="wireLayer"></svg>
-
-  <!-- 電源 -->
-  <div class="device" id="power">
+  <div class="device">
     <h3>電源</h3>
     <div class="terminal" data-id="power-L">L</div>
     <div class="terminal" data-id="power-N">N</div>
   </div>
 
-  <!-- 片切 -->
-  <div class="device switch" id="switch">
+  <div class="device">
     <h3>片切</h3>
     <div class="terminal" data-id="switch-IN">IN</div>
     <div class="terminal" data-id="switch-OUT">OUT</div>
   </div>
 
-  <!-- ランプ -->
-  <div class="device lamp" id="lamp">
+  <div class="device">
     <h3>ランプ</h3>
     <div class="terminal" data-id="lamp-L">L</div>
     <div class="terminal" data-id="lamp-N">N</div>
   </div>
 
-  <!-- J/B -->
-  <div class="device" id="junction">
+  <div class="device">
     <h3>J/B</h3>
     <div class="terminal" data-id="jb-1"></div>
     <div class="terminal" data-id="jb-2"></div>
@@ -55,6 +48,10 @@
 </div>
 
 <button id="setBtn">SET</button>
+
+<div id="overlay" class="hidden">
+  <h1>CLEAR</h1>
+</div>
 
 <script src="main.js"></script>
 </body>
