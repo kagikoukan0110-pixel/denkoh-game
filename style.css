@@ -1,115 +1,133 @@
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #111;
-  color: #fff;
-  text-align: center;
+body{
+  margin:0;
+  background:black;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
 }
 
-.header {
-  padding: 10px;
-  background: #1a1a1a;
+h1{
+  margin-top:20px;
 }
 
-.status {
-  padding: 10px;
+.hp-wrapper{
+  width:90%;
+  margin:20px auto;
 }
 
-.label {
-  font-size: 12px;
-  margin: 5px 0;
+.label{
+  margin:5px 0;
 }
 
-.hp-bar {
-  width: 90%;
-  height: 16px;
-  background: #333;
-  margin: 0 auto 10px;
-  border-radius: 8px;
-  overflow: hidden;
+.hp-bar{
+  width:100%;
+  height:20px;
+  background:#333;
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:10px;
 }
 
-.hp {
-  height: 100%;
-  width: 100%;
-  transition: width 0.3s ease;
+.hp-fill{
+  height:100%;
+  width:100%;
+  transition:0.3s;
 }
 
-.hp.boss {
-  background: red;
+.boss{
+  background:red;
 }
 
-.hp.player {
-  background: limegreen;
+.player{
+  background:limegreen;
 }
 
-.boss-area {
-  position: relative;
-  height: 400px;
-  margin-top: 20px;
+/* ===== 推奨レイアウト ===== */
+
+.board{
+  position:relative;
+  height:380px;
+  margin-top:40px;
 }
 
-.device {
-  position: absolute;
-  width: 120px;
-  height: 100px;
-  background: #fff;
-  color: #000;
-  border-radius: 8px;
-  padding-top: 10px;
+.device{
+  position:absolute;
+  width:140px;
+  padding:15px;
+  background:#ddd;
+  color:black;
+  border-radius:15px;
 }
 
-.device-title {
-  font-size: 14px;
-  margin-bottom: 10px;
+.power{
+  left:5%;
+  top:40px;
 }
 
-.power { top: 40px; left: 30px; }
-.switch { top: 150px; left: 130px; }
-.lamp { top: 40px; right: 30px; }
-
-.terminal {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  background: #222;
-  color: #fff;
-  border-radius: 50%;
-  line-height: 40px;
-  margin: 5px;
-  cursor: pointer;
+.switch{
+  left:50%;
+  transform:translateX(-50%);
+  top:140px;
 }
 
-.terminal.selected {
-  background: orange;
+.lamp{
+  right:5%;
+  top:240px;
 }
 
-#wiredLayer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.title{
+  margin-bottom:10px;
+  font-weight:bold;
 }
 
-#wireLayer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+.terminals{
+  display:flex;
+  justify-content:space-around;
 }
 
-#setBtn {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
+.terminal{
+  width:40px;
+  height:40px;
+  background:#222;
+  color:white;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
 }
 
-.freeze-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: black;
-  display: none;
-  z-index: 9999;
+.terminal.selected{
+  outline:3px solid yellow;
+}
+
+#lineCanvas{
+  position:absolute;
+  top:0;
+  left:0;
+  pointer-events:none;
+}
+
+/* SETボタン */
+#setBtn{
+  margin-top:30px;
+  padding:15px 40px;
+  border:none;
+  border-radius:20px;
+  font-size:18px;
+}
+
+/* フリーズ */
+#freezeScreen{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  color:white;
+  font-size:40px;
+  display:none;
+  align-items:center;
+  justify-content:center;
 }
