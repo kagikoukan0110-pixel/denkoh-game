@@ -62,12 +62,10 @@ function connect(a,b){
   line.setAttribute("x2",x2);
   line.setAttribute("y2",y2);
   line.setAttribute("stroke","yellow");
-  line.setAttribute("stroke-width","4");
-  line.setAttribute("stroke-linecap","round");
+  line.setAttribute("stroke-width","3");
 
-  wireLayer.appendChild(line);
+  document.getElementById("wireLayer").appendChild(line);
 }
-
 /* ===== 判定 ===== */
 
 setBtn.addEventListener("click",()=>{
