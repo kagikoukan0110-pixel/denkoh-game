@@ -1,133 +1,133 @@
-body{
-  margin:0;
-  background:black;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
 }
 
-h1{
-  margin-top:20px;
+body {
+  background: #111;
+  font-family: sans-serif;
+  overflow: hidden;
+  color: white;
 }
 
-.hp-wrapper{
-  width:90%;
-  margin:20px auto;
+#gameWrapper {
+  width: 100%;
+  height: 100vh;
+  position: relative;
 }
 
-.label{
-  margin:5px 0;
+#board {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.hp-bar{
-  width:100%;
-  height:20px;
-  background:#333;
-  border-radius:20px;
-  overflow:hidden;
-  margin-bottom:10px;
+/* 端子 */
+.terminal {
+  fill: #333;
+  stroke: #aaa;
+  stroke-width: 4;
+  cursor: pointer;
 }
 
-.hp-fill{
-  height:100%;
-  width:100%;
-  transition:0.3s;
+.terminal.active {
+  stroke: yellow;
+  stroke-width: 6;
 }
 
-.boss{
-  background:red;
+.device-label {
+  fill: white;
+  font-size: 28px;
+  text-anchor: middle;
 }
 
-.player{
-  background:limegreen;
+/* 配線 */
+.wire {
+  stroke: #888;
+  stroke-width: 8;
+  fill: none;
 }
 
-/* ===== 推奨レイアウト ===== */
-
-.board{
-  position:relative;
-  height:380px;
-  margin-top:40px;
+.wire.live {
+  stroke: orange;
 }
 
-.device{
-  position:absolute;
-  width:140px;
-  padding:15px;
-  background:#ddd;
-  color:black;
-  border-radius:15px;
+/* 束ドット */
+.bundle-dot {
+  r: 10;
 }
 
-.power{
-  left:5%;
-  top:40px;
+.bundle-L { fill: red; }
+.bundle-N { fill: cyan; }
+.bundle-unknown { fill: yellow; }
+
+/* ランプ */
+#lampBulb {
+  fill: #222;
+  stroke: #aaa;
+  stroke-width: 6;
 }
 
-.switch{
-  left:50%;
-  transform:translateX(-50%);
-  top:140px;
+#lampBulb.on {
+  fill: #fff8b0;
+  filter: drop-shadow(0 0 20px gold);
 }
 
-.lamp{
-  right:5%;
-  top:240px;
+#filament {
+  stroke: orange;
+  stroke-width: 6;
+  opacity: 0;
 }
 
-.title{
-  margin-bottom:10px;
-  font-weight:bold;
+#filament.on {
+  opacity: 1;
+  animation: filamentPulse 0.8s infinite alternate;
 }
 
-.terminals{
-  display:flex;
-  justify-content:space-around;
-}
-
-.terminal{
-  width:40px;
-  height:40px;
-  background:#222;
-  color:white;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
-
-.terminal.selected{
-  outline:3px solid yellow;
-}
-
-#lineCanvas{
-  position:absolute;
-  top:0;
-  left:0;
-  pointer-events:none;
+@keyframes filamentPulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
 }
 
 /* SETボタン */
-#setBtn{
-  margin-top:30px;
-  padding:15px 40px;
-  border:none;
-  border-radius:20px;
-  font-size:18px;
+#setBtn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  background: #444;
+  color: white;
+  transition: 0.2s;
 }
 
-/* フリーズ */
-#freezeScreen{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:black;
-  color:white;
-  font-size:40px;
-  display:none;
-  align-items:center;
-  justify-content:center;
+#setBtn.active {
+  background: orange;
+  box-shadow: 0 0 20px orange;
+}
+
+#setBtn:active {
+  transform: scale(0.9);
+}
+
+/* オーバーレイ */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
 }
