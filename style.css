@@ -61,8 +61,8 @@ h1{
   transform:translate(-50%,-50%);
   width:120px;
   padding:15px;
-  background:transparent;   /* ← ここ変更 */
-  border:3px solid #ccc;    /* ← 枠だけにする */
+  background:transparent;
+  border:3px solid #ccc;
   border-radius:20px;
   color:black;
   z-index:1;
