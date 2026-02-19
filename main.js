@@ -1,7 +1,7 @@
 // =========================
 // 状態管理
 // =========================
-
+alert("main loaded");
 let playerHP = 100;
 let bossHP = 100;
 let currentQuestion = 0;
