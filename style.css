@@ -1,183 +1,115 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-}
+/* =========================
+   全体
+========================= */
 
 body {
+  margin: 0;
+  font-family: sans-serif;
   background: #111;
-  color: white;
+  color: #fff;
   text-align: center;
 }
 
-.screen {
-  padding: 20px;
+/* =========================
+   ヘッダー
+========================= */
+
+.header {
+  padding: 10px;
+  background: #1a1a1a;
+  border-bottom: 2px solid #333;
 }
 
-.hidden {
-  display: none;
+.header h1 {
+  margin: 0;
+  font-size: 20px;
 }
 
-/* ===== HUD ===== */
+/* =========================
+   HP表示
+========================= */
 
-.hud {
-  margin-bottom: 20px;
-}
-
-.hpBar {
-  margin: 10px 0;
+.status {
+  padding: 10px 0;
 }
 
 .label {
-  font-size: 14px;
+  font-size: 12px;
   margin-bottom: 4px;
+  opacity: 0.7;
 }
 
-.bar {
-  width: 80%;
-  height: 14px;
+.hp-bar {
+  width: 90%;
+  height: 18px;
   background: #333;
-  margin: 0 auto;
+  margin: 0 auto 12px auto;
   border-radius: 10px;
   overflow: hidden;
 }
 
-.bar div {
+.hp {
   height: 100%;
   width: 100%;
-  background: #4caf50;
   transition: width 0.3s ease;
 }
 
-.bar.boss div {
-  background: #e53935;
+.hp.boss {
+  background: linear-gradient(90deg, #ff3b3b, #b00000);
 }
 
-/* ===== QUIZ ===== */
+.hp.player {
+  background: linear-gradient(90deg, #4caf50, #1b5e20);
+}
 
-#questionNumber {
-  margin-bottom: 10px;
-  font-size: 14px;
+/* =========================
+   クイズ画面
+========================= */
+
+.quiz {
+  padding: 20px;
 }
 
 #questionText {
+  font-size: 16px;
   margin-bottom: 20px;
-  font-size: 18px;
-}
-
-#choices {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .choiceBtn {
-  padding: 10px;
+  display: block;
+  width: 80%;
+  margin: 10px auto;
+  padding: 12px;
+  font-size: 14px;
   background: #222;
-  border: 1px solid #555;
   color: white;
-  cursor: pointer;
+  border: 1px solid #444;
+  border-radius: 8px;
 }
 
-.choiceBtn:hover {
+.choiceBtn:active {
   background: #333;
 }
 
-#resultMessage {
-  margin-top: 20px;
-  font-size: 16px;
-  height: 24px;
+/* =========================
+   ボス戦
+========================= */
+
+.boss-area {
+  padding: 40px 0;
+  font-size: 18px;
 }
 
-/* ===== BOSS ===== */
+/* =========================
+   フリーズ演出
+========================= */
 
-#bossTitle {
-  font-size: 20px;
-  margin-bottom: 20px;
-  color: red;
-}
-
-#board {
-  display: flex;
-  justify-content: space-around;
-  margin: 30px 0;
-}
-
-.device {
-  background: #222;
-  padding: 15px;
-  border: 1px solid #555;
-  border-radius: 6px;
-  width: 100px;
-}
-
-.deviceTitle {
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.terminal {
-  background: #444;
-  margin: 5px auto;
-  padding: 5px;
-  width: 40px;
-  cursor: pointer;
-}
-
-.terminal.selected {
-  background: #888;
-}
-
-#lampVisual {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #222;
-  margin: 10px auto 0;
-  transition: background 0.3s ease;
-}
-
-#lampVisual.on {
-  background: yellow;
-}
-
-/* ===== SET BUTTON ===== */
-
-#setButton {
-  padding: 10px 30px;
-  background: #000;
-  border: 1px solid red;
-  color: white;
-  cursor: pointer;
-  margin-top: 20px;
-}
-
-/* ===== OVERLAY ===== */
-
-#overlay {
+.freeze-screen {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: black;
-  color: gold;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-#overlayText {
-  font-size: 28px;
-  margin-bottom: 20px;
-}
-
-#nextWorldBtn {
-  padding: 10px 20px;
-  background: #000;
-  border: 1px solid gold;
-  color: gold;
-  cursor: pointer;
+  z-index: 9999;
 }
