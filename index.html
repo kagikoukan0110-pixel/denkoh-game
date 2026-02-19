@@ -19,24 +19,31 @@
 
 <div id="board">
 
+  <!-- 配線レイヤー -->
+  <svg id="wireLayer"></svg>
+
+  <!-- 電源 -->
   <div class="device" id="power">
     <h3>電源</h3>
     <div class="terminal" data-id="power-L">L</div>
     <div class="terminal" data-id="power-N">N</div>
   </div>
 
+  <!-- 片切 -->
   <div class="device switch" id="switch">
     <h3>片切</h3>
     <div class="terminal" data-id="switch-IN">IN</div>
     <div class="terminal" data-id="switch-OUT">OUT</div>
   </div>
 
+  <!-- ランプ -->
   <div class="device lamp" id="lamp">
     <h3>ランプ</h3>
     <div class="terminal" data-id="lamp-L">L</div>
     <div class="terminal" data-id="lamp-N">N</div>
   </div>
 
+  <!-- J/B -->
   <div class="device" id="junction">
     <h3>J/B</h3>
     <div class="terminal" data-id="jb-1"></div>
@@ -48,10 +55,6 @@
 </div>
 
 <button id="setBtn">SET</button>
-
-<div id="overlay">
-  <div>CLEAR</div>
-</div>
 
 <script src="main.js"></script>
 </body>
