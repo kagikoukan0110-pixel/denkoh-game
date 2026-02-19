@@ -2,36 +2,55 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>俺らの電工 - WORLD1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俺らの電工 β</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="gameWrapper">
+<h1>俺らの電工 β</h1>
 
-  <svg id="board" viewBox="0 0 1000 1600">
+<div class="hp-area">
+  <div>BOSS</div>
+  <div class="bar"><div id="bossHP" class="boss"></div></div>
+  <div>PLAYER</div>
+  <div class="bar"><div id="playerHP" class="player"></div></div>
+</div>
 
-    <!-- デバイス -->
-    <g id="devices"></g>
+<div id="board">
 
-    <!-- 配線 -->
-    <g id="wireLayer"></g>
-
-    <!-- 通電粒子 -->
-    <g id="flowLayer"></g>
-
-    <!-- 束ドット -->
-    <g id="bundleLayer"></g>
-
-  </svg>
-
-  <button id="setBtn">SET</button>
-
-  <div id="overlay" class="hidden">
-    <div id="clearText">CLEAR</div>
+  <div class="device" id="power">
+    <h3>電源</h3>
+    <div class="terminal" data-id="power-L">L</div>
+    <div class="terminal" data-id="power-N">N</div>
   </div>
 
+  <div class="device" id="switch">
+    <h3>片切</h3>
+    <div class="terminal" data-id="switch-IN">IN</div>
+    <div class="terminal" data-id="switch-OUT">OUT</div>
+  </div>
+
+  <div class="device" id="lamp">
+    <h3>ランプ</h3>
+    <div class="terminal" data-id="lamp-L">L</div>
+    <div class="terminal" data-id="lamp-N">N</div>
+  </div>
+
+  <div id="junction">
+    <h3>J/B</h3>
+    <div class="terminal" data-id="jb-1"></div>
+    <div class="terminal" data-id="jb-2"></div>
+    <div class="terminal" data-id="jb-3"></div>
+    <div class="terminal" data-id="jb-4"></div>
+  </div>
+
+</div>
+
+<button id="setBtn">SET</button>
+
+<div id="overlay" class="hidden">
+  <h1>CLEAR</h1>
 </div>
 
 <script src="main.js"></script>
