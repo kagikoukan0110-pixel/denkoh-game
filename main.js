@@ -18,7 +18,10 @@ document.querySelectorAll(".terminal").forEach(t=>{
       t.classList.add("selected");
     }else{
       if(selected !== t){
-        connections.push([selected.dataset.id, t.dataset.id]);
+        connections.push([
+          selected.dataset.id,
+          t.dataset.id
+        ]);
       }
       selected.classList.remove("selected");
       selected = null;
@@ -26,19 +29,15 @@ document.querySelectorAll(".terminal").forEach(t=>{
   });
 });
 
-setBtn.addEventListener("click",checkCircuit);
+setBtn.addEventListener("click",()=>{
 
-function checkCircuit(){
-
-  const ok =
-    has("power-L","jb-1") &&
-    has("jb-1","switch-IN") &&
-    has("switch-OUT","jb-2") &&
-    has("jb-2","lamp-L") &&
-    has("power-N","lamp-N");
-
-  if(ok){
-    bossHP = 0;
+  if(
+    has("power-L","switch-IN") &&
+    has("switch-OUT","lamp-L") &&
+    has("power-N","lamp-N")
+  ){
+    bossHP -= 30;
+    if(bossHP < 0) bossHP = 0;
     updateHP();
     showClear();
   }else{
@@ -50,7 +49,8 @@ function checkCircuit(){
       location.reload();
     }
   }
-}
+
+});
 
 function has(a,b){
   return connections.some(c =>
