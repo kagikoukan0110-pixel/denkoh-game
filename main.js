@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", () => {
+
 let bossHP = 100;
 let playerHP = 100;
 
@@ -8,6 +10,22 @@ const overlay = document.getElementById("overlay");
 
 let selected = null;
 let connections = [];
+
+function updateHP(){
+  bossBar.style.width = bossHP + "%";
+  playerBar.style.width = playerHP + "%";
+}
+
+function has(a,b){
+  return connections.some(c =>
+    (c[0]===a && c[1]===b) ||
+    (c[0]===b && c[1]===a)
+  );
+}
+
+function showClear(){
+  overlay.classList.remove("hidden");
+}
 
 updateHP();
 
@@ -31,14 +49,12 @@ document.querySelectorAll(".terminal").forEach(t=>{
 
 setBtn.addEventListener("click",()=>{
 
-  if(
+  const correct =
     has("power-L","switch-IN") &&
     has("switch-OUT","lamp-L") &&
-    has("power-N","lamp-N")
-  ){
-    bossHP -= 30;
-    if(bossHP < 0) bossHP = 0;
-    updateHP();
+    has("power-N","lamp-N");
+
+  if(correct){
     showClear();
   }else{
     playerHP -= 20;
@@ -52,18 +68,4 @@ setBtn.addEventListener("click",()=>{
 
 });
 
-function has(a,b){
-  return connections.some(c =>
-    (c[0]===a && c[1]===b) ||
-    (c[0]===b && c[1]===a)
-  );
-}
-
-function updateHP(){
-  bossBar.style.width = bossHP + "%";
-  playerBar.style.width = playerHP + "%";
-}
-
-function showClear(){
-  overlay.classList.remove("hidden");
-}
+});
