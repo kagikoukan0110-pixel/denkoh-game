@@ -130,3 +130,6 @@ button{
 .hidden{
   display:none;
 }
+#overlay.hidden {
+  display: none !important;
+}
