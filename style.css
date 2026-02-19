@@ -1,108 +1,183 @@
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:#f4f4f4;
-  overflow:hidden;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
 }
 
-body.boss-mode{
-  background:#000;
+body {
+  background: #111;
+  color: white;
+  text-align: center;
 }
 
-#hud{
-  padding:10px;
-  display:flex;
-  justify-content:space-between;
-  font-size:14px;
+.screen {
+  padding: 20px;
 }
 
-#bossUI{
-  padding:10px;
+.hidden {
+  display: none;
 }
 
-.barWrap{
-  margin-bottom:8px;
+/* ===== HUD ===== */
+
+.hud {
+  margin-bottom: 20px;
 }
 
-.bar{
-  width:100%;
-  height:10px;
-  background:#333;
+.hpBar {
+  margin: 10px 0;
 }
 
-.fill{
-  height:100%;
-  width:100%;
+.label {
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
-.fill.red{
-  background:#ff0000;
+.bar {
+  width: 80%;
+  height: 14px;
+  background: #333;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.fill.blue{
-  background:#0080ff;
+.bar div {
+  height: 100%;
+  width: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
 }
 
-#workspace{
-  position:relative;
-  width:100%;
-  height:60vh;
+.bar.boss div {
+  background: #e53935;
 }
 
-.part{
-  background:#222;
-  color:#fff;
-  padding:6px 10px;
-  border:1px solid #555;
-  font-size:12px;
-  border-radius:4px;
-  position:absolute;
-  transform:translate(-50%,-50%);
+/* ===== QUIZ ===== */
+
+#questionNumber {
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 
-.terminal{
-  width:8px;
-  height:8px;
-  background:#fff;
-  border-radius:50%;
-  position:absolute;
-  cursor:pointer;
+#questionText {
+  margin-bottom: 20px;
+  font-size: 18px;
 }
 
-.terminal.selected{
-  background:yellow;
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-body.boss-mode .terminal{
-  box-shadow:0 0 6px #fff;
+.choiceBtn {
+  padding: 10px;
+  background: #222;
+  border: 1px solid #555;
+  color: white;
+  cursor: pointer;
 }
 
-#waveLayer{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+.choiceBtn:hover {
+  background: #333;
 }
 
-#wireLayer{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+#resultMessage {
+  margin-top: 20px;
+  font-size: 16px;
+  height: 24px;
 }
 
-#freezeScreen{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:black;
-  z-index:999;
+/* ===== BOSS ===== */
+
+#bossTitle {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: red;
 }
 
-button{
-  position:fixed;
-  bottom:10px;
-  right:10px;
+#board {
+  display: flex;
+  justify-content: space-around;
+  margin: 30px 0;
+}
+
+.device {
+  background: #222;
+  padding: 15px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  width: 100px;
+}
+
+.deviceTitle {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.terminal {
+  background: #444;
+  margin: 5px auto;
+  padding: 5px;
+  width: 40px;
+  cursor: pointer;
+}
+
+.terminal.selected {
+  background: #888;
+}
+
+#lampVisual {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #222;
+  margin: 10px auto 0;
+  transition: background 0.3s ease;
+}
+
+#lampVisual.on {
+  background: yellow;
+}
+
+/* ===== SET BUTTON ===== */
+
+#setButton {
+  padding: 10px 30px;
+  background: #000;
+  border: 1px solid red;
+  color: white;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* ===== OVERLAY ===== */
+
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: gold;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#overlayText {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+#nextWorldBtn {
+  padding: 10px 20px;
+  background: #000;
+  border: 1px solid gold;
+  color: gold;
+  cursor: pointer;
 }
