@@ -1,182 +1,128 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("main loaded");
-
-  // =========================
-  // 状態管理
-  // =========================
   let playerHP = 100;
   let bossHP = 100;
-  let currentQuestion = 0;
-  let quizMistakes = 0;
-  let phase = "quiz"; // quiz → boss
 
-  // =========================
-  // DOM取得
-  // =========================
   const bossBar = document.getElementById("bossHP");
   const playerBar = document.getElementById("playerHP");
-  const comboUI = document.getElementById("comboUI");
-
-  const quizContainer = document.getElementById("quizContainer");
-  const questionText = document.getElementById("questionText");
-  const choicesContainer = document.getElementById("choicesContainer");
-
-  const bossArea = document.getElementById("bossArea");
-
+  const setBtn = document.getElementById("setBtn");
   const freezeScreen = document.getElementById("freezeScreen");
+  const wireLayer = document.getElementById("wireLayer");
 
-  const freezeSound = new Audio("sound/freeze.mp3");
-  const impactSound = new Audio("sound/impact.mp3");
+  let connections = [];
+  let selected = null;
 
-  // =========================
-  // 問題（5問固定）
-  // =========================
-  const questions = [
-    {
-      text: "三路スイッチの端子数はどれか。",
-      choices: ["2", "3", "4", "5"],
-      answer: 1
-    },
-    {
-      text: "接地工事D種の接地抵抗値はどれか。",
-      choices: ["10Ω以下", "100Ω以下", "500Ω以下", "制限なし"],
-      answer: 1
-    },
-    {
-      text: "VVFケーブルの接地側の色はどれか。",
-      choices: ["黒", "白", "赤", "青"],
-      answer: 1
-    },
-    {
-      text: "100V回路の電圧許容誤差はどれか。",
-      choices: ["±5%", "±6%", "±10%", "±15%"],
-      answer: 1
-    },
-    {
-      text: "過電流遮断器の目的は何か。",
-      choices: ["漏電防止", "過負荷保護", "感電防止", "電圧安定"],
-      answer: 1
-    }
-  ];
+  updateHP();
 
-  // =========================
-  // UI更新
-  // =========================
   function updateHP() {
-    if (bossBar) bossBar.style.width = bossHP + "%";
-    if (playerBar) playerBar.style.width = playerHP + "%";
+    bossBar.style.width = bossHP + "%";
+    playerBar.style.width = playerHP + "%";
   }
 
-  // =========================
-  // クイズ表示
-  // =========================
-  function loadQuestion() {
+  document.querySelectorAll(".terminal").forEach(t => {
+    t.addEventListener("click", () => {
 
-    if (currentQuestion >= questions.length) {
-      startBossBattle();
-      return;
-    }
+      if (!selected) {
+        selected = t;
+        t.classList.add("selected");
+      } else {
 
-    const q = questions[currentQuestion];
-    questionText.textContent = q.text;
-    choicesContainer.innerHTML = "";
+        if (selected === t) {
+          t.classList.remove("selected");
+          selected = null;
+          return;
+        }
 
-    q.choices.forEach((choice, index) => {
-      const btn = document.createElement("button");
-      btn.textContent = choice;
-      btn.className = "choiceBtn";
-      btn.onclick = () => checkAnswer(index);
-      choicesContainer.appendChild(btn);
+        connectTerminals(selected, t);
+
+        selected.classList.remove("selected");
+        selected = null;
+      }
     });
+  });
+
+  function connectTerminals(t1, t2) {
+
+    const id1 = t1.dataset.id;
+    const id2 = t2.dataset.id;
+
+    if (id1 === id2) return;
+
+    connections.push([id1, id2]);
+
+    drawWire(t1, t2);
   }
 
-  // =========================
-  // 回答判定
-  // =========================
-  function checkAnswer(selected) {
-    const correct = questions[currentQuestion].answer;
+  function drawWire(t1, t2) {
 
-    if (selected === correct) {
-      bossHP -= 15;
-      if (bossHP < 0) bossHP = 0;
+    const rect1 = t1.getBoundingClientRect();
+    const rect2 = t2.getBoundingClientRect();
+
+    const x1 = rect1.left + rect1.width/2;
+    const y1 = rect1.top + rect1.height/2;
+    const x2 = rect2.left + rect2.width/2;
+    const y2 = rect2.top + rect2.height/2;
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x1);
+    line.setAttribute("y2", y1);
+    line.setAttribute("stroke", "yellow");
+    line.setAttribute("stroke-width", "3");
+
+    wireLayer.appendChild(line);
+
+    let progress = 0;
+    const animate = setInterval(() => {
+      progress += 0.05;
+      if (progress >= 1) {
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        clearInterval(animate);
+      } else {
+        line.setAttribute("x2", x1 + (x2 - x1) * progress);
+        line.setAttribute("y2", y1 + (y2 - y1) * progress);
+      }
+    }, 16);
+  }
+
+  setBtn.addEventListener("click", checkCircuit);
+
+  function has(a, b) {
+    return connections.some(c =>
+      (c[0] === a && c[1] === b) ||
+      (c[0] === b && c[1] === a)
+    );
+  }
+
+  function checkCircuit() {
+
+    const correct =
+      has("powerL","switchIn") &&
+      has("switchOut","lampL") &&
+      has("lampN","powerN");
+
+    if (correct) {
+      bossHP = 0;
+      updateHP();
+      triggerFreeze();
     } else {
-      playerHP -= 15;
+      playerHP -= 20;
       if (playerHP < 0) playerHP = 0;
-      quizMistakes++;
+      updateHP();
+      alert("回路が違う！");
     }
-
-    updateHP();
-
-    currentQuestion++;
-
-    setTimeout(() => {
-      loadQuestion();
-    }, 800);
   }
 
-  // =========================
-  // ボス戦開始
-  // =========================
-  function startBossBattle() {
-
-    phase = "boss";
-
-    quizContainer.style.display = "none";
-    bossArea.style.display = "block";
-
-    // クイズでミス多いほど不利
-    playerHP -= quizMistakes * 5;
-    if (playerHP < 10) playerHP = 10;
-
-    updateHP();
-  }
-
-  // =========================
-  // ボス撃破演出
-  // =========================
   function triggerFreeze() {
-
     freezeScreen.style.display = "block";
-
-    freezeSound.currentTime = 0;
-    freezeSound.play().catch(()=>{});
-
-    // 3秒後プチュン
-    setTimeout(()=>{
-      impactSound.currentTime = 0;
-      impactSound.play().catch(()=>{});
-    },3000);
-
-    // 合計6秒後復帰
-    setTimeout(()=>{
+    setTimeout(() => {
       freezeScreen.style.display = "none";
       alert("WORLD1 CLEAR");
       location.reload();
-    },6000);
+    }, 3000);
   }
-
-  // =========================
-  // 仮ボス攻撃（タップで削る）
-  // =========================
-  bossArea.addEventListener("click", function(){
-
-    if (phase !== "boss") return;
-
-    bossHP -= 20;
-    if (bossHP < 0) bossHP = 0;
-
-    updateHP();
-
-    if (bossHP === 0) {
-      triggerFreeze();
-    }
-  });
-
-  // =========================
-  // 初期化
-  // =========================
-  updateHP();
-  loadQuestion();
 
 });
