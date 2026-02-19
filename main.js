@@ -1,5 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-
 let bossHP = 100;
 let playerHP = 100;
 
@@ -11,10 +9,24 @@ const overlay = document.getElementById("overlay");
 let selected = null;
 let connections = [];
 
-function updateHP(){
-  bossBar.style.width = bossHP + "%";
-  playerBar.style.width = playerHP + "%";
-}
+updateHP();
+
+document.querySelectorAll(".terminal").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    if(!selected){
+      selected = t;
+      t.classList.add("selected");
+    }else{
+      if(selected !== t){
+        connections.push([selected.dataset.id, t.dataset.id]);
+      }
+      selected.classList.remove("selected");
+      selected = null;
+    }
+  });
+});
+
+setBtn.addEventListener("click", checkAnswer);
 
 function has(a,b){
   return connections.some(c =>
@@ -23,38 +35,20 @@ function has(a,b){
   );
 }
 
-function showClear(){
-  overlay.classList.remove("hidden");
-}
-
-updateHP();
-
-document.querySelectorAll(".terminal").forEach(t=>{
-  t.addEventListener("click",()=>{
-    if(!selected){
-      selected = t;
-      t.classList.add("selected");
-    }else{
-      if(selected !== t){
-        connections.push([
-          selected.dataset.id,
-          t.dataset.id
-        ]);
-      }
-      selected.classList.remove("selected");
-      selected = null;
-    }
-  });
-});
-
-setBtn.addEventListener("click",()=>{
+function checkAnswer(){
 
   const correct =
-    has("power-L","switch-IN") &&
-    has("switch-OUT","lamp-L") &&
-    has("power-N","lamp-N");
+    has("power-L","jb-1") &&
+    has("jb-1","switch-IN") &&
+    has("switch-OUT","jb-2") &&
+    has("jb-2","lamp-L") &&
+    has("power-N","jb-3") &&
+    has("jb-3","lamp-N");
 
   if(correct){
+    bossHP -= 100;
+    if(bossHP < 0) bossHP = 0;
+    updateHP();
     showClear();
   }else{
     playerHP -= 20;
@@ -65,7 +59,13 @@ setBtn.addEventListener("click",()=>{
       location.reload();
     }
   }
+}
 
-});
+function updateHP(){
+  bossBar.style.width = bossHP + "%";
+  playerBar.style.width = playerHP + "%";
+}
 
-});
+function showClear(){
+  overlay.style.display = "flex";
+}
