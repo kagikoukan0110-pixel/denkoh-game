@@ -1,18 +1,14 @@
 body{
-  background:black;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
   margin:0;
-}
-
-h1{
-  margin:20px 0;
+  background:#000;
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
 }
 
 .hp-area{
-  width:80%;
-  margin:0 auto 30px;
+  width:90%;
+  margin:20px auto;
 }
 
 .bar{
@@ -25,62 +21,61 @@ h1{
 }
 
 .boss{
-  background:red;
   height:100%;
   width:100%;
+  background:red;
 }
 
 .player{
-  background:limegreen;
   height:100%;
   width:100%;
+  background:limegreen;
 }
 
 #board{
-  display:flex;
-  justify-content:space-around;
-  flex-wrap:wrap;
-  margin:40px 20px;
+  position:relative;
+  width:100%;
+  height:500px;
 }
 
 .device, #junction{
-  background:#ddd;
+  position:absolute;
+  background:#ccc;
   color:black;
-  padding:15px;
-  border-radius:15px;
-  width:120px;
-  margin:10px;
+  padding:10px;
+  border-radius:10px;
+  width:130px;
 }
 
+#power{ top:80px; left:40px; }
+#switch{ top:200px; left:180px; }
+#lamp{ top:320px; left:320px; }
+#junction{ top:200px; right:40px; }
+
 .terminal{
-  width:35px;
-  height:35px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
   background:#222;
   color:white;
-  border-radius:50%;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   margin:5px;
   cursor:pointer;
-  border:3px solid transparent;
 }
 
 .terminal.selected{
-  border:3px solid yellow;
-}
-
-#junction .terminal{
-  background:#555;
+  outline:3px solid yellow;
 }
 
 button{
+  margin:30px;
   padding:15px 40px;
   font-size:20px;
-  border-radius:40px;
   border:none;
+  border-radius:40px;
   background:#ccc;
-  margin:30px;
 }
 
 #overlay{
