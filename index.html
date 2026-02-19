@@ -1,309 +1,62 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>俺らの電工β</title>
-
-<style>
-body{
-  margin:0;
-  background:#000;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
-
-h1{
-  margin:20px 0;
-}
-
-.hp-wrapper{
-  width:80%;
-  margin:10px auto;
-}
-
-.hp-label{
-  margin-bottom:5px;
-}
-
-.hp-bar{
-  width:100%;
-  height:20px;
-  background:#333;
-  border-radius:20px;
-  overflow:hidden;
-}
-
-.hp-fill{
-  height:100%;
-  width:100%;
-  transition:width 0.3s;
-}
-
-#bossHP{ background:red; }
-#playerHP{ background:limegreen; }
-
-#battleArea{
-  position:relative;
-  margin-top:30px;
-}
-
-.device{
-  width:120px;
-  padding:15px;
-  background:#ddd;
-  color:black;
-  border-radius:12px;
-  display:inline-block;
-  margin:20px;
-}
-
-.terminals{
-  display:flex;
-  justify-content:space-around;
-  margin-top:10px;
-}
-
-.terminal{
-  width:45px;
-  height:45px;
-  background:#222;
-  color:white;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
-
-#wireLayer{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-}
-
-#setBtn{
-  margin-top:30px;
-  padding:10px 30px;
-  font-size:18px;
-  border-radius:20px;
-  border:none;
-}
-
-#freezeScreen{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:black;
-  display:none;
-  z-index:9999;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>俺らの電工β</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>俺らの電工 β</h1>
+  <h1>俺らの電工 β</h1>
 
-<div class="hp-wrapper">
-  <div class="hp-label">BOSS</div>
-  <div class="hp-bar"><div id="bossHP" class="hp-fill"></div></div>
-</div>
+  <!-- HPゲージ -->
+  <div class="hp-wrapper">
+    <div class="label">BOSS</div>
+    <div class="hp-bar">
+      <div id="bossHP" class="hp-fill boss"></div>
+    </div>
 
-<div class="hp-wrapper">
-  <div class="hp-label">PLAYER</div>
-  <div class="hp-bar"><div id="playerHP" class="hp-fill"></div></div>
-</div>
-
-<div id="battleArea">
-
-  <svg id="wireLayer"></svg>
-
-  <div class="device">
-    電源
-    <div class="terminals">
-      <div class="terminal" data-type="power-L">L</div>
-      <div class="terminal" data-type="power-N">N</div>
+    <div class="label">PLAYER</div>
+    <div class="hp-bar">
+      <div id="playerHP" class="hp-fill player"></div>
     </div>
   </div>
 
-  <div class="device">
-    片切
-    <div class="terminals">
-      <div class="terminal" data-type="switch-IN">IN</div>
-      <div class="terminal" data-type="switch-OUT">OUT</div>
+  <!-- 配線エリア -->
+  <div class="board">
+
+    <div class="device power">
+      <div class="title">電源</div>
+      <div class="terminals">
+        <div class="terminal" data-id="power-L">L</div>
+        <div class="terminal" data-id="power-N">N</div>
+      </div>
     </div>
+
+    <div class="device switch">
+      <div class="title">片切</div>
+      <div class="terminals">
+        <div class="terminal" data-id="switch-IN">IN</div>
+        <div class="terminal" data-id="switch-OUT">OUT</div>
+      </div>
+    </div>
+
+    <div class="device lamp">
+      <div class="title">ランプ</div>
+      <div class="terminals">
+        <div class="terminal" data-id="lamp-L">L</div>
+        <div class="terminal" data-id="lamp-N">N</div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="device">
-    ランプ
-    <div class="terminals">
-      <div class="terminal" data-type="lamp-L">L</div>
-      <div class="terminal" data-type="lamp-N">N</div>
-    </div>
-  </div>
+  <button id="setBtn">SET</button>
 
-</div>
+  <!-- フリーズ演出 -->
+  <div id="freezeScreen">CLEAR</div>
 
-<button id="setBtn">SET</button>
-
-<div id="freezeScreen"></div>
-
-<script>
-/* =============================
-   状態管理
-============================= */
-
-let bossHP = 100;
-let playerHP = 100;
-let connections = [];
-let selectedTerminal = null;
-
-const bossBar = document.getElementById("bossHP");
-const playerBar = document.getElementById("playerHP");
-const freezeScreen = document.getElementById("freezeScreen");
-const wireLayer = document.getElementById("wireLayer");
-
-const freezeSound = new Audio("sound/freeze.mp3");
-freezeSound.preload = "auto";
-
-/* =============================
-   HP更新
-============================= */
-
-function updateHP(){
-  bossBar.style.width = bossHP + "%";
-  playerBar.style.width = playerHP + "%";
-}
-
-/* =============================
-   配線処理
-============================= */
-
-document.querySelectorAll(".terminal").forEach(t=>{
-  t.addEventListener("click",()=>{
-    if(!selectedTerminal){
-      selectedTerminal = t;
-    }else{
-      drawWire(selectedTerminal,t);
-      connections.push([
-        selectedTerminal.dataset.type,
-        t.dataset.type
-      ]);
-      selectedTerminal = null;
-    }
-  });
-});
-
-/* =============================
-   線描画（ズレ完全修正）
-============================= */
-
-function drawWire(t1,t2){
-
-  const svgRect = wireLayer.getBoundingClientRect();
-  const r1 = t1.getBoundingClientRect();
-  const r2 = t2.getBoundingClientRect();
-
-  const x1 = r1.left + r1.width/2 - svgRect.left;
-  const y1 = r1.top + r1.height/2 - svgRect.top;
-
-  const x2 = r2.left + r2.width/2 - svgRect.left;
-  const y2 = r2.top + r2.height/2 - svgRect.top;
-
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-
-  line.setAttribute("x1",x1);
-  line.setAttribute("y1",y1);
-  line.setAttribute("x2",x1);
-  line.setAttribute("y2",y1);
-  line.setAttribute("stroke","yellow");
-  line.setAttribute("stroke-width","3");
-
-  wireLayer.appendChild(line);
-
-  let progress = 0;
-  const animate = setInterval(()=>{
-    progress += 0.05;
-    if(progress>=1){
-      line.setAttribute("x2",x2);
-      line.setAttribute("y2",y2);
-      clearInterval(animate);
-    }else{
-      line.setAttribute("x2",x1+(x2-x1)*progress);
-      line.setAttribute("y2",y1+(y2-y1)*progress);
-    }
-  },16);
-}
-
-/* =============================
-   判定
-============================= */
-
-document.getElementById("setBtn").addEventListener("click",()=>{
-
-  const correct1 = connections.some(c =>
-    c.includes("power-L") && c.includes("switch-IN")
-  );
-
-  const correct2 = connections.some(c =>
-    c.includes("switch-OUT") && c.includes("lamp-L")
-  );
-
-  const correct3 = connections.some(c =>
-    c.includes("power-N") && c.includes("lamp-N")
-  );
-
-  if(correct1 && correct2 && correct3){
-    bossHP -= 50;
-    if(bossHP < 0) bossHP = 0;
-  }else{
-    playerHP -= 20;
-    if(playerHP < 0) playerHP = 0;
-  }
-
-  updateHP();
-  connections = [];
-  wireLayer.innerHTML = "";
-
-  if(bossHP === 0){
-    triggerFreeze();
-  }
-
-  if(playerHP === 0){
-    alert("GAME OVER");
-    location.reload();
-  }
-
-});
-
-/* =============================
-   フリーズ演出
-============================= */
-
-function triggerFreeze(){
-
-  freezeSound.currentTime = 0;
-  freezeSound.play().catch(()=>{});
-
-  freezeScreen.style.display = "block";
-
-  setTimeout(()=>{
-    freezeScreen.style.display = "none";
-    alert("WORLD1 CLEAR");
-    location.reload();
-  },3000);
-}
-
-updateHP();
-
-</script>
-
+  <script src="main.js"></script>
 </body>
 </html>
