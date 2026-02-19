@@ -1,62 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>俺らの電工β</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>俺らの電工 - WORLD1</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>俺らの電工 β</h1>
+<div id="gameWrapper">
 
-  <!-- HPゲージ -->
-  <div class="hp-wrapper">
-    <div class="label">BOSS</div>
-    <div class="hp-bar">
-      <div id="bossHP" class="hp-fill boss"></div>
-    </div>
+  <svg id="board" viewBox="0 0 1000 1600">
 
-    <div class="label">PLAYER</div>
-    <div class="hp-bar">
-      <div id="playerHP" class="hp-fill player"></div>
-    </div>
-  </div>
+    <!-- デバイス -->
+    <g id="devices"></g>
 
-  <!-- 配線エリア -->
-  <div class="board">
+    <!-- 配線 -->
+    <g id="wireLayer"></g>
 
-    <div class="device power">
-      <div class="title">電源</div>
-      <div class="terminals">
-        <div class="terminal" data-id="power-L">L</div>
-        <div class="terminal" data-id="power-N">N</div>
-      </div>
-    </div>
+    <!-- 通電粒子 -->
+    <g id="flowLayer"></g>
 
-    <div class="device switch">
-      <div class="title">片切</div>
-      <div class="terminals">
-        <div class="terminal" data-id="switch-IN">IN</div>
-        <div class="terminal" data-id="switch-OUT">OUT</div>
-      </div>
-    </div>
+    <!-- 束ドット -->
+    <g id="bundleLayer"></g>
 
-    <div class="device lamp">
-      <div class="title">ランプ</div>
-      <div class="terminals">
-        <div class="terminal" data-id="lamp-L">L</div>
-        <div class="terminal" data-id="lamp-N">N</div>
-      </div>
-    </div>
-
-  </div>
+  </svg>
 
   <button id="setBtn">SET</button>
 
-  <!-- フリーズ演出 -->
-  <div id="freezeScreen">CLEAR</div>
+  <div id="overlay" class="hidden">
+    <div id="clearText">CLEAR</div>
+  </div>
 
-  <script src="main.js"></script>
+</div>
+
+<script src="main.js"></script>
 </body>
 </html>
