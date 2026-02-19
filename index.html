@@ -1,58 +1,57 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>俺らの電工 β</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俺らの電工 β</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ========================= -->
-  <!-- ヘッダー -->
-  <!-- ========================= -->
-  <header class="header">
-    <h1>俺らの電工 β</h1>
-    <div id="comboUI">COMBO: 0</div>
-  </header>
+<header class="header">
+  <h1>俺らの電工 β</h1>
+</header>
 
-  <!-- ========================= -->
-  <!-- HPバー -->
-  <!-- ========================= -->
-  <section class="status">
-    <div class="label">BOSS</div>
-    <div class="hp-bar">
-      <div id="bossHP" class="hp boss"></div>
-    </div>
+<section class="status">
+  <div class="label">BOSS</div>
+  <div class="hp-bar">
+    <div id="bossHP" class="hp boss"></div>
+  </div>
 
-    <div class="label">PLAYER</div>
-    <div class="hp-bar">
-      <div id="playerHP" class="hp player"></div>
-    </div>
-  </section>
+  <div class="label">PLAYER</div>
+  <div class="hp-bar">
+    <div id="playerHP" class="hp player"></div>
+  </div>
+</section>
 
-  <!-- ========================= -->
-  <!-- クイズ画面 -->
-  <!-- ========================= -->
-  <section id="quizContainer" class="quiz">
-    <h2 id="questionText">読み込み中...</h2>
-    <div id="choicesContainer"></div>
-  </section>
+<section id="bossArea" class="boss-area">
 
-  <!-- ========================= -->
-  <!-- ボス戦エリア -->
-  <!-- ========================= -->
-  <section id="bossArea" class="boss-area" style="display:none;">
-    <h2>BOSS BATTLE</h2>
-    <p>画面タップで攻撃</p>
-  </section>
+  <svg id="wireLayer"></svg>
 
-  <!-- ========================= -->
-  <!-- フリーズ演出 -->
-  <!-- ========================= -->
-  <div id="freezeScreen" class="freeze-screen" style="display:none;"></div>
+  <div class="device power">
+    <div class="device-title">電源</div>
+    <div class="terminal" data-id="powerL">L</div>
+    <div class="terminal" data-id="powerN">N</div>
+  </div>
 
-  <script src="main.js"></script>
+  <div class="device switch">
+    <div class="device-title">片切</div>
+    <div class="terminal" data-id="switchIn">IN</div>
+    <div class="terminal" data-id="switchOut">OUT</div>
+  </div>
 
+  <div class="device lamp">
+    <div class="device-title">ランプ</div>
+    <div class="terminal" data-id="lampL">L</div>
+    <div class="terminal" data-id="lampN">N</div>
+  </div>
+
+</section>
+
+<button id="setBtn">SET</button>
+
+<div id="freezeScreen" class="freeze-screen"></div>
+
+<script src="main.js"></script>
 </body>
 </html>
