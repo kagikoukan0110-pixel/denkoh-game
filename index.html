@@ -1,37 +1,96 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>俺らの電工 β</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>俺らの電工 - WORLD1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="hud">
-  <div>俺らの電工 β</div>
-  <div id="comboUI">COMBO: 0</div>
-</div>
+  <!-- ===== QUIZ SCREEN ===== -->
+  <div id="quizScreen" class="screen">
 
-<div id="bossUI">
-  <div class="barWrap">
-    <div>BOSS</div>
-    <div class="bar"><div id="bossHP" class="fill red"></div></div>
+    <div class="hud">
+      <div class="hpBar">
+        <div class="label">PLAYER</div>
+        <div class="bar"><div id="playerHPBar"></div></div>
+      </div>
+
+      <div class="hpBar">
+        <div class="label">BOSS</div>
+        <div class="bar boss"><div id="bossHPBar"></div></div>
+      </div>
+    </div>
+
+    <div id="quizContainer">
+      <div id="questionNumber"></div>
+      <div id="questionText"></div>
+
+      <div id="choices"></div>
+
+      <div id="resultMessage"></div>
+    </div>
+
   </div>
 
-  <div class="barWrap">
-    <div>PLAYER</div>
-    <div class="bar"><div id="playerHP" class="fill blue"></div></div>
+
+  <!-- ===== BOSS SCREEN ===== -->
+  <div id="bossScreen" class="screen hidden">
+
+    <div class="hud">
+      <div class="hpBar">
+        <div class="label">PLAYER</div>
+        <div class="bar"><div id="playerHPBarBoss"></div></div>
+      </div>
+
+      <div class="hpBar">
+        <div class="label">BOSS</div>
+        <div class="bar boss"><div id="bossHPBarBoss"></div></div>
+      </div>
+    </div>
+
+    <div id="bossTitle">BOSS BATTLE</div>
+
+    <div id="board">
+
+      <!-- 電源 -->
+      <div class="device">
+        <div class="deviceTitle">電源</div>
+        <div class="terminal" data-id="powerL">L</div>
+        <div class="terminal" data-id="powerN">N</div>
+      </div>
+
+      <!-- スイッチ -->
+      <div class="device">
+        <div class="deviceTitle">スイッチ</div>
+        <div class="terminal" data-id="switchIn">IN</div>
+        <div class="terminal" data-id="switchOut">OUT</div>
+      </div>
+
+      <!-- ランプ -->
+      <div class="device">
+        <div class="deviceTitle">ランプ</div>
+        <div class="terminal" data-id="lampL">L</div>
+        <div class="terminal" data-id="lampN">N</div>
+        <div id="lampVisual"></div>
+      </div>
+
+    </div>
+
+    <button id="setButton">SET</button>
+
   </div>
-</div>
 
-<div id="workspace">
-  <svg id="wireLayer"></svg>
-</div>
 
-<div id="freezeScreen"></div>
-<button id="freezeBtn">FREEZE TEST</button>
+  <!-- ===== OVERLAY ===== -->
+  <div id="overlay" class="hidden">
+    <div id="overlayText"></div>
+    <button id="nextWorldBtn" class="hidden">▶ 次のWORLDへ</button>
+  </div>
 
-<script src="main.js"></script>
+
+  <script src="main.js"></script>
 </body>
 </html>
