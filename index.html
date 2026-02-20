@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1</title>
+<title>俺らの電工 - WORLD1 (full)</title>
 <style>
 :root{
   --bg:#000;
@@ -11,115 +11,76 @@
   --term-bg:#222;
   --wire:#ffd800;
   --wirew:6;
-  --device-w:110px;
-  --device-padding:10px;
+  --device-w:86px;
+  --device-padding:8px;
   --boss-hp-color:#e74c3c;
   --boss-hp-back:#332626;
 }
-html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased;}
-/* wire layer must be direct child of body and on top */
-#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+/* wire layer MUST be body direct child */
+#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2000}
 
 /* header */
 .header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
 .title{font-size:20px;margin:0;font-weight:700}
 .hp-area{width:46%;min-width:180px}
-.bar{width:100%;height:14px;background:#222;border-radius:12px;overflow:hidden}
-.player{height:100%;width:100%;background:#34d058;border-radius:12px;transition:width 300ms linear}
+.bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
+.player{height:100%;width:100%;background:#34d058;border-radius:12px}
 
-/* main board area */
-#board-wrap{position:relative;width:100%;height:calc(100vh - 240px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
+/* board */
+#board-wrap{position:relative;width:100%;height:calc(100vh - 230px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
 #board{position:relative;width:100%;height:100%}
 
-/* devices */
-.device{
-  position:absolute;
-  width:var(--device-w);
-  padding:var(--device-padding);
-  background:var(--panel);
-  border-radius:12px;
-  color:#000;
-  box-shadow:0 20px 50px rgba(0,0,0,0.6);
-  transform:translate(-50%,-50%);
-  text-align:center;
-  z-index:40; /* below svg wireLayer */
-}
-.device h3{margin:4px 0 8px 0;font-size:13px}
-.terminal{
-  display:inline-flex;
-  justify-content:center;
-  align-items:center;
-  width:30px;height:30px;margin:6px;
-  background:var(--term-bg);color:#fff;border-radius:50%;font-size:13px;cursor:pointer;user-select:none;
-}
+/* device */
+.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:10px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:50}
+.device h3{margin:4px 0 8px 0;font-size:12px}
+.terminal{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
 .selected{outline:3px solid #ffd800}
 
 /* junction */
-#junction{left:40%;top:42%;width:140px;padding:12px;background:#d6d6d6;border-radius:16px;z-index:42;transform:translate(-50%,-50%)}
-.jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
-.jb-term{width:20px;height:20px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
+#junction{left:38%;top:42%;width:120px;padding:10px;background:#d6d6d6;border-radius:14px;z-index:45;transform:translate(-50%,-50%)}
+.jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
 
 /* controls */
 .controls{height:180px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-button#setBtn{padding:14px 40px;border-radius:28px;border:none;background:#ffd000;color:#000;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,0.5)}
-button.small{padding:10px 14px;margin:8px;border-radius:14px;border:none;background:#333;color:#fff}
-.note{font-size:13px;color:#bbb;text-align:center;margin-top:10px}
+button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:700}
+button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
+.note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
-/* overlay clear */
-#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.96);display:none;align-items:center;justify-content:center;font-size:56px;z-index:10010;color:#ffd000}
-#overlay.show{display:flex}
+/* quiz/title screens */
+#titleScreen,#quizScreen{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9000}
+#titleScreen.show,#quizScreen.show{display:flex}
+.titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:18px}
+.quizCard{max-width:760px;color:#fff}
 
 /* boss screen */
-#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:10005;color:#fff}
-#bossPanel{width:92%;max-width:900px;background:linear-gradient(180deg,rgba(0,0,0,0.55),rgba(0,0,0,0.7));border-radius:14px;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
-#bossImage{flex:1;height:320px;background-size:cover;background-position:center;border-radius:14px}
-#bossInfo{width:45%;min-width:220px;padding:8px;color:#fff}
-#bossName{font-size:20px;color:#ffd200;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bossHPwrap{margin-top:10px}
+#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:8000;color:#fff}
+#bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
+#bossName{font-size:22px;color:#ffd200;margin-right:12px;font-weight:800;white-space:nowrap}
+.bossHPwrap{flex:1}
 .bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
-.bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 600ms linear;border-radius:12px}
+.bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 500ms linear;border-radius:12px}
 
-/* damage effects */
-.hitText{position:fixed;top:12%;left:50%;transform:translateX(-50%);font-size:48px;color:#fff;z-index:10020;pointer-events:none;mix-blend-mode:screen;display:none}
-@keyframes dmgFlash {
-  0%{filter:brightness(1)}
-  25%{filter:brightness(2)}
-  50%{filter:brightness(0.7)}
-  75%{filter:brightness(1.8)}
-  100%{filter:brightness(1)}
-}
-@keyframes rainbow {
-  0%{filter:hue-rotate(0deg)}
-  25%{filter:hue-rotate(90deg)}
-  50%{filter:hue-rotate(180deg)}
-  75%{filter:hue-rotate(270deg)}
-  100%{filter:hue-rotate(360deg)}
-}
+/* effects */
+@keyframes flashRed { 0%{filter:none}50%{filter:drop-shadow(0 0 14px rgba(231,76,60,0.9))}100%{filter:none} }
+@keyframes shake { 0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}100%{transform:translateX(0)} }
+.boss-damage{animation: flashRed 300ms ease, shake 420ms ease}
 
-/* version badge */
-#versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:10030}
+/* final flash */
+#finalFlash{position:fixed;inset:0;pointer-events:none;display:none;z-index:99999;background:linear-gradient(90deg, red, orange, yellow, green, cyan, blue, magenta);mix-blend-mode:screen;opacity:0}
+#finalFlash.show{display:block;animation: finalRainbow 3s linear forwards}
+@keyframes finalRainbow{0%{opacity:0}10%{opacity:1}100%{opacity:0}}
 
-/* quiz overlay (title->quiz) */
-#quizScreen{position:fixed;inset:0;display:none;background:rgba(0,0,0,0.96);z-index:10002;color:#fff;padding:28px;box-sizing:border-box;overflow:auto}
-#quizScreen.show{display:block}
-.quizTitle{font-size:34px;color:#ffd200;margin-bottom:16px}
-.choice{display:block;background:#222;padding:14px;border-radius:8px;margin:10px 0;color:#fff;cursor:pointer}
-
-/* victory rainbow overlay */
-#rainbowOverlay{position:fixed;inset:0;display:none;z-index:10050;pointer-events:none}
-#rainbowOverlay.show{display:block;animation:rainbow 3s linear}
+/* version */
+#versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:5000}
 
 /* responsive */
-@media (max-width:480px){
-  :root{--device-w:84px; --wirew:5}
-  .title{font-size:18px}
-  #bossImage{height:220px}
-  .hitText{font-size:36px}
-}
+@media (max-width:480px){:root{--device-w:72px;} .title{font-size:18px}}
 </style>
 </head>
 <body>
-  <!-- IMPORTANT: wireLayer must be a direct child of body and on top -->
+  <!-- must be direct child -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
   <div id="versionBadge">version: 2026-02-20T1900</div>
@@ -127,7 +88,7 @@ button.small{padding:10px 14px;margin:8px;border-radius:14px;border:none;backgro
   <div class="header">
     <div style="display:flex;align-items:center;gap:12px">
       <div class="title">俺らの電工 β</div>
-      <div class="roundBox" style="font-size:13px;color:#ccc">Round: <span id="roundLabel">1</span> / 3</div>
+      <div class="roundBox" style="font-size:13px;color:#ccc;margin-left:8px">Round: <span id="roundLabel">1</span> / 3</div>
     </div>
 
     <div class="hp-area">
@@ -140,57 +101,39 @@ button.small{padding:10px 14px;margin:8px;border-radius:14px;border:none;backgro
     </div>
   </div>
 
-  <!-- QUIZ/OPENING SCREEN (start) -->
-  <div id="quizScreen" aria-hidden="false">
-    <div class="quizTitle">学科問題</div>
-    <div style="font-size:18px;margin-bottom:12px">1. 電気で L は何を表す？</div>
-    <div id="choices">
-      <div class="choice" data-c="neutral">中性線</div>
-      <div class="choice" data-c="live">活線(L)</div>
-      <div class="choice" data-c="earth">地線</div>
-      <div class="choice" data-c="illum">照明</div>
-    </div>
-    <div style="margin-top:18px;">
-      <button id="startFromQuiz" class="small">回答して開始</button>
-    </div>
-  </div>
-
+  <!-- board -->
   <div id="board-wrap">
     <div id="board">
-      <!-- POWER -->
       <div class="device" id="power" style="left:12%; top:26%;">
-        <h3>電源</h3>
+        <h3 style="font-size:12px">電源</h3>
         <div style="text-align:center;">
           <div class="terminal" data-id="power-L">L</div>
           <div class="terminal" data-id="power-N">N</div>
         </div>
       </div>
 
-      <!-- SWITCH -->
       <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
-        <h3>片切</h3>
+        <h3 style="font-size:12px">片切</h3>
         <div style="text-align:center;">
           <div class="terminal" data-id="switch-IN">IN</div>
           <div class="terminal" data-id="switch-OUT">OUT</div>
         </div>
-        <div id="switchState" style="color:#333;margin-top:6px;font-size:12px;">Switch: OFF</div>
+        <div id="switchState" style="color:#333;margin-top:6px;font-size:11px;">Switch: OFF</div>
       </div>
 
-      <!-- JUNCTION (center-ish fixed area but movable slightly) -->
       <div id="junction" class="device" style="left:40%; top:42%;">
-        <h3>Joint Box</h3>
-        <div class="jb-dots" style="margin-top:8px;">
+        <h3 style="font-size:12px">Joint Box</h3>
+        <div class="jb-dots" style="margin-top:6px;">
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
         </div>
-        <div style="font-size:11px;color:#666;margin-top:8px;">端子は導通のみ。どの端子でもOK。</div>
+        <div style="font-size:11px;color:#666;margin-top:6px;">端子は導通のみ。どの端子でもOK。</div>
       </div>
 
-      <!-- LAMP -->
       <div class="device" id="lamp" style="left:78%; top:66%;">
-        <h3>ランプ</h3>
+        <h3 style="font-size:12px">ランプ</h3>
         <div style="text-align:center;">
           <div class="terminal" data-id="lamp-L">L</div>
           <div class="terminal" data-id="lamp-N">N</div>
@@ -199,82 +142,126 @@ button.small{padding:10px 14px;margin:8px;border-radius:14px;border:none;backgro
     </div>
   </div>
 
-  <div class="controls">
-    <button id="setBtn">SET</button>
-    <div style="margin-top:12px;">
+  <div class="controls" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
+    <div style="display:flex;gap:18px;align-items:center">
       <button id="switchBtn" class="small">SWITCH</button>
+      <button id="setBtn">SET</button>
       <button id="resetWires" class="small">Reset Wires</button>
       <button id="restart" class="small">Restart</button>
     </div>
     <div class="note">端子クリック → もう一つの端子クリックで配線。配線選択してクリックで削除。</div>
   </div>
 
-  <div id="overlay">WORLD1 CLEAR</div>
-  <div id="rainbowOverlay"></div>
+  <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9500;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
-  <!-- boss screen -->
-  <div id="bossScreen" aria-hidden="true">
-    <div id="bossPanel">
-      <div id="bossImage" style="background-image: url('boss.png.jpg');"></div>
-      <div id="bossInfo">
-        <div id="bossName">汚ねえ大工</div>
-        <div style="font-size:12px;color:#ccc;margin-top:8px;">BOSS HP</div>
-        <div class="bossHPwrap"><div class="bossHPback"><div id="bossHPbar" class="bossHPbar" style="width:100%"></div></div></div>
+  <!-- title screen -->
+  <div id="titleScreen" class="show">
+    <div class="titleBig">WORLD1</div>
+    <div style="color:#fff;margin-bottom:18px">俺らの電工 - チュートリアル</div>
+    <div style="display:flex;gap:12px">
+      <button id="toQuiz" class="small" style="padding:12px 18px">開始 (学科問題へ)</button>
+    </div>
+  </div>
+
+  <!-- quiz screen -->
+  <div id="quizScreen">
+    <div style="color:#ffd200;font-size:28px;margin-bottom:14px">学科問題</div>
+    <div style="background:#111;padding:18px;border-radius:12px;max-width:720px;color:#fff">
+      <div style="margin-bottom:12px">1. 電気で L は何を表す？</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+        <button class="quizOpt small">中性線</button>
+        <button class="quizOpt small">活線(L)</button>
+        <button class="quizOpt small">地線</button>
+        <button class="quizOpt small">照明</button>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button id="answerBtn" class="small">回答</button>
+        <button id="skipQuiz" class="small">スキップ (デバッグ)</button>
       </div>
     </div>
   </div>
 
-  <div id="hitText" class="hitText">HIT -40</div>
+  <!-- boss -->
+  <div id="bossScreen" aria-hidden="true">
+    <div id="bossPanel">
+      <img id="bossImg" src="boss.png.jpg" alt="boss" style="width:200px;height:200px;object-fit:cover;border-radius:8px" />
+      <div style="flex:1">
+        <div id="bossName">汚ねえ大工</div>
+        <div style="font-size:12px;color:#ccc;margin:8px 0;">BOSS HP</div>
+        <div class="bossHPback"><div id="bossHPbar" class="bossHPbar" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
 
-  <!-- audio -->
-  <audio id="freezeAudio" src="freeze.mp3" preload="auto"></audio>
+  <div id="finalFlash"></div>
+
+  <audio id="freezeSound" src="freeze.mp3" preload="auto"></audio>
 
 <script>
-/* ---------- state ---------- */
+/* ------- state -------- */
 let bossHP = 100;
 let playerHP = 100;
 let roundNum = 1;
 let switchOn = false;
 let selected = null;
 let connections = [];
-let state = 'title'; // title -> quiz -> play -> boss -> clear
+let state = 'title'; // crucial: start at title -> quiz -> play
 
-/* DOM refs */
-const board = document.getElementById('board');
-const wireLayer = document.getElementById('wireLayer');
-const playerBar = document.getElementById('playerHP');
-const bossHPbar = document.getElementById('bossHPbar');
-const overlay = document.getElementById('overlay');
-const bossScreen = document.getElementById('bossScreen');
-const setBtn = document.getElementById('setBtn');
-const switchEl = document.getElementById('switch');
-const switchState = document.getElementById('switchState');
-const startQuizBtn = document.getElementById('startFromQuiz');
-const quizScreen = document.getElementById('quizScreen');
-const roundLabel = document.getElementById('roundLabel');
-const stateLabel = document.getElementById('stateLabel');
-const hitText = document.getElementById('hitText');
-const freezeAudio = document.getElementById('freezeAudio');
-const rainbowOverlay = document.getElementById('rainbowOverlay');
+/* elements */
+const board = document.getElementById("board");
+const wireLayer = document.getElementById("wireLayer");
+const playerBar = document.getElementById("playerHP");
+const bossHPbar = document.getElementById("bossHPbar");
+const overlay = document.getElementById("overlay");
+const bossScreen = document.getElementById("bossScreen");
+const setBtn = document.getElementById("setBtn");
+const switchState = document.getElementById("switchState");
+const stateLabel = document.getElementById("stateLabel");
+const titleScreen = document.getElementById("titleScreen");
+const quizScreen = document.getElementById("quizScreen");
+const toQuiz = document.getElementById("toQuiz");
+const answerBtn = document.getElementById("answerBtn");
+const freezeSound = document.getElementById("freezeSound");
+const finalFlash = document.getElementById("finalFlash");
+const switchBtn = document.getElementById("switchBtn");
+const roundLabel = document.getElementById("roundLabel");
 
-/* ensure svg sits above devices - viewport sizing relative to board */
+/* -------- svg sizing (keep wireLayer aligned with board) -------- */
 function resizeSVG(){
   const r = board.getBoundingClientRect();
-  wireLayer.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+  wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
+  // put svg exactly over board (important so lines align)
   wireLayer.style.left = r.left + 'px';
   wireLayer.style.top = r.top + 'px';
   wireLayer.style.width = r.width + 'px';
   wireLayer.style.height = r.height + 'px';
 }
-window.addEventListener('resize', resizeSVG);
-window.addEventListener('load', ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
+window.addEventListener("resize", resizeSVG);
+window.addEventListener("load", ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
 
-/* UI updates */
-function updateHP(){ playerBar.style.width = playerHP + '%'; }
-function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + '%'; }
+/* UI helpers */
+function updateHP(){ playerBar.style.width = playerHP + "%"; }
+function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + "%"; }
 function updateRound(){ roundLabel.textContent = roundNum; }
+function setState(s){
+  state = s;
+  stateLabel.textContent = s;
+  // show/hide screens
+  if(s === 'title'){
+    titleScreen.classList.add('show');
+    quizScreen.classList.remove('show');
+  } else if(s === 'quiz'){
+    titleScreen.classList.remove('show');
+    quizScreen.classList.add('show');
+  } else if(s === 'play'){
+    titleScreen.classList.remove('show');
+    quizScreen.classList.remove('show');
+    // ensure svg sizing after layout changes
+    setTimeout(resizeSVG,60);
+  }
+}
 
-/* normalize JB terminals */
+/* normalization of JB */
 function normalizeId(id, el){
   if(!id && el) id = el.dataset.id;
   if(!id) return id;
@@ -283,61 +270,57 @@ function normalizeId(id, el){
   return id;
 }
 
-/* terminal click handling */
-function onTerminalClick(t){
-  // JB dots: set dataset
-  if(t.classList.contains('jb-term')) t.dataset.id = 'jb';
-  if(selected === t){ t.classList.remove('selected'); selected = null; return; }
-  if(!selected){ selected = t; t.classList.add('selected'); return; }
-  if(selected !== t){
-    connect(selected, t);
-  }
-  if(selected) selected.classList.remove('selected');
-  selected = null;
-}
-
-/* attach listeners */
-function attachTerminalListeners(){
-  document.querySelectorAll('.terminal, .jb-term').forEach(t=>{
-    t.removeEventListener('click', t._clicker);
-    t._clicker = ()=> onTerminalClick(t);
-    t.addEventListener('click', t._clicker);
+/* register terminal clicks */
+document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
+  t.addEventListener("click", (e)=>{
+    // if not in play state, ignore terminal clicks
+    if(state !== 'play') return;
+    if(t.classList.contains('jb-term')) t.dataset.id = 'jb';
+    if(selected === t){ t.classList.remove("selected"); selected = null; return; }
+    if(!selected){ selected = t; t.classList.add("selected"); return; }
+    if(selected !== t){
+      connect(selected, t);
+    }
+    if(selected) selected.classList.remove("selected");
+    selected = null;
   });
-}
-attachTerminalListeners();
-
-/* switch control: dblclick toggles, and also button toggles */
-switchEl.addEventListener('dblclick', ()=>{
-  switchOn = !switchOn;
-  switchState.textContent = switchOn ? 'Switch: ON' : 'Switch: OFF';
-  switchEl.style.background = switchOn ? '#e7ffec' : '';
-});
-document.getElementById('switchBtn').addEventListener('click', ()=>{
-  switchOn = !switchOn;
-  switchState.textContent = switchOn ? 'Switch: ON' : 'Switch: OFF';
-  switchEl.style.background = switchOn ? '#e7ffec' : '';
 });
 
-/* connect: store connection (normalized) and draw SVG line */
+/* switch UI */
+switchBtn.addEventListener("click", ()=>{
+  // toggle quickly from controls
+  switchOn = !switchOn;
+  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
+  // visual
+  document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
+});
+
+/* double click switch area still works */
+document.getElementById("switch").addEventListener("dblclick", ()=>{
+  switchOn = !switchOn;
+  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
+  document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
+});
+
+/* connection logic - same as working version */
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
   if(!idA || !idB) return;
   if(idA === idB) return;
-  // toggle removal if exists
+  // toggle remove if existing
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
-      // remove associated svg line(s)
-      const existing = Array.from(wireLayer.querySelectorAll(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`));
-      existing.forEach(e=>e.remove());
+      const existing = wireLayer.querySelector(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
+      if(existing) existing.remove();
       connections.splice(i,1);
       return;
     }
   }
-  // add connection
+  // store connection
   connections.push([idA,idB]);
-  // compute coordinates relative to board
+  // draw line
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
   const boardRect = board.getBoundingClientRect();
@@ -346,34 +329,34 @@ function connect(a,b){
   const x2 = rectB.left - boardRect.left + rectB.width/2;
   const y2 = rectB.top - boardRect.top + rectB.height/2;
 
-  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-  line.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800');
-  line.setAttribute('stroke-width', getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 6);
-  line.setAttribute('stroke-linecap', 'round');
-  line.setAttribute('data-from', idA); line.setAttribute('data-to', idB);
-  // stroke dash prep for animate
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1); line.setAttribute("y1",y1); line.setAttribute("x2",x2); line.setAttribute("y2",y2);
+  line.setAttribute("stroke", getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800');
+  line.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
+  line.setAttribute("stroke-linecap","round");
+  line.setAttribute("data-from", idA); line.setAttribute("data-to", idB);
+  // stroke-dash for animation
   const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
   line.style.strokeDasharray = len;
   line.style.strokeDashoffset = len;
+  // append and ensure it's visually on top of devices:
+  // wireLayer is on high z-index; lines will appear above devices visually.
   wireLayer.appendChild(line);
 }
 
-/* helper checks */
+/* helper to check connection existence */
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
 
-/* solution check with JB normalization */
+/* solution check (JB normalized) */
 function checkSolution(){
-  // require JB somewhere
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
-  return connHas('power-L','jb') && connHas('jb','switch-IN') && connHas('switch-OUT','jb') && connHas('jb','lamp-L') && connHas('power-N','jb') && connHas('jb','lamp-N');
+  return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
 }
 
-/* animate lines reveal */
+/* animate wire reveal */
 function animateLinesForward(ms){
   return new Promise(res=>{
-    const lines = Array.from(wireLayer.querySelectorAll('line'));
+    const lines = Array.from(wireLayer.querySelectorAll("line"));
     if(lines.length===0){ setTimeout(res,ms); return; }
     lines.forEach(l=>{
       const len = l.getTotalLength ? l.getTotalLength() : 200;
@@ -388,204 +371,173 @@ function animateLinesForward(ms){
   });
 }
 
-/* boss sequence (animate, damage, sound, return) */
+/* boss flow sequence */
 async function doBossSequence(){
-  state = 'boss';
   stateLabel.textContent = 'boss';
-  // show boss panel
   bossScreen.style.display = 'flex';
   bossScreen.setAttribute('aria-hidden','false');
-
   // small delay
-  await new Promise(r=>setTimeout(r,300));
+  await new Promise(r=>setTimeout(r,350));
 
-  // damage animation repeated (2s)
-  hitText.style.display = 'block';
-  hitText.textContent = 'HIT -40';
-  // play sound
-  try{ freezeAudio.currentTime = 0; freezeAudio.play(); }catch(e){}
-  // flash bossImage continuously for 2s
-  const bossPanel = document.getElementById('bossPanel');
-  bossPanel.style.animation = 'dmgFlash 200ms linear 0s 8'; // rapid flashes (~8 * 200ms = 1.6s)
-  // also apply CSS transform shake via inline animation
-  bossPanel.style.transition = 'transform 120ms';
-  bossPanel.style.transform = 'translateY(0)';
-  // small shakes
-  for(let i=0;i<6;i++){
-    bossPanel.style.transform = `translateX(${i%2? -8:8 }px)`;
-    await new Promise(r=>setTimeout(r,120));
+  // damage animation: flash + shake + play sound repeatedly for 2s (as requested earlier)
+  const panel = document.getElementById("bossPanel");
+  // repeat short flash while playing freeze sound
+  freezeSound.currentTime = 0;
+  freezeSound.play().catch(()=>{ /* ignore autoplay block in some browsers */ });
+
+  const flashCount = 6;
+  for(let i=0;i<flashCount;i++){
+    panel.classList.add('boss-damage');
+    await new Promise(r=>setTimeout(r,300));
+    panel.classList.remove('boss-damage');
+    await new Promise(r=>setTimeout(r,150));
   }
-  bossPanel.style.transform = 'translateX(0)';
-  bossPanel.style.animation = '';
-  hitText.style.display = 'none';
 
-  // deal damage
+  // damage amount
   const dmg = 40;
   bossHP -= dmg;
   updateBossHP();
 
-  // if boss dead OR last round -> victory
+  // if boss dead or last round => final clear
   if(bossHP <= 0 || roundNum >= 3){
-    // display final rainbow flash for 3s and overlay
-    rainbowOverlay.classList.add('show');
-    rainbowOverlay.style.zIndex = 10050;
-    rainbowOverlay.style.animation = 'rainbow 3s linear';
-    overlay.classList.add('show');
+    // big final flashy text + rainbow flash (3s)
+    bossScreen.style.display = 'none';
+    finalFlash.classList.add('show'); finalFlash.style.display='block';
+    finalFlash.style.animation = 'none';
+    // force reflow to restart
+    void finalFlash.offsetWidth;
+    finalFlash.style.animation = 'finalRainbow 3s linear forwards';
+    // show final overlay text
+    overlay.style.display = 'flex'; overlay.textContent = 'WORLD1 CLEAR';
     stateLabel.textContent = 'clear';
-    // stop bossScreen after small delay
-    setTimeout(()=>{
-      bossScreen.style.display = 'none';
-      bossScreen.setAttribute('aria-hidden','true');
-      rainbowOverlay.classList.remove('show');
-      rainbowOverlay.style.animation = '';
-    }, 3000);
+    // stop sound after short while
+    setTimeout(()=>{ freezeSound.pause(); freezeSound.currentTime=0; }, 1200);
+    // hide finalFlash after 3s
+    setTimeout(()=>{ finalFlash.style.display='none'; }, 3000);
     return;
   }
 
-  // else return to play after short pause
-  await new Promise(r=>setTimeout(r,600));
+  // not dead -> return to play (next round)
+  await new Promise(r=>setTimeout(r,700));
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
 
-  // clear wires and selection, increment round
-  wireLayer.querySelectorAll('line').forEach(l=>l.remove());
+  // reset wires and selected
+  document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
+  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
-  document.querySelectorAll('.terminal.selected').forEach(t=>t.classList.remove('selected'));
 
   roundNum++;
   updateRound();
 
-  // randomize device positions (non-overlap)
+  // randomize device positions (avoid overlap)
   randomizeDevicePositions();
 
-  state = 'play';
   stateLabel.textContent = 'play';
 }
 
-/* non-overlap randomization for devices */
+/* randomize positions but avoid overlaps (simple) */
 function randomizeDevicePositions(){
   const devices = Array.from(document.querySelectorAll('.device'));
+  const placed = [];
   const boardRect = board.getBoundingClientRect();
-  // bounding area in px
-  const pad = 12; // px margin
-  const placedRects = [];
-
-  function overlaps(r){
-    for(const p of placedRects){
-      if(!(r.right + pad < p.left || r.left - pad > p.right || r.bottom + pad < p.top || r.top - pad > p.bottom)){
-        return true;
-      }
-    }
-    return false;
-  }
-
+  const padX = 12; // percent margins
+  const padY = 14;
   devices.forEach(dev=>{
-    // keep junction near center
-    let attempts = 0;
-    let setRect = null;
-    while(attempts < 300){
-      attempts++;
-      // for junction bias near center
-      let leftPct, topPct;
-      if(dev.id === 'junction'){
-        leftPct = 35 + Math.random()*30; // 35% - 65%
-        topPct = 30 + Math.random()*30; // 30% - 60%
-      } else {
-        leftPct = 8 + Math.random()*84; // avoid edges
-        topPct = 14 + Math.random()*70;
+    let tries = 0;
+    while(tries++ < 40){
+      const l = padX + Math.random()*(100 - padX*2);
+      const t = padY + Math.random()*(100 - padY*2);
+      // compute approximate rect
+      const w = 12; const h = 18; // approximate in %
+      const rect = {left:l,top:t,right:l+w, bottom:t+h};
+      // check overlap
+      let ok = true;
+      for(const p of placed){
+        const overlap = !(rect.right < p.left || rect.left > p.right || rect.bottom < p.top || rect.top > p.bottom);
+        if(overlap){ ok=false; break; }
       }
-      dev.style.left = leftPct + '%';
-      dev.style.top = topPct + '%';
-      // allow layout to compute
-      const r = dev.getBoundingClientRect();
-      // ensure the device is within board bounds
-      const inside = (r.left >= boardRect.left - 4) && (r.right <= boardRect.right + 4) && (r.top >= boardRect.top - 4) && (r.bottom <= boardRect.bottom + 4);
-      if(!inside) continue;
-      const relRect = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-      if(!overlaps(relRect)){
-        setRect = relRect;
+      if(ok){
+        dev.style.left = l + '%';
+        dev.style.top = t + '%';
+        placed.push(rect);
         break;
       }
     }
-    if(!setRect){
-      // fallback: keep current position
-      const r = dev.getBoundingClientRect();
-      placedRects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
-    } else {
-      placedRects.push(setRect);
-    }
   });
-
-  // after positions changed, adjust SVG coordinates
-  setTimeout(resizeSVG,80);
+  setTimeout(resizeSVG,60);
 }
 
-/* SET button logic */
-setBtn.addEventListener('click', async ()=>{
-  if(state !== 'play'){ return; }
-  if(!switchOn){ alert('スイッチがOFFです。SWITCHボタンでONにしてください。'); return; }
+/* ---- SET button behavior ---- */
+setBtn.addEventListener("click", async ()=>{
+  // require being in play state
+  if(state !== 'play'){ alert('現在は配線パートではありません。'); return; }
+  if(!switchOn){ alert("スイッチがOFFです。スイッチをクリックしてONにしてください。"); return; }
   if(!checkSolution()){
     playerHP = Math.max(0, playerHP - 20);
     updateHP();
-    if(playerHP <= 0){ alert('PLAYER HP 0 - game over'); }
+    if(playerHP <= 0){ alert("PLAYER HP 0 - game over"); }
     return;
   }
-  // correct -> animate wires then boss
+  // correct: animate wires and do boss
   await animateLinesForward(2000);
   await doBossSequence();
 });
 
-/* animate lines helper (already defined above) used by SET */
-
-/* Reset / Restart */
-document.getElementById('resetWires').addEventListener('click', ()=>{
-  wireLayer.querySelectorAll('line').forEach(l=>l.remove());
-  connections = []; selected = null;
-  document.querySelectorAll('.terminal.selected').forEach(t=>t.classList.remove('selected'));
+/* reset/restart */
+document.getElementById("resetWires").addEventListener("click", ()=>{
+  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  connections = [];
+  selected = null;
+  document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
 });
-document.getElementById('restart').addEventListener('click', ()=>{
+document.getElementById("restart").addEventListener("click", ()=>{
   playerHP = 100; bossHP = 100; roundNum = 1; updateHP(); updateBossHP(); updateRound();
-  overlay.classList.remove('show');
-  wireLayer.querySelectorAll('line').forEach(l=>l.remove());
-  connections = []; selected = null; switchOn=false; switchState.textContent='Switch: OFF'; state='title'; stateLabel.textContent='title';
-  // reset device default positions
-  document.getElementById('power').style.left='12%'; document.getElementById('power').style.top='26%';
-  document.getElementById('switch').style.left='78%'; document.getElementById('switch').style.top='18%';
-  document.getElementById('junction').style.left='40%'; document.getElementById('junction').style.top='42%';
-  document.getElementById('lamp').style.left='78%'; document.getElementById('lamp').style.top='66%';
-  setTimeout(resizeSVG,60);
-  // go back to quiz/title
-  showQuiz();
+  overlay.style.display = 'none';
+  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  connections = []; selected = null; switchOn=false; switchState.textContent="Switch: OFF"; stateLabel.textContent="title";
+  setState('title');
 });
 
-/* QUIZ flow: basic (one question) */
-document.querySelectorAll('.choice').forEach(c=>{
-  c.addEventListener('click', (e)=>{
-    document.querySelectorAll('.choice').forEach(x=>x.style.outline='none');
-    c.style.outline = '3px solid rgba(255,210,0,0.6)';
-    c.dataset.chosen = '1';
-    // store selection (not used further here)
-  });
+/* ---- quiz/title flow handlers ---- */
+toQuiz.addEventListener("click", ()=>{ setState('quiz'); });
+document.getElementById("skipQuiz").addEventListener("click", ()=>{ startPlay(); });
+answerBtn.addEventListener("click", ()=>{
+  // check selected answer (simple: second option is correct)
+  const opts = Array.from(document.querySelectorAll('.quizOpt'));
+  const correctIndex = 1; // "活線(L)"
+  let chosen = opts.findIndex(o=>o.classList.contains('chosen'));
+  if(chosen === -1){ alert('選択肢を選んでください'); return; }
+  if(chosen === correctIndex){
+    alert('正解！配線パートへ進みます');
+    startPlay();
+  } else {
+    alert('不正解：体力 -10');
+    playerHP = Math.max(0, playerHP - 10);
+    updateHP();
+    // still allow play
+    startPlay();
+  }
 });
-startQuizBtn.addEventListener('click', ()=>{
-  // proceed to play regardless; you can check answer if needed
-  quizScreen.classList.remove('show');
-  quizScreen.style.display = 'none';
-  state = 'play';
+document.querySelectorAll('.quizOpt').forEach((b,i)=>{
+  b.addEventListener('click', ()=>{ document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen')); b.classList.add('chosen'); });
+});
+
+/* start play */
+function startPlay(){
+  setState('play');
   stateLabel.textContent = 'play';
-  resizeSVG();
-});
+  // place devices in starting positions (or randomize)
+  randomizeDevicePositions();
+  setTimeout(resizeSVG,60);
+}
 
-/* initial setup */
-updateHP(); updateBossHP(); updateRound();
+/* initializations */
+updateHP(); updateBossHP(); updateRound(); setState('title');
 resizeSVG();
-randomizeDevicePositions();
-attachTerminalListeners();
 
-/* small UX: when tapping anywhere, reattach listeners (fixes mobile clobber) */
-document.addEventListener('touchend', ()=>{ attachTerminalListeners(); setTimeout(resizeSVG,30); }, {passive:true});
-
-/* end of script */
+/* make sure board receives focus on tap to avoid mobile zoom weirdness */
+document.addEventListener('touchstart', ()=>{/* keep to prevent double-tap zoom on some browsers */}, {passive:true});
 </script>
 </body>
 </html>
