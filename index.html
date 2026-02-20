@@ -32,15 +32,15 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 #board{position:relative;width:100%;height:100%}
 
 /* small device style */
-.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:10px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:50;touch-action:none;-webkit-user-select:none;user-select:none}
+.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:10px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:50;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .device h3{margin:4px 0 8px 0;font-size:12px}
-.terminal{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none;touch-action:none}
+.terminal{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none;touch-action:manipulation}
 .selected{outline:3px solid #ffd800}
 
 /* junction small with four black dots */
 #junction{left:38%;top:42%;width:110px;padding:10px;background:#d6d6d6;border-radius:14px;z-index:45;transform:translate(-50%,-50%)}
 .jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer;touch-action:none}
+.jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer;touch-action:manipulation}
 
 /* controls area bottom */
 .controls{height:180px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
@@ -59,9 +59,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 .bossHPwrap{flex:1}
 .bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
 .bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 500ms linear;border-radius:12px}
-
-/* boss image */
-#bossImage{width:160px;height:auto;border-radius:10px;object-fit:cover;filter:grayscale(8%) contrast(96%);}
+#bossImage{width:160px;height:auto;border-radius:10px;object-fit:cover;filter:grayscale(8%) contrast(96%)}
 
 /* damage flash & shake */
 @keyframes flashRed { 0%{filter:none}50%{filter:drop-shadow(0 0 14px rgba(231,76,60,0.9))}100%{filter:none} }
@@ -101,21 +99,21 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
   </div>
 
   <div id="board-wrap">
-    <div id="board">
+    <div id="board" tabindex="0">
       <!-- devices (initial positions) -->
       <div class="device" id="power" style="left:12%; top:26%;">
         <h3 style="font-size:12px">電源</h3>
         <div style="text-align:center;">
-          <div class="terminal" data-id="power-L" role="button" aria-label="power L">L</div>
-          <div class="terminal" data-id="power-N" role="button" aria-label="power N">N</div>
+          <div class="terminal" data-id="power-L" role="button" aria-label="power L" tabindex="0">L</div>
+          <div class="terminal" data-id="power-N" role="button" aria-label="power N" tabindex="0">N</div>
         </div>
       </div>
 
       <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
         <h3 style="font-size:12px">片切</h3>
         <div style="text-align:center;">
-          <div class="terminal" data-id="switch-IN" role="button" aria-label="switch IN">IN</div>
-          <div class="terminal" data-id="switch-OUT" role="button" aria-label="switch OUT">OUT</div>
+          <div class="terminal" data-id="switch-IN" role="button" aria-label="switch IN" tabindex="0">IN</div>
+          <div class="terminal" data-id="switch-OUT" role="button" aria-label="switch OUT" tabindex="0">OUT</div>
         </div>
         <div id="switchState" style="color:#333;margin-top:6px;font-size:11px;">Switch: OFF</div>
       </div>
@@ -123,10 +121,10 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
       <div id="junction" class="device" style="left:40%; top:42%;">
         <h3 style="font-size:12px">Joint Box</h3>
         <div class="jb-dots" style="margin-top:6px;">
-          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal"></div>
-          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal"></div>
-          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal"></div>
-          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal"></div>
+          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal" tabindex="0"></div>
+          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal" tabindex="0"></div>
+          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal" tabindex="0"></div>
+          <div class="jb-term" data-id="jb" role="button" aria-label="jb terminal" tabindex="0"></div>
         </div>
         <div style="font-size:11px;color:#666;margin-top:6px;">端子は導通のみ。どの端子でもOK。</div>
       </div>
@@ -134,16 +132,16 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
       <div class="device" id="lamp" style="left:78%; top:66%;">
         <h3 style="font-size:12px">ランプ</h3>
         <div style="text-align:center;">
-          <div class="terminal" data-id="lamp-L" role="button" aria-label="lamp L">L</div>
-          <div class="terminal" data-id="lamp-N" role="button" aria-label="lamp N">N</div>
+          <div class="terminal" data-id="lamp-L" role="button" aria-label="lamp L" tabindex="0">L</div>
+          <div class="terminal" data-id="lamp-N" role="button" aria-label="lamp N" tabindex="0">N</div>
         </div>
       </div>
 
       <div class="device" id="spare" style="left:18%; top:68%;">
         <h3 style="font-size:12px">予備</h3>
         <div style="text-align:center;">
-          <div class="terminal" data-id="spare-1" role="button" aria-label="spare 1">•</div>
-          <div class="terminal" data-id="spare-2" role="button" aria-label="spare 2">•</div>
+          <div class="terminal" data-id="spare-1" role="button" aria-label="spare 1" tabindex="0">•</div>
+          <div class="terminal" data-id="spare-2" role="button" aria-label="spare 2" tabindex="0">•</div>
         </div>
       </div>
     </div>
@@ -163,9 +161,8 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
   <!-- Boss screen (hidden until triggered) -->
   <div id="bossScreen" aria-hidden="true">
     <div id="bossPanel">
-      <!-- Boss image: replace with your saved boss.png.jpg in same folder -->
+      <!-- boss image file must be in same folder -->
       <img id="bossImage" src="boss.png.jpg" alt="boss image">
-
       <div style="flex:1;min-width:0">
         <div id="bossName">汚ねえ大工</div>
         <div class="bossHPwrap">
@@ -222,8 +219,9 @@ function normalizeId(id, el){
   return id;
 }
 
-/* ---------- terminal interaction (delegated pointer handling) ---------- */
+/* ---------- terminal interaction (pointer delegation) ---------- */
 function handleTerminalTap(t){
+  if(!t) return;
   if(t.classList.contains('jb-term')) t.dataset.id = 'jb';
   if(selected === t){
     t.classList.remove("selected");
@@ -241,6 +239,8 @@ function handleTerminalTap(t){
   if(selected) selected.classList.remove("selected");
   selected = null;
 }
+
+/* use pointerdown to ensure consistent behavior across devices; preventDefault to avoid double-tap blur/zoom */
 board.addEventListener('pointerdown', function(ev){
   const t = ev.target.closest('.terminal, .jb-term');
   if(!t) return;
@@ -258,16 +258,18 @@ board.addEventListener('keydown', function(ev){
   }
 });
 
-/* double-click switch toggle */
-switchEl.addEventListener("dblclick", ()=>{
+/* ---------- switch: single tap toggle (click) ---------- */
+switchEl.addEventListener("click", (ev)=>{
+  // clicking the device itself toggles switch state
+  // prevent double-tap zoom side effects by preventing default pointer behaviors already
   switchOn = !switchOn;
   switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
   switchEl.style.background = switchOn ? "#e7ffec" : "";
 });
 
-/* ---------- connect() - corrected version (replace existing) ---------- */
+/* ---------- connect() : robust line creation ---------- */
 function connect(a, b){
-  // ensure svg coords up-to-date
+  if(!a || !b) return;
   resizeSVG();
 
   const idA = normalizeId(a.dataset.id, a);
@@ -275,7 +277,7 @@ function connect(a, b){
   if(!idA || !idB) return;
   if(idA === idB) return;
 
-  // toggle removal if connection already exists
+  // toggle remove if existing
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
@@ -288,10 +290,9 @@ function connect(a, b){
     }
   }
 
-  // store normalized connection
   connections.push([idA, idB]);
 
-  // coordinates relative to board
+  // obtain coordinates relative to board
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
   const boardRect = board.getBoundingClientRect();
@@ -300,7 +301,6 @@ function connect(a, b){
   const x2 = rectB.left - boardRect.left + rectB.width/2;
   const y2 = rectB.top - boardRect.top + rectB.height/2;
 
-  // create line and set attributes BEFORE computing length
   const line = document.createElementNS("http://www.w3.org/2000/svg","line");
   line.setAttribute("x1", x1);
   line.setAttribute("y1", y1);
@@ -316,10 +316,9 @@ function connect(a, b){
   line.setAttribute("data-from", idA);
   line.setAttribute("data-to", idB);
 
-  // append to DOM first so getTotalLength() returns correct value
   wireLayer.appendChild(line);
 
-  // compute length safely (fallback to Euclidean)
+  // compute length (fallback if getTotalLength fails)
   let len = 0;
   try {
     len = line.getTotalLength();
@@ -328,28 +327,32 @@ function connect(a, b){
     len = Math.hypot(x2 - x1, y2 - y1);
   }
 
-  // prepare stroke-dash for animation
   line.style.strokeDasharray = len;
   line.style.strokeDashoffset = len;
-  // ensure paint
-  line.getBoundingClientRect();
+  // force reflow so transition works later
+  void line.getBoundingClientRect();
   return line;
 }
 
-/* ---------- helpers for solution ---------- */
+/* ---------- connection checks ---------- */
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
 function checkSolution(){
+  // require JB usage (normalized id 'jb')
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
   return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
 }
 
-/* ---------- animate lines ---------- */
+/* ---------- animate lines forward ---------- */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const lines = Array.from(wireLayer.querySelectorAll("line"));
     if(lines.length===0){ setTimeout(res,ms); return; }
     lines.forEach(l=>{
-      const len = l.getTotalLength ? l.getTotalLength() : 200;
+      let len = 0;
+      try { len = l.getTotalLength(); if(!isFinite(len) || len<=0) throw 0; } catch(e){ 
+        const x1 = +l.getAttribute('x1'), y1 = +l.getAttribute('y1'), x2 = +l.getAttribute('x2'), y2 = +l.getAttribute('y2');
+        len = Math.hypot(x2-x1, y2-y1);
+      }
       l.style.transition='none';
       l.style.strokeDasharray = len;
       l.style.strokeDashoffset = len;
@@ -392,7 +395,7 @@ async function doBossSequence(){
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
 
-  // cleanup wires and selection
+  // clear wires and selection
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
@@ -405,23 +408,23 @@ async function doBossSequence(){
   stateLabel.textContent = 'play';
 }
 
-/* ---------- device placement (avoid overlap) ---------- */
+/* ---------- randomize device positions while avoiding overlap ---------- */
 function randomizeDevicePositions(){
   const devices = Array.from(document.querySelectorAll('.device'));
   const boardRect = board.getBoundingClientRect();
   const placed = [];
   devices.forEach(dev=>{
     let attempts = 0;
-    while(attempts++ < 60){
-      const left = 8 + Math.random()*84; // %
-      const top = 18 + Math.random()*66; // %
-      const devW = dev.offsetWidth || 86;
-      const devH = dev.offsetHeight || 56;
+    const devW = dev.offsetWidth || 86;
+    const devH = dev.offsetHeight || 56;
+    while(attempts++ < 80){
+      const left = 6 + Math.random()*88;
+      const top = 14 + Math.random()*72;
       const x = (left/100) * boardRect.width;
       const y = (top/100) * boardRect.height;
       let ok = true;
       for(const p of placed){
-        if(Math.abs(p.x - x) < (p.w/2 + devW/2 + 26) && Math.abs(p.y - y) < (p.h/2 + devH/2 + 26)){ ok = false; break; }
+        if(Math.abs(p.x - x) < (p.w/2 + devW/2 + 18) && Math.abs(p.y - y) < (p.h/2 + devH/2 + 18)){ ok = false; break; }
       }
       if(ok){
         placed.push({x,y,w:devW,h:devH});
@@ -430,14 +433,13 @@ function randomizeDevicePositions(){
         break;
       }
     }
-    // fallback: keep current if none found
   });
   setTimeout(resizeSVG,60);
 }
 
 /* ---------- controls ---------- */
 setBtn.addEventListener("click", async ()=>{
-  if(!switchOn){ alert("スイッチがOFFです。スイッチをダブルタップでONにしてください。"); return; }
+  if(!switchOn){ alert("スイッチがOFFです。スイッチをタップしてONにしてください。"); return; }
   if(!checkSolution()){
     playerHP = Math.max(0, playerHP - 20);
     updateHP();
@@ -459,7 +461,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
   overlay.classList.remove("show");
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null; switchOn=false; switchState.textContent="Switch: OFF"; stateLabel.textContent="play";
-  // reset positions to defaults
+  // reset positions
   document.getElementById('power').style.left='12%'; document.getElementById('power').style.top='26%';
   document.getElementById('switch').style.left='78%'; document.getElementById('switch').style.top='18%';
   document.getElementById('junction').style.left='40%'; document.getElementById('junction').style.top='42%';
@@ -472,7 +474,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
 updateHP(); updateBossHP(); updateRound();
 resizeSVG();
 
-// make terminals keyboard-focusable for accessibility
+// make terminals keyboard-focusable for accessibility (already set tabindex), ensure style
 document.querySelectorAll('.terminal, .jb-term').forEach(t=>{
   t.tabIndex = 0;
 });
