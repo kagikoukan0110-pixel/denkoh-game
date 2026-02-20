@@ -5,8 +5,10 @@ const board = document.getElementById("board");
 const wireLayer = document.getElementById("wireLayer");
 
 function resizeSVG(){
-  wireLayer.setAttribute("viewBox",
-    `0 0 ${board.clientWidth} ${board.clientHeight}`);
+  wireLayer.setAttribute(
+    "viewBox",
+    `0 0 ${board.clientWidth} ${board.clientHeight}`
+  );
 }
 
 resizeSVG();
