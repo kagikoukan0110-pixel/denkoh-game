@@ -6,10 +6,6 @@
 <title>俺らの電工 WORLD1</title>
 
 <style>
-:root{
-  --device-size: 84px;
-}
-
 body{
   margin:0;
   background:#000;
@@ -47,23 +43,23 @@ body{
 #board{
   position:relative;
   width:100%;
-  height:55vh;
+  height:60vh;
 }
 
 .device{
   position:absolute;
-  width:var(--device-size);
+  width:90px;
   padding:8px;
   background:#ddd;
-  border-radius:10px;
+  border-radius:12px;
   color:#000;
   text-align:center;
   transform:translate(-50%,-50%);
-  box-shadow:0 10px 25px rgba(0,0,0,.5);
+  box-shadow:0 12px 30px rgba(0,0,0,.6);
 }
 
 .device h3{
-  margin:4px 0 6px 0;
+  margin:4px 0 6px;
   font-size:12px;
 }
 
@@ -87,24 +83,24 @@ body{
 .jb-dot{
   width:18px;
   height:18px;
-  border-radius:50%;
   background:#222;
+  border-radius:50%;
   display:inline-block;
   margin:6px;
   cursor:pointer;
 }
 
+.controls{
+  text-align:center;
+  padding:30px;
+}
+
 button{
   padding:14px 36px;
   border:none;
-  border-radius:24px;
-  font-weight:bold;
+  border-radius:28px;
   background:#ffd000;
-}
-
-.controls{
-  text-align:center;
-  padding:20px;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -114,12 +110,8 @@ button{
 
 <div class="header">
   <div>俺らの電工 β</div>
-  <div>
-    Round <span id="round">1</span>/3
-  </div>
-  <div class="bar">
-    <div id="playerHP" class="player"></div>
-  </div>
+  <div>Round <span id="round">1</span>/3</div>
+  <div class="bar"><div id="playerHP" class="player"></div></div>
 </div>
 
 <div id="board">
@@ -157,117 +149,67 @@ button{
 </div>
 
 <script>
-let connections = [];
-let selected = null;
+const board = document.getElementById("board");
+const junction = document.getElementById("junction");
+const devices = ["power","switch","lamp"];
 let round = 1;
 
-const board = document.getElementById("board");
-const wireLayer = document.getElementById("wireLayer");
-const roundLabel = document.getElementById("round");
-
-function resizeSVG(){
-  const r = board.getBoundingClientRect();
-  wireLayer.setAttribute("viewBox",`0 0 ${r.width} ${r.height}`);
-  wireLayer.style.width=r.width+"px";
-  wireLayer.style.height=r.height+"px";
-  wireLayer.style.left=r.left+"px";
-  wireLayer.style.top=r.top+"px";
+function centerJB(){
+  const rect = board.getBoundingClientRect();
+  junction.style.left = rect.width/2 + "px";
+  junction.style.top = rect.height/2 + "px";
 }
-window.addEventListener("resize",resizeSVG);
-window.addEventListener("load",resizeSVG);
-
-/* ========= 重ならないランダム配置 ========= */
 
 function randomizeLayout(){
 
-  const devices = [...document.querySelectorAll(".device")];
-  const placed = [];
-  const padding = 110; // 最低距離
+  centerJB();
 
-  devices.forEach(dev=>{
-    let placedOK=false;
-    let attempts=0;
+  const placedRects = [];
 
-    while(!placedOK && attempts<200){
-      attempts++;
+  devices.forEach(id=>{
+    const el = document.getElementById(id);
+    let placed = false;
+    let tries = 0;
 
-      const x = 10 + Math.random()*80;
-      const y = 20 + Math.random()*60;
+    while(!placed && tries < 200){
+      tries++;
 
-      let overlap=false;
+      const rect = board.getBoundingClientRect();
+      const x = Math.random() * (rect.width - 140) + 70;
+      const y = Math.random() * (rect.height - 140) + 70;
 
-      for(let p of placed){
-        const dx = p.x - x;
-        const dy = p.y - y;
-        const dist = Math.sqrt(dx*dx+dy*dy);
-        if(dist < padding){
-          overlap=true;
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+
+      const newRect = el.getBoundingClientRect();
+      const jRect = junction.getBoundingClientRect();
+
+      if(intersect(newRect, jRect)) continue;
+
+      let overlap = false;
+      for(const r of placedRects){
+        if(intersect(newRect, r)){
+          overlap = true;
           break;
         }
       }
 
       if(!overlap){
-        dev.style.left = x+"%";
-        dev.style.top = y+"%";
-        placed.push({x,y});
-        placedOK=true;
+        placedRects.push(newRect);
+        placed = true;
       }
     }
   });
-
-  setTimeout(resizeSVG,50);
 }
 
-/* ========= 接続 ========= */
-
-document.querySelectorAll(".terminal,.jb-dot").forEach(t=>{
-  t.addEventListener("click",()=>{
-    if(!selected){
-      selected=t;
-      t.style.outline="3px solid yellow";
-      return;
-    }
-    if(selected!==t){
-      connect(selected,t);
-    }
-    selected.style.outline="";
-    selected=null;
-  });
-});
-
-function normalize(id){
-  if(id==="jb") return "jb";
-  return id;
+function intersect(a,b){
+  return !(
+    a.right < b.left ||
+    a.left > b.right ||
+    a.bottom < b.top ||
+    a.top > b.bottom
+  );
 }
-
-function connect(a,b){
-  const idA=normalize(a.dataset.id);
-  const idB=normalize(b.dataset.id);
-
-  connections.push([idA,idB]);
-
-  const rA=a.getBoundingClientRect();
-  const rB=b.getBoundingClientRect();
-  const br=board.getBoundingClientRect();
-
-  const x1=rA.left-br.left+rA.width/2;
-  const y1=rA.top-br.top+rA.height/2;
-  const x2=rB.left-br.left+rB.width/2;
-  const y2=rB.top-br.top+rB.height/2;
-
-  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1);
-  line.setAttribute("y1",y1);
-  line.setAttribute("x2",x2);
-  line.setAttribute("y2",y2);
-  line.setAttribute("stroke","yellow");
-  line.setAttribute("stroke-width","4");
-  line.setAttribute("stroke-linecap","round");
-
-  wireLayer.appendChild(line);
-}
-
-/* ========= ラウンド進行 ========= */
 
 document.getElementById("setBtn").addEventListener("click",()=>{
   round++;
@@ -275,12 +217,17 @@ document.getElementById("setBtn").addEventListener("click",()=>{
     alert("WORLD CLEAR");
     round=1;
   }
-  roundLabel.textContent=round;
+  document.getElementById("round").textContent=round;
   randomizeLayout();
 });
 
-/* 初期配置 */
-randomizeLayout();
+window.addEventListener("load",()=>{
+  centerJB();
+  randomizeLayout();
+});
+window.addEventListener("resize",()=>{
+  centerJB();
+});
 </script>
 
 </body>
