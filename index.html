@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (full)</title>
+<title>俺らの電工 - WORLD1 (fixed quiz modal)</title>
 <style>
 :root{
   --bg:#000;
@@ -16,7 +16,7 @@
   --boss-hp-color:#e74c3c;
   --boss-hp-back:#332626;
 }
-html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;-webkit-font-smoothing:antialiased;}
 /* wire layer MUST be body direct child */
 #wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2000}
 
@@ -48,14 +48,15 @@ button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd00
 button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
 .note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
-/* quiz/title screens */
-#titleScreen,#quizScreen{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9000}
-#titleScreen.show,#quizScreen.show{display:flex}
+/* modal title & quiz screens (block pointer events below) */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500;pointer-events:auto}
+.modal-backdrop.show{display:flex}
 .titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:18px}
 .quizCard{max-width:760px;color:#fff}
+.quizBox{background:#111;padding:18px;border-radius:12px;max-width:760px;color:#fff}
 
 /* boss screen */
-#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:8000;color:#fff}
+#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9000;color:#fff}
 #bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
 #bossName{font-size:22px;color:#ffd200;margin-right:12px;font-weight:800;white-space:nowrap}
 .bossHPwrap{flex:1}
@@ -67,7 +68,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 @keyframes shake { 0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}100%{transform:translateX(0)} }
 .boss-damage{animation: flashRed 300ms ease, shake 420ms ease}
 
-/* final flash */
+/* final rainbow flash (3s) */
 #finalFlash{position:fixed;inset:0;pointer-events:none;display:none;z-index:99999;background:linear-gradient(90deg, red, orange, yellow, green, cyan, blue, magenta);mix-blend-mode:screen;opacity:0}
 #finalFlash.show{display:block;animation: finalRainbow 3s linear forwards}
 @keyframes finalRainbow{0%{opacity:0}10%{opacity:1}100%{opacity:0}}
@@ -77,6 +78,8 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
 /* responsive */
 @media (max-width:480px){:root{--device-w:72px;} .title{font-size:18px}}
+/* quiz option chosen */
+.quizOpt.chosen{outline:3px solid #ffd200}
 </style>
 </head>
 <body>
@@ -152,10 +155,10 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     <div class="note">端子クリック → もう一つの端子クリックで配線。配線選択してクリックで削除。</div>
   </div>
 
-  <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9500;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
+  <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
-  <!-- title screen -->
-  <div id="titleScreen" class="show">
+  <!-- title modal -->
+  <div id="titleScreen" class="modal-backdrop show" aria-hidden="false">
     <div class="titleBig">WORLD1</div>
     <div style="color:#fff;margin-bottom:18px">俺らの電工 - チュートリアル</div>
     <div style="display:flex;gap:12px">
@@ -163,16 +166,16 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
-  <!-- quiz screen -->
-  <div id="quizScreen">
-    <div style="color:#ffd200;font-size:28px;margin-bottom:14px">学科問題</div>
-    <div style="background:#111;padding:18px;border-radius:12px;max-width:720px;color:#fff">
+  <!-- quiz modal -->
+  <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
+    <div class="titleBig">学科問題</div>
+    <div class="quizBox">
       <div style="margin-bottom:12px">1. 電気で L は何を表す？</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
-        <button class="quizOpt small">中性線</button>
-        <button class="quizOpt small">活線(L)</button>
-        <button class="quizOpt small">地線</button>
-        <button class="quizOpt small">照明</button>
+        <button class="quizOpt small" data-correct="false">中性線</button>
+        <button class="quizOpt small" data-correct="true">活線(L)</button>
+        <button class="quizOpt small" data-correct="false">地線</button>
+        <button class="quizOpt small" data-correct="false">照明</button>
       </div>
       <div style="display:flex;gap:12px">
         <button id="answerBtn" class="small">回答</button>
@@ -205,7 +208,7 @@ let roundNum = 1;
 let switchOn = false;
 let selected = null;
 let connections = [];
-let state = 'title'; // crucial: start at title -> quiz -> play
+let state = 'title'; // title -> quiz -> play
 
 /* elements */
 const board = document.getElementById("board");
@@ -226,11 +229,10 @@ const finalFlash = document.getElementById("finalFlash");
 const switchBtn = document.getElementById("switchBtn");
 const roundLabel = document.getElementById("roundLabel");
 
-/* -------- svg sizing (keep wireLayer aligned with board) -------- */
+/* svg sizing */
 function resizeSVG(){
   const r = board.getBoundingClientRect();
   wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
-  // put svg exactly over board (important so lines align)
   wireLayer.style.left = r.left + 'px';
   wireLayer.style.top = r.top + 'px';
   wireLayer.style.width = r.width + 'px';
@@ -246,17 +248,15 @@ function updateRound(){ roundLabel.textContent = roundNum; }
 function setState(s){
   state = s;
   stateLabel.textContent = s;
-  // show/hide screens
   if(s === 'title'){
-    titleScreen.classList.add('show');
-    quizScreen.classList.remove('show');
+    titleScreen.classList.add('show'); titleScreen.setAttribute('aria-hidden','false');
+    quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true');
   } else if(s === 'quiz'){
-    titleScreen.classList.remove('show');
-    quizScreen.classList.add('show');
+    titleScreen.classList.remove('show'); titleScreen.setAttribute('aria-hidden','true');
+    quizScreen.classList.add('show'); quizScreen.setAttribute('aria-hidden','false');
   } else if(s === 'play'){
-    titleScreen.classList.remove('show');
-    quizScreen.classList.remove('show');
-    // ensure svg sizing after layout changes
+    titleScreen.classList.remove('show'); titleScreen.setAttribute('aria-hidden','true');
+    quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true');
     setTimeout(resizeSVG,60);
   }
 }
@@ -270,10 +270,9 @@ function normalizeId(id, el){
   return id;
 }
 
-/* register terminal clicks */
+/* disable terminal clicks outside play */
 document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
   t.addEventListener("click", (e)=>{
-    // if not in play state, ignore terminal clicks
     if(state !== 'play') return;
     if(t.classList.contains('jb-term')) t.dataset.id = 'jb';
     if(selected === t){ t.classList.remove("selected"); selected = null; return; }
@@ -286,29 +285,24 @@ document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
   });
 });
 
-/* switch UI */
+/* switch controls */
 switchBtn.addEventListener("click", ()=>{
-  // toggle quickly from controls
   switchOn = !switchOn;
   switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
-  // visual
   document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
 });
-
-/* double click switch area still works */
 document.getElementById("switch").addEventListener("dblclick", ()=>{
   switchOn = !switchOn;
   switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
   document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
 });
 
-/* connection logic - same as working version */
+/* connect logic (same reliable implementation) */
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
   if(!idA || !idB) return;
   if(idA === idB) return;
-  // toggle remove if existing
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
@@ -318,9 +312,7 @@ function connect(a,b){
       return;
     }
   }
-  // store connection
   connections.push([idA,idB]);
-  // draw line
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
   const boardRect = board.getBoundingClientRect();
@@ -335,25 +327,22 @@ function connect(a,b){
   line.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
   line.setAttribute("stroke-linecap","round");
   line.setAttribute("data-from", idA); line.setAttribute("data-to", idB);
-  // stroke-dash for animation
   const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
   line.style.strokeDasharray = len;
   line.style.strokeDashoffset = len;
-  // append and ensure it's visually on top of devices:
-  // wireLayer is on high z-index; lines will appear above devices visually.
   wireLayer.appendChild(line);
 }
 
-/* helper to check connection existence */
+/* helper */
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
 
-/* solution check (JB normalized) */
+/* solution check */
 function checkSolution(){
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
   return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
 }
 
-/* animate wire reveal */
+/* animate wires */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const lines = Array.from(wireLayer.querySelectorAll("line"));
@@ -371,20 +360,16 @@ function animateLinesForward(ms){
   });
 }
 
-/* boss flow sequence */
+/* boss sequence */
 async function doBossSequence(){
   stateLabel.textContent = 'boss';
   bossScreen.style.display = 'flex';
   bossScreen.setAttribute('aria-hidden','false');
-  // small delay
   await new Promise(r=>setTimeout(r,350));
 
-  // damage animation: flash + shake + play sound repeatedly for 2s (as requested earlier)
   const panel = document.getElementById("bossPanel");
-  // repeat short flash while playing freeze sound
   freezeSound.currentTime = 0;
-  freezeSound.play().catch(()=>{ /* ignore autoplay block in some browsers */ });
-
+  freezeSound.play().catch(()=>{});
   const flashCount = 6;
   for(let i=0;i<flashCount;i++){
     panel.classList.add('boss-damage');
@@ -393,36 +378,27 @@ async function doBossSequence(){
     await new Promise(r=>setTimeout(r,150));
   }
 
-  // damage amount
   const dmg = 40;
   bossHP -= dmg;
   updateBossHP();
 
-  // if boss dead or last round => final clear
   if(bossHP <= 0 || roundNum >= 3){
-    // big final flashy text + rainbow flash (3s)
     bossScreen.style.display = 'none';
     finalFlash.classList.add('show'); finalFlash.style.display='block';
     finalFlash.style.animation = 'none';
-    // force reflow to restart
     void finalFlash.offsetWidth;
     finalFlash.style.animation = 'finalRainbow 3s linear forwards';
-    // show final overlay text
     overlay.style.display = 'flex'; overlay.textContent = 'WORLD1 CLEAR';
     stateLabel.textContent = 'clear';
-    // stop sound after short while
     setTimeout(()=>{ freezeSound.pause(); freezeSound.currentTime=0; }, 1200);
-    // hide finalFlash after 3s
     setTimeout(()=>{ finalFlash.style.display='none'; }, 3000);
     return;
   }
 
-  // not dead -> return to play (next round)
   await new Promise(r=>setTimeout(r,700));
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
 
-  // reset wires and selected
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
@@ -430,28 +406,23 @@ async function doBossSequence(){
   roundNum++;
   updateRound();
 
-  // randomize device positions (avoid overlap)
   randomizeDevicePositions();
 
   stateLabel.textContent = 'play';
 }
 
-/* randomize positions but avoid overlaps (simple) */
+/* randomize positions avoiding overlap (simple) */
 function randomizeDevicePositions(){
   const devices = Array.from(document.querySelectorAll('.device'));
   const placed = [];
-  const boardRect = board.getBoundingClientRect();
-  const padX = 12; // percent margins
-  const padY = 14;
+  const minLeft = 6, maxLeft = 92, minTop = 14, maxTop = 84;
   devices.forEach(dev=>{
     let tries = 0;
-    while(tries++ < 40){
-      const l = padX + Math.random()*(100 - padX*2);
-      const t = padY + Math.random()*(100 - padY*2);
-      // compute approximate rect
-      const w = 12; const h = 18; // approximate in %
-      const rect = {left:l,top:t,right:l+w, bottom:t+h};
-      // check overlap
+    while(tries++ < 60){
+      const l = Math.floor(minLeft + Math.random()*(maxLeft - minLeft));
+      const t = Math.floor(minTop + Math.random()*(maxTop - minTop));
+      const w = 12, h = 18;
+      const rect = {left:l, top:t, right:l+w, bottom:t+h};
       let ok = true;
       for(const p of placed){
         const overlap = !(rect.right < p.left || rect.left > p.right || rect.bottom < p.top || rect.top > p.bottom);
@@ -468,18 +439,16 @@ function randomizeDevicePositions(){
   setTimeout(resizeSVG,60);
 }
 
-/* ---- SET button behavior ---- */
+/* SET behaviour */
 setBtn.addEventListener("click", async ()=>{
-  // require being in play state
-  if(state !== 'play'){ alert('現在は配線パートではありません。'); return; }
-  if(!switchOn){ alert("スイッチがOFFです。スイッチをクリックしてONにしてください。"); return; }
+  if(state !== 'play'){ alert('配線パート中に実行してください'); return; }
+  if(!switchOn){ alert("スイッチがOFFです。SWITCH を押して ON にしてください。"); return; }
   if(!checkSolution()){
     playerHP = Math.max(0, playerHP - 20);
     updateHP();
     if(playerHP <= 0){ alert("PLAYER HP 0 - game over"); }
     return;
   }
-  // correct: animate wires and do boss
   await animateLinesForward(2000);
   await doBossSequence();
 });
@@ -499,45 +468,55 @@ document.getElementById("restart").addEventListener("click", ()=>{
   setState('title');
 });
 
-/* ---- quiz/title flow handlers ---- */
+/* quiz/title flow */
 toQuiz.addEventListener("click", ()=>{ setState('quiz'); });
 document.getElementById("skipQuiz").addEventListener("click", ()=>{ startPlay(); });
+
+/* improved answer handling: require explicit chosen button and check data-correct */
 answerBtn.addEventListener("click", ()=>{
-  // check selected answer (simple: second option is correct)
   const opts = Array.from(document.querySelectorAll('.quizOpt'));
-  const correctIndex = 1; // "活線(L)"
-  let chosen = opts.findIndex(o=>o.classList.contains('chosen'));
-  if(chosen === -1){ alert('選択肢を選んでください'); return; }
-  if(chosen === correctIndex){
-    alert('正解！配線パートへ進みます');
+  const chosen = opts.find(o => o.classList.contains('chosen'));
+  if(!chosen){
+    alert('選択肢を選んでください。');
+    return;
+  }
+  const isCorrect = chosen.dataset.correct === 'true';
+  if(isCorrect){
+    // 正解：短いメッセージの後プレイ開始
+    alert('正解！配線パートへ進みます。');
     startPlay();
   } else {
-    alert('不正解：体力 -10');
+    // 不正解：体力減らす、その後プレイ
     playerHP = Math.max(0, playerHP - 10);
     updateHP();
-    // still allow play
+    alert('不正解：体力 -10。配線パートへ進みます。');
     startPlay();
   }
 });
-document.querySelectorAll('.quizOpt').forEach((b,i)=>{
-  b.addEventListener('click', ()=>{ document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen')); b.classList.add('chosen'); });
+
+/* mark chosen */
+document.querySelectorAll('.quizOpt').forEach((b)=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
+    b.classList.add('chosen');
+  });
 });
 
-/* start play */
 function startPlay(){
   setState('play');
   stateLabel.textContent = 'play';
-  // place devices in starting positions (or randomize)
+  document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
+  // randomize positions but keep junction central bias
   randomizeDevicePositions();
-  setTimeout(resizeSVG,60);
+  setTimeout(resizeSVG,80);
 }
 
-/* initializations */
+/* initial */
 updateHP(); updateBossHP(); updateRound(); setState('title');
 resizeSVG();
 
-/* make sure board receives focus on tap to avoid mobile zoom weirdness */
-document.addEventListener('touchstart', ()=>{/* keep to prevent double-tap zoom on some browsers */}, {passive:true});
+/* prevent mobile double-tap zoom issues (light) */
+document.addEventListener('touchstart', ()=>{}, {passive:true});
 </script>
 </body>
 </html>
