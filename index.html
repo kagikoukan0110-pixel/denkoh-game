@@ -11,33 +11,35 @@ body{
   background:#000;
   color:#fff;
   font-family:sans-serif;
+  overflow:hidden;
 }
 
 #wireLayer{
   position:fixed;
   inset:0;
   pointer-events:none;
-  z-index:2000;
+  z-index:1000;
 }
 
 .header{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   padding:14px;
 }
 
-.bar{
-  width:180px;
-  height:12px;
+.hpbar{
+  width:160px;
+  height:10px;
   background:#222;
-  border-radius:10px;
+  border-radius:8px;
 }
 
-.player{
+.hpfill{
   height:100%;
-  width:100%;
   background:#2ecc71;
-  border-radius:10px;
+  width:100%;
+  border-radius:8px;
 }
 
 #board{
@@ -55,11 +57,11 @@ body{
   color:#000;
   text-align:center;
   transform:translate(-50%,-50%);
-  box-shadow:0 12px 30px rgba(0,0,0,.6);
+  box-shadow:0 15px 40px rgba(0,0,0,.6);
 }
 
 .device h3{
-  margin:4px 0 6px;
+  margin:4px 0;
   font-size:12px;
 }
 
@@ -99,8 +101,37 @@ button{
   padding:14px 36px;
   border:none;
   border-radius:28px;
-  background:#ffd000;
   font-weight:bold;
+}
+
+#setBtn{
+  background:#ffd000;
+}
+
+#bossScreen{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:3000;
+}
+
+#bossHPbar{
+  width:200px;
+  height:14px;
+  background:#222;
+  border-radius:10px;
+  margin-top:20px;
+}
+
+#bossHPfill{
+  height:100%;
+  background:#e74c3c;
+  width:100%;
+  border-radius:10px;
 }
 </style>
 </head>
@@ -111,7 +142,7 @@ button{
 <div class="header">
   <div>俺らの電工 β</div>
   <div>Round <span id="round">1</span>/3</div>
-  <div class="bar"><div id="playerHP" class="player"></div></div>
+  <div class="hpbar"><div id="playerHP" class="hpfill"></div></div>
 </div>
 
 <div id="board">
@@ -148,86 +179,122 @@ button{
   <button id="setBtn">SET</button>
 </div>
 
+<div id="bossScreen">
+  <h1>汚ねえ大工</h1>
+  <div id="bossHPbar">
+    <div id="bossHPfill"></div>
+  </div>
+</div>
+
 <script>
 const board = document.getElementById("board");
 const junction = document.getElementById("junction");
-const devices = ["power","switch","lamp"];
+const wireLayer = document.getElementById("wireLayer");
+
+let selected = null;
+let wires = [];
 let round = 1;
+let bossHP = 100;
 
-function centerJB(){
-  const rect = board.getBoundingClientRect();
-  junction.style.left = rect.width/2 + "px";
-  junction.style.top = rect.height/2 + "px";
+function getCenter(el){
+  const r = el.getBoundingClientRect();
+  return {
+    x:r.left + r.width/2,
+    y:r.top + r.height/2
+  };
 }
 
-function randomizeLayout(){
-
-  centerJB();
-
-  const placedRects = [];
-
-  devices.forEach(id=>{
-    const el = document.getElementById(id);
-    let placed = false;
-    let tries = 0;
-
-    while(!placed && tries < 200){
-      tries++;
-
-      const rect = board.getBoundingClientRect();
-      const x = Math.random() * (rect.width - 140) + 70;
-      const y = Math.random() * (rect.height - 140) + 70;
-
-      el.style.left = x + "px";
-      el.style.top = y + "px";
-
-      const newRect = el.getBoundingClientRect();
-      const jRect = junction.getBoundingClientRect();
-
-      if(intersect(newRect, jRect)) continue;
-
-      let overlap = false;
-      for(const r of placedRects){
-        if(intersect(newRect, r)){
-          overlap = true;
-          break;
-        }
-      }
-
-      if(!overlap){
-        placedRects.push(newRect);
-        placed = true;
-      }
+document.querySelectorAll(".terminal, .jb-dot").forEach(t=>{
+  t.addEventListener("click",()=>{
+    if(!selected){
+      selected = t;
+      return;
     }
+    if(selected === t){
+      selected = null;
+      return;
+    }
+    drawWire(selected,t);
+    wires.push([selected.dataset.id,t.dataset.id]);
+    selected=null;
   });
+});
+
+function drawWire(a,b){
+  const p1 = getCenter(a);
+  const p2 = getCenter(b);
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",p1.x);
+  line.setAttribute("y1",p1.y);
+  line.setAttribute("x2",p2.x);
+  line.setAttribute("y2",p2.y);
+  line.setAttribute("stroke","yellow");
+  line.setAttribute("stroke-width","3");
+  wireLayer.appendChild(line);
 }
 
-function intersect(a,b){
-  return !(
-    a.right < b.left ||
-    a.left > b.right ||
-    a.bottom < b.top ||
-    a.top > b.bottom
+function checkCorrect(){
+  const needed = [
+    ["power-L","switch-IN"],
+    ["switch-OUT","lamp-L"],
+    ["power-N","lamp-N"]
+  ];
+
+  return needed.every(pair =>
+    wires.some(w =>
+      (w[0]===pair[0] && w[1]===pair[1]) ||
+      (w[1]===pair[0] && w[0]===pair[1])
+    )
   );
 }
 
 document.getElementById("setBtn").addEventListener("click",()=>{
-  round++;
-  if(round>3){
-    alert("WORLD CLEAR");
-    round=1;
-  }
-  document.getElementById("round").textContent=round;
-  randomizeLayout();
+  if(!checkCorrect()) return;
+
+  bossHP -= 34;
+  if(bossHP<0) bossHP=0;
+
+  document.getElementById("bossHPfill").style.width=bossHP+"%";
+  document.getElementById("bossScreen").style.display="flex";
+
+  setTimeout(()=>{
+    document.getElementById("bossScreen").style.display="none";
+    wires=[];
+    wireLayer.innerHTML="";
+    if(bossHP<=0){
+      alert("WORLD CLEAR");
+      bossHP=100;
+      round=1;
+    }else{
+      round++;
+    }
+    document.getElementById("round").textContent=round;
+    randomizeLayout();
+  },1500);
 });
+
+function centerJB(){
+  const r = board.getBoundingClientRect();
+  junction.style.left=r.width/2+"px";
+  junction.style.top=r.height/2+"px";
+}
+
+function randomizeLayout(){
+  centerJB();
+  const ids=["power","switch","lamp"];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    const r=board.getBoundingClientRect();
+    el.style.left=(Math.random()*(r.width-140)+70)+"px";
+    el.style.top=(Math.random()*(r.height-140)+70)+"px";
+  });
+}
 
 window.addEventListener("load",()=>{
   centerJB();
   randomizeLayout();
 });
-window.addEventListener("resize",()=>{
-  centerJB();
-});
+window.addEventListener("resize",centerJB);
 </script>
 
 </body>
