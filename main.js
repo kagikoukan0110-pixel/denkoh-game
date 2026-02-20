@@ -1,6 +1,16 @@
 let bossHP = 100;
 let playerHP = 100;
 
+const board = document.getElementById("board");
+const wireLayer = document.getElementById("wireLayer");
+
+function resizeSVG(){
+  wireLayer.setAttribute("viewBox",
+    `0 0 ${board.clientWidth} ${board.clientHeight}`);
+}
+
+resizeSVG();
+window.addEventListener("resize", resizeSVG);
 const bossBar = document.getElementById("bossHP");
 const playerBar = document.getElementById("playerHP");
 const overlay = document.getElementById("overlay");
