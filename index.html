@@ -1,76 +1,189 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>俺らの電工 - WORLD1</title>
 
 <style>
-/* === 元のCSSそのまま === */
 :root{
   --bg:#000;
   --panel:#ddd;
   --term-bg:#222;
   --wire:#ffd800;
   --wirew:4;
-  --device-w:86px;
-  --device-padding:8px;
-  --boss-hp:#e74c3c;
 }
-html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui;}
-#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2000}
 
-/* header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
-.bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
-.player{height:100%;width:100%;background:#34d058;border-radius:12px}
+html,body{
+  margin:0;
+  height:100%;
+  background:#000;
+  color:#fff;
+  font-family:system-ui;
+  overflow:hidden;
+}
 
-/* board */
-#board-wrap{position:relative;width:100%;height:calc(100vh - 200px);padding:8px 16px;overflow:hidden}
-#board{position:relative;width:100%;height:100%}
+/* ==================== 配線レイヤー ==================== */
+#wireLayer{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;height:100vh;
+  pointer-events:none;
+  z-index:2000;
+}
 
-/* device */
-.device{position:absolute;width:86px;padding:8px;background:#ddd;border-radius:10px;color:#000;
-transform:translate(-50%,-50%);text-align:center}
-.terminal{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;
-margin:4px;background:#222;color:#fff;border-radius:50%;cursor:pointer}
-.selected{outline:3px solid #ffd800}
+/* ==================== 配線画面 ==================== */
+#gameScreen{
+  width:100%;
+  height:100%;
+  display:none;
+}
 
-/* junction */
-#junction{left:38%;top:42%;width:110px;padding:10px;background:#d6d6d6;border-radius:14px;
-transform:translate(-50%,-50%)}
-.jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
+.header{
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+}
 
-/* controls */
-.controls{height:140px;padding:12px;display:flex;flex-direction:column;align-items:center}
-button{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;font-weight:700}
-button.small{padding:8px 12px;margin:8px;border-radius:12px;background:#333;color:#fff}
+.bar{height:12px;background:#222;border-radius:12px;overflow:hidden;width:200px;}
+.player{height:100%;width:100%;background:#34d058;}
 
-/* boss screen */
-#bossScreen{
+#board-wrap{
+  position:relative;
+  height:calc(100vh - 180px);
+}
+
+#board{
+  position:relative;
+  width:100%;
+  height:100%;
+}
+
+.device{
+  position:absolute;
+  width:86px;
+  padding:8px;
+  background:#ddd;
+  border-radius:10px;
+  color:#000;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+
+.terminal{
+  display:inline-flex;
+  width:26px;height:26px;
+  background:#222;color:#fff;
+  border-radius:50%;
+  justify-content:center;
+  align-items:center;
+  margin:4px;
+  cursor:pointer;
+}
+
+.selected{outline:3px solid #ffd800;}
+
+#junction{left:38%;top:42%;background:#d6d6d6;}
+.jb-term{
+  width:18px;height:18px;
+  background:#222;border-radius:50%;
+  display:inline-block;margin:4px;cursor:pointer;
+}
+
+.controls{
+  text-align:center;
+  padding:10px;
+}
+
+/* ==================== オープニング ==================== */
+#opening{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:9000;
+}
+
+/* ==================== クイズ ==================== */
+#quizScreen{
   position:fixed;
   inset:0;
   background:#000;
   display:none;
-  align-items:center;
-  justify-content:center;
   flex-direction:column;
+  justify-content:center;
+  align-items:center;
   z-index:9000;
 }
-#bossPanel{
-  width:90%;
-  max-width:500px;
-  background:#111;
-  padding:20px;
-  border-radius:12px;
-  text-align:center;
+
+/* ==================== ボス ==================== */
+#bossScreen{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:9000;
+  background:black;
 }
-#bossHPbar{
-  height:16px;
-  background:var(--boss-hp);
+
+#bossImage{
+  position:absolute;
+  inset:0;
   width:100%;
-  border-radius:8px;
-  transition:width .5s;
+  height:100%;
+  object-fit:cover;
+}
+
+#bossHPWrap{
+  position:absolute;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:80%;
+  z-index:10;
+}
+
+#bossHPBar{
+  height:16px;
+  background:red;
+  width:100%;
+  transition:width .4s;
+}
+
+#rainbowOverlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  z-index:10000;
+  animation: rainbow 0.6s linear infinite;
+}
+
+@keyframes rainbow{
+  0%{background:red;}
+  25%{background:yellow;}
+  50%{background:lime;}
+  75%{background:cyan;}
+  100%{background:red;}
+}
+
+#victoryText{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  font-size:90px;
+  font-weight:900;
+  color:white;
+  text-shadow:0 0 40px gold;
+  z-index:10001;
+}
+
+@keyframes victory{
+  0%{transform:translate(-50%,-50%) scale(0);}
+  50%{transform:translate(-50%,-50%) scale(1.5);}
+  100%{transform:translate(-50%,-50%) scale(1.2);}
 }
 </style>
 </head>
@@ -79,69 +192,95 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;background:#333;colo
 
 <svg id="wireLayer"></svg>
 
+<!-- オープニング -->
+<div id="opening">
+  <h1>俺らの電工</h1>
+  <button onclick="startQuiz()">START</button>
+</div>
+
+<!-- クイズ -->
+<div id="quizScreen">
+  <h2>電気でLは？</h2>
+  <button onclick="answerQuiz(false)">中性線</button>
+  <button onclick="answerQuiz(true)">活線</button>
+  <button onclick="answerQuiz(false)">地線</button>
+</div>
+
+<!-- ゲーム画面 -->
+<div id="gameScreen">
+
 <div class="header">
-  <div>俺らの電工 β</div>
-  <div style="width:40%">
-    <div class="bar"><div id="playerHP" class="player"></div></div>
-  </div>
+  <div>WORLD1</div>
+  <div class="bar"><div id="playerHP" class="player"></div></div>
 </div>
 
 <div id="board-wrap">
 <div id="board">
 
-<div class="device" id="power" style="left:10%; top:22%;">
-  <div class="terminal" data-id="power-L">L</div>
-  <div class="terminal" data-id="power-N">N</div>
+<div class="device" style="left:10%;top:22%;">
+<div class="terminal" data-id="power-L">L</div>
+<div class="terminal" data-id="power-N">N</div>
 </div>
 
-<div class="device" id="switch" style="left:80%; top:18%;">
-  <div class="terminal" data-id="switch-IN">IN</div>
-  <div class="terminal" data-id="switch-OUT">OUT</div>
-  <div id="switchState">OFF</div>
+<div class="device" id="switch" style="left:80%;top:18%;">
+<div class="terminal" data-id="switch-IN">IN</div>
+<div class="terminal" data-id="switch-OUT">OUT</div>
 </div>
 
 <div id="junction" class="device">
-  <div class="jb-term" data-id="jb"></div>
-  <div class="jb-term" data-id="jb"></div>
-  <div class="jb-term" data-id="jb"></div>
-  <div class="jb-term" data-id="jb"></div>
+<div class="jb-term" data-id="jb"></div>
+<div class="jb-term" data-id="jb"></div>
+<div class="jb-term" data-id="jb"></div>
 </div>
 
-<div class="device" id="lamp" style="left:78%; top:66%;">
-  <div class="terminal" data-id="lamp-L">L</div>
-  <div class="terminal" data-id="lamp-N">N</div>
+<div class="device" style="left:78%;top:66%;">
+<div class="terminal" data-id="lamp-L">L</div>
+<div class="terminal" data-id="lamp-N">N</div>
 </div>
 
 </div>
 </div>
 
 <div class="controls">
-  <button id="setBtn">SET</button>
+<button onclick="toggleSwitch()">SWITCH</button>
+<button onclick="setCheck()">SET</button>
 </div>
 
-<!-- BOSS -->
-<div id="bossScreen">
-  <div id="bossPanel">
-    <img src="boss.png.jpg" style="width:120px"><br><br>
-    <div style="background:#333;border-radius:8px;">
-      <div id="bossHPbar"></div>
-    </div>
-  </div>
 </div>
+
+<!-- ボス -->
+<div id="bossScreen">
+<img id="bossImage" src="boss.png.jpg">
+<div id="bossHPWrap">
+<div id="bossHPBar"></div>
+</div>
+</div>
+
+<div id="rainbowOverlay"></div>
+<div id="victoryText">撃 破</div>
+<audio id="freezeSound" src="freeze.mp3"></audio>
 
 <script>
+/* ================== 画面遷移 ================== */
+function startQuiz(){
+  opening.style.display="none";
+  quizScreen.style.display="flex";
+}
+function answerQuiz(correct){
+  if(!correct){alert("不正解");return;}
+  quizScreen.style.display="none";
+  gameScreen.style.display="block";
+}
 
-/* === あなたの安定版ロジックそのまま === */
+/* ================== 配線エンジン（安定版そのまま） ================== */
 
-let bossHP=100, playerHP=100, switchOn=false, selected=null, connections=[];
-const playerBar=document.getElementById("playerHP");
+let switchOn=false;
+let selected=null;
+let connections=[];
+let bossHP=100;
+
 const wireLayer=document.getElementById("wireLayer");
 const board=document.getElementById("board");
-const switchEl=document.getElementById("switch");
-const switchState=document.getElementById("switchState");
-const setBtn=document.getElementById("setBtn");
-const bossScreen=document.getElementById("bossScreen");
-const bossHPbar=document.getElementById("bossHPbar");
 
 function resizeSVG(){
   const r=board.getBoundingClientRect();
@@ -151,20 +290,11 @@ function resizeSVG(){
   wireLayer.style.width=r.width+'px';
   wireLayer.style.height=r.height+'px';
 }
-window.addEventListener("resize",resizeSVG);
 window.addEventListener("load",resizeSVG);
-
-function normalizeId(id,el){
-  if(!id&&el)id=el.dataset.id;
-  if(!id)return id;
-  if(id==="jb")return "jb";
-  if(el&&el.closest&&el.closest('#junction'))return "jb";
-  return id;
-}
+window.addEventListener("resize",resizeSVG);
 
 document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
   t.addEventListener("click",()=>{
-    if(t.classList.contains('jb-term'))t.dataset.id='jb';
     if(selected===t){t.classList.remove("selected");selected=null;return;}
     if(!selected){selected=t;t.classList.add("selected");return;}
     connect(selected,t);
@@ -173,16 +303,14 @@ document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
   });
 });
 
-switchEl.addEventListener("dblclick",()=>{
-  switchOn=!switchOn;
-  switchState.textContent=switchOn?"ON":"OFF";
-});
+function normalizeId(id,el){
+  if(el.closest('#junction')) return "jb";
+  return id;
+}
 
 function connect(a,b){
   const idA=normalizeId(a.dataset.id,a);
   const idB=normalizeId(b.dataset.id,b);
-  if(!idA||!idB||idA===idB)return;
-
   connections.push([idA,idB]);
 
   const rectA=a.getBoundingClientRect();
@@ -210,32 +338,42 @@ function connHas(a,b){
   return connections.some(c=>(c[0]===a&&c[1]===b)||(c[0]===b&&c[1]===a));
 }
 
-function checkSolution(){
-  return connHas("power-L","jb") &&
-         connHas("jb","switch-IN") &&
-         connHas("switch-OUT","jb") &&
-         connHas("jb","lamp-L") &&
-         connHas("power-N","jb") &&
-         connHas("jb","lamp-N");
+function toggleSwitch(){switchOn=!switchOn;}
+
+function setCheck(){
+  if(!switchOn){alert("スイッチONにしろ");return;}
+
+  if(
+    connHas("power-L","jb") &&
+    connHas("jb","switch-IN") &&
+    connHas("switch-OUT","jb") &&
+    connHas("jb","lamp-L") &&
+    connHas("power-N","jb") &&
+    connHas("jb","lamp-N")
+  ){
+    bossPhase();
+  }else{
+    alert("配線ミス");
+  }
 }
 
-async function doBossSequence(){
-  bossScreen.style.display="flex";
-  await new Promise(r=>setTimeout(r,800));
+/* ================== ボス戦 ================== */
+
+function bossPhase(){
+  bossScreen.style.display="block";
   bossHP-=50;
-  bossHPbar.style.width=bossHP+"%";
-  await new Promise(r=>setTimeout(r,1000));
-  bossScreen.style.display="none";
+  document.getElementById("bossHPBar").style.width=bossHP+"%";
+
+  if(bossHP<=0){
+    setTimeout(()=>{
+      document.getElementById("rainbowOverlay").style.display="block";
+      document.getElementById("freezeSound").play();
+      const v=document.getElementById("victoryText");
+      v.style.animation="victory 1s forwards";
+    },800);
+  }
 }
-
-setBtn.addEventListener("click",async()=>{
-  if(!switchOn){alert("スイッチONにしてください");return;}
-  if(!checkSolution()){alert("配線ミス");return;}
-
-  await doBossSequence();   // ← ここだけ追加
-});
-
-resizeSVG();
 </script>
+
 </body>
 </html>
