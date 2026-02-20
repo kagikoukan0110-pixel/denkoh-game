@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>俺らの電工 - WORLD1 完成版</title>
+<title>俺らの電工 - WORLD1 完成版（重なり防止）</title>
 
 <style>
 :root{
@@ -222,6 +222,12 @@ body{
       <div class="terminal" data-id="lamp-N">N</div>
     </div>
 
+    <div class="device" id="spare" style="left:18%; top:68%; display:block;">
+      <h3>予備</h3>
+      <div class="terminal" data-id="spare-1">•</div>
+      <div class="terminal" data-id="spare-2">•</div>
+    </div>
+
   </div>
 </div>
 
@@ -241,6 +247,7 @@ body{
 <div id="overlay">WORLD1 CLEAR</div>
 
 <script>
+/* ===== state (unchanged behavior) ===== */
 let bossHP=100;
 let playerHP=100;
 let roundNum=1;
@@ -248,6 +255,7 @@ let switchOn=false;
 let selected=null;
 let connections=[];
 
+/* ===== DOM refs ===== */
 const board=document.getElementById("board");
 const wireLayer=document.getElementById("wireLayer");
 const playerBar=document.getElementById("playerHP");
@@ -255,7 +263,10 @@ const bossBar=document.getElementById("bossHPbar");
 const bossScreen=document.getElementById("bossScreen");
 const overlay=document.getElementById("overlay");
 const roundLabel=document.getElementById("roundLabel");
+const switchEl=document.getElementById("switch");
+const switchState=document.getElementById("switchState");
 
+/* ===== svg sizing (unchanged) ===== */
 function resizeSVG(){
   const r=board.getBoundingClientRect();
   wireLayer.setAttribute("viewBox",`0 0 ${r.width} ${r.height}`);
@@ -265,12 +276,14 @@ function resizeSVG(){
   wireLayer.style.height=r.height+"px";
 }
 window.addEventListener("resize",resizeSVG);
-window.addEventListener("load",resizeSVG);
+window.addEventListener("load",()=>{ resizeSVG(); setTimeout(resizeSVG,100); });
 
+/* ===== UI updates ===== */
 function updateHP(){playerBar.style.width=playerHP+"%";}
 function updateBoss(){bossBar.style.width=bossHP+"%";}
 function updateRound(){roundLabel.textContent=roundNum;}
 
+/* ===== terminal click (unchanged) ===== */
 document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
   t.onclick=()=>{
     if(selected===t){t.classList.remove("selected");selected=null;return;}
@@ -281,16 +294,17 @@ document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
   };
 });
 
-document.getElementById("switch").ondblclick=()=>{
+/* ===== switch toggle (unchanged) ===== */
+switchEl.ondblclick=()=>{
   switchOn=!switchOn;
-  document.getElementById("switchState").textContent=
-    switchOn?"Switch: ON":"Switch: OFF";
+  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
 };
 
+/* ===== connect/draw (unchanged) ===== */
 function connect(a,b){
   const idA=a.dataset.id;
   const idB=b.dataset.id;
-  if(idA===idB)return;
+  if(idA===idB) return;
 
   connections.push([idA,idB]);
 
@@ -304,10 +318,8 @@ function connect(a,b){
   const y2=rB.top-rBord.top+rB.height/2;
 
   const line=document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1);
-  line.setAttribute("y1",y1);
-  line.setAttribute("x2",x2);
-  line.setAttribute("y2",y2);
+  line.setAttribute("x1",x1); line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2); line.setAttribute("y2",y2);
   line.setAttribute("stroke","#ffd800");
   line.setAttribute("stroke-width","4");
   line.setAttribute("stroke-linecap","round");
@@ -329,8 +341,9 @@ function check(){
       && has("jb","lamp-N");
 }
 
+/* ===== boss flow (unchanged) ===== */
 document.getElementById("setBtn").onclick=async()=>{
-  if(!switchOn){alert("スイッチをONにしてください");return;}
+  if(!switchOn){ alert("スイッチをONにしてください"); return; }
   if(!check()){
     playerHP=Math.max(0,playerHP-20);
     updateHP();
@@ -341,7 +354,7 @@ document.getElementById("setBtn").onclick=async()=>{
   await new Promise(r=>setTimeout(r,600));
 
   bossHP-=34;
-  if(bossHP<0)bossHP=0;
+  if(bossHP<0) bossHP=0;
   updateBoss();
 
   await new Promise(r=>setTimeout(r,800));
@@ -354,13 +367,81 @@ document.getElementById("setBtn").onclick=async()=>{
 
   roundNum++;
   updateRound();
+
+  // clear wires & connections, then reposition devices (non-overlap)
   wireLayer.innerHTML="";
   connections=[];
+  await randomizeDevicePositions();
+  resizeSVG();
 };
 
-updateHP();
-updateBoss();
-updateRound();
+/* ===== non-overlapping placement (NEW - minimal, safe) =====
+   - junction remains near center
+   - other devices are placed randomly but checked for overlap
+*/
+async function randomizeDevicePositions(){
+  const deviceIds = ['power','switch','lamp','spare'];
+  const rect = board.getBoundingClientRect();
+  const placedRects = [];
+  const minDist = 110; // px, minimum center distance
+
+  // ensure junction stays at near-center (no change)
+  const junction = document.getElementById('junction');
+  junction.style.left = '40%';
+  junction.style.top = '42%';
+
+  for(const id of deviceIds){
+    const el = document.getElementById(id);
+    if(!el) continue;
+    let placed=false;
+    let tries=0;
+    while(!placed && tries < 300){
+      tries++;
+      // sample within board bounds with margins
+      const margin = 60;
+      const x = margin + Math.random() * (rect.width - margin*2);
+      const y = margin + Math.random() * (rect.height - margin*2);
+      // temporarily position to measure size
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      const r = el.getBoundingClientRect();
+      const cx = r.left - rect.left + r.width/2;
+      const cy = r.top - rect.top + r.height/2;
+      // keep some distance from junction
+      const jRect = junction.getBoundingClientRect();
+      const jcx = jRect.left - rect.left + jRect.width/2;
+      const jcy = jRect.top - rect.top + jRect.height/2;
+      const dj = Math.hypot(cx-jcx, cy-jcy);
+      if(dj < minDist) continue;
+      // check distance to already placed
+      let ok=true;
+      for(const pr of placedRects){
+        const d = Math.hypot(cx-pr.cx, cy-pr.cy);
+        if(d < minDist){ ok=false; break; }
+      }
+      if(ok){
+        placedRects.push({cx,cy,rect:r});
+        // convert to percent to keep responsive-ish
+        const leftPct = Math.round(((r.left - rect.left) + r.width/2) / rect.width * 100);
+        const topPct = Math.round(((r.top - rect.top) + r.height/2) / rect.height * 100);
+        el.style.left = leftPct + '%';
+        el.style.top = topPct + '%';
+        placed=true;
+      }
+    }
+    // fallback: if cannot place, keep previous location (do nothing)
+  }
+
+  // slight delay to let browser apply layout then resize SVG coordinates
+  await new Promise(r=>setTimeout(r,40));
+}
+
+/* ===== initialization ===== */
+updateHP(); updateBoss(); updateRound();
+resizeSVG();
+
+// on first load, arrange devices non-overlapping while preserving JB center
+window.addEventListener('load', ()=>{ randomizeDevicePositions().then(()=>resizeSVG()); });
 </script>
 </body>
 </html>
