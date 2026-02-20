@@ -3,69 +3,89 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>俺らの電工 WORLD1</title>
+<title>俺らの電工 - WORLD1 完成版</title>
 
 <style>
+:root{
+  --bg:#000;
+  --panel:#ddd;
+  --term:#222;
+  --wire:#ffd800;
+}
+
 body{
   margin:0;
   background:#000;
   color:#fff;
-  font-family:sans-serif;
-  overflow:hidden;
+  font-family:system-ui;
 }
 
 #wireLayer{
   position:fixed;
-  inset:0;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
   pointer-events:none;
-  z-index:1000;
+  z-index:2000;
 }
 
+/* ===== HEADER ===== */
 .header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:14px;
+  padding:12px 18px;
 }
 
-.hpbar{
-  width:160px;
-  height:10px;
-  background:#222;
-  border-radius:8px;
-}
+.title{font-size:20px;font-weight:700}
 
-.hpfill{
-  height:100%;
-  background:#2ecc71;
+.hp-area{width:40%}
+.bar{
   width:100%;
-  border-radius:8px;
+  height:12px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+}
+.player{
+  height:100%;
+  width:100%;
+  background:#2ecc71;
+  border-radius:10px;
+}
+
+/* ===== BOARD ===== */
+#board-wrap{
+  height:65vh;
+  position:relative;
 }
 
 #board{
-  position:relative;
   width:100%;
-  height:60vh;
+  height:100%;
+  position:relative;
 }
 
+/* ===== DEVICE ===== */
 .device{
   position:absolute;
-  width:90px;
+  width:86px;
   padding:8px;
   background:#ddd;
   border-radius:12px;
   color:#000;
-  text-align:center;
   transform:translate(-50%,-50%);
-  box-shadow:0 15px 40px rgba(0,0,0,.6);
+  text-align:center;
+  box-shadow:0 12px 30px rgba(0,0,0,.6);
 }
 
 .device h3{
-  margin:4px 0;
+  margin:4px 0 6px;
   font-size:12px;
 }
 
-.terminal{
+.terminal,.jb-term{
   width:26px;
   height:26px;
   display:inline-flex;
@@ -76,62 +96,85 @@ body{
   border-radius:50%;
   margin:4px;
   cursor:pointer;
+  user-select:none;
+}
+
+.selected{
+  outline:3px solid #ffd800;
 }
 
 #junction{
-  width:110px;
+  left:40%;
+  top:42%;
 }
 
-.jb-dot{
-  width:18px;
-  height:18px;
-  background:#222;
-  border-radius:50%;
-  display:inline-block;
-  margin:6px;
-  cursor:pointer;
-}
-
+/* ===== CONTROLS ===== */
 .controls{
+  padding:18px;
   text-align:center;
-  padding:30px;
-}
-
-button{
-  padding:14px 36px;
-  border:none;
-  border-radius:28px;
-  font-weight:bold;
 }
 
 #setBtn{
+  padding:14px 36px;
+  border:none;
+  border-radius:26px;
   background:#ffd000;
+  font-weight:700;
 }
 
+/* ===== BOSS ===== */
 #bossScreen{
   position:fixed;
   inset:0;
   background:#000;
   display:none;
-  flex-direction:column;
-  justify-content:center;
   align-items:center;
-  z-index:3000;
+  justify-content:center;
+  flex-direction:column;
+  z-index:8000;
 }
 
-#bossHPbar{
-  width:200px;
-  height:14px;
-  background:#222;
-  border-radius:10px;
-  margin-top:20px;
+#bossPanel{
+  width:80%;
+  max-width:600px;
+  background:#111;
+  padding:20px;
+  border-radius:14px;
+  text-align:center;
 }
 
-#bossHPfill{
-  height:100%;
-  background:#e74c3c;
+#bossName{
+  font-size:28px;
+  color:#ffd200;
+  font-weight:800;
+  margin-bottom:16px;
+}
+
+.bossHPback{
   width:100%;
-  border-radius:10px;
+  height:18px;
+  background:#331f1f;
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.bossHPbar{
+  height:100%;
+  width:100%;
+  background:#e74c3c;
+  transition:width 400ms linear;
+}
+
+#overlay{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:56px;
+  color:#ffd000;
+  z-index:9999;
 }
 </style>
 </head>
@@ -140,39 +183,46 @@ button{
 <svg id="wireLayer"></svg>
 
 <div class="header">
-  <div>俺らの電工 β</div>
-  <div>Round <span id="round">1</span>/3</div>
-  <div class="hpbar"><div id="playerHP" class="hpfill"></div></div>
+  <div class="title">俺らの電工 β</div>
+  <div>Round <span id="roundLabel">1</span> / 3</div>
+  <div class="hp-area">
+    <div class="bar"><div id="playerHP" class="player"></div></div>
+  </div>
 </div>
 
-<div id="board">
+<div id="board-wrap">
+  <div id="board">
 
-  <div class="device" id="power">
-    <h3>電源</h3>
-    <div class="terminal" data-id="power-L">L</div>
-    <div class="terminal" data-id="power-N">N</div>
+    <div class="device" id="power" style="left:12%; top:26%;">
+      <h3>電源</h3>
+      <div class="terminal" data-id="power-L">L</div>
+      <div class="terminal" data-id="power-N">N</div>
+    </div>
+
+    <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
+      <h3>片切</h3>
+      <div class="terminal" data-id="switch-IN">IN</div>
+      <div class="terminal" data-id="switch-OUT">OUT</div>
+      <div id="switchState" style="font-size:11px;margin-top:6px;">Switch: OFF</div>
+    </div>
+
+    <div class="device" id="junction">
+      <h3>Joint Box</h3>
+      <div>
+        <div class="jb-term" data-id="jb"></div>
+        <div class="jb-term" data-id="jb"></div>
+        <div class="jb-term" data-id="jb"></div>
+        <div class="jb-term" data-id="jb"></div>
+      </div>
+    </div>
+
+    <div class="device" id="lamp" style="left:78%; top:66%;">
+      <h3>ランプ</h3>
+      <div class="terminal" data-id="lamp-L">L</div>
+      <div class="terminal" data-id="lamp-N">N</div>
+    </div>
+
   </div>
-
-  <div class="device" id="switch">
-    <h3>片切</h3>
-    <div class="terminal" data-id="switch-IN">IN</div>
-    <div class="terminal" data-id="switch-OUT">OUT</div>
-  </div>
-
-  <div class="device" id="junction">
-    <h3>Joint Box</h3>
-    <div class="jb-dot" data-id="jb"></div>
-    <div class="jb-dot" data-id="jb"></div>
-    <div class="jb-dot" data-id="jb"></div>
-    <div class="jb-dot" data-id="jb"></div>
-  </div>
-
-  <div class="device" id="lamp">
-    <h3>ランプ</h3>
-    <div class="terminal" data-id="lamp-L">L</div>
-    <div class="terminal" data-id="lamp-N">N</div>
-  </div>
-
 </div>
 
 <div class="controls">
@@ -180,122 +230,137 @@ button{
 </div>
 
 <div id="bossScreen">
-  <h1>汚ねえ大工</h1>
-  <div id="bossHPbar">
-    <div id="bossHPfill"></div>
+  <div id="bossPanel">
+    <div id="bossName">汚ねえ大工</div>
+    <div class="bossHPback">
+      <div id="bossHPbar" class="bossHPbar"></div>
+    </div>
   </div>
 </div>
 
+<div id="overlay">WORLD1 CLEAR</div>
+
 <script>
-const board = document.getElementById("board");
-const junction = document.getElementById("junction");
-const wireLayer = document.getElementById("wireLayer");
+let bossHP=100;
+let playerHP=100;
+let roundNum=1;
+let switchOn=false;
+let selected=null;
+let connections=[];
 
-let selected = null;
-let wires = [];
-let round = 1;
-let bossHP = 100;
+const board=document.getElementById("board");
+const wireLayer=document.getElementById("wireLayer");
+const playerBar=document.getElementById("playerHP");
+const bossBar=document.getElementById("bossHPbar");
+const bossScreen=document.getElementById("bossScreen");
+const overlay=document.getElementById("overlay");
+const roundLabel=document.getElementById("roundLabel");
 
-function getCenter(el){
-  const r = el.getBoundingClientRect();
-  return {
-    x:r.left + r.width/2,
-    y:r.top + r.height/2
-  };
+function resizeSVG(){
+  const r=board.getBoundingClientRect();
+  wireLayer.setAttribute("viewBox",`0 0 ${r.width} ${r.height}`);
+  wireLayer.style.left=r.left+"px";
+  wireLayer.style.top=r.top+"px";
+  wireLayer.style.width=r.width+"px";
+  wireLayer.style.height=r.height+"px";
 }
+window.addEventListener("resize",resizeSVG);
+window.addEventListener("load",resizeSVG);
 
-document.querySelectorAll(".terminal, .jb-dot").forEach(t=>{
-  t.addEventListener("click",()=>{
-    if(!selected){
-      selected = t;
-      return;
-    }
-    if(selected === t){
-      selected = null;
-      return;
-    }
-    drawWire(selected,t);
-    wires.push([selected.dataset.id,t.dataset.id]);
+function updateHP(){playerBar.style.width=playerHP+"%";}
+function updateBoss(){bossBar.style.width=bossHP+"%";}
+function updateRound(){roundLabel.textContent=roundNum;}
+
+document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
+  t.onclick=()=>{
+    if(selected===t){t.classList.remove("selected");selected=null;return;}
+    if(!selected){selected=t;t.classList.add("selected");return;}
+    connect(selected,t);
+    selected.classList.remove("selected");
     selected=null;
-  });
+  };
 });
 
-function drawWire(a,b){
-  const p1 = getCenter(a);
-  const p2 = getCenter(b);
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",p1.x);
-  line.setAttribute("y1",p1.y);
-  line.setAttribute("x2",p2.x);
-  line.setAttribute("y2",p2.y);
-  line.setAttribute("stroke","yellow");
-  line.setAttribute("stroke-width","3");
+document.getElementById("switch").ondblclick=()=>{
+  switchOn=!switchOn;
+  document.getElementById("switchState").textContent=
+    switchOn?"Switch: ON":"Switch: OFF";
+};
+
+function connect(a,b){
+  const idA=a.dataset.id;
+  const idB=b.dataset.id;
+  if(idA===idB)return;
+
+  connections.push([idA,idB]);
+
+  const rA=a.getBoundingClientRect();
+  const rB=b.getBoundingClientRect();
+  const rBord=board.getBoundingClientRect();
+
+  const x1=rA.left-rBord.left+rA.width/2;
+  const y1=rA.top-rBord.top+rA.height/2;
+  const x2=rB.left-rBord.left+rB.width/2;
+  const y2=rB.top-rBord.top+rB.height/2;
+
+  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1);
+  line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2);
+  line.setAttribute("y2",y2);
+  line.setAttribute("stroke","#ffd800");
+  line.setAttribute("stroke-width","4");
+  line.setAttribute("stroke-linecap","round");
   wireLayer.appendChild(line);
 }
 
-function checkCorrect(){
-  const needed = [
-    ["power-L","switch-IN"],
-    ["switch-OUT","lamp-L"],
-    ["power-N","lamp-N"]
-  ];
-
-  return needed.every(pair =>
-    wires.some(w =>
-      (w[0]===pair[0] && w[1]===pair[1]) ||
-      (w[1]===pair[0] && w[0]===pair[1])
-    )
+function has(a,b){
+  return connections.some(c=>
+    (c[0]===a&&c[1]===b)||(c[1]===a&&c[0]===b)
   );
 }
 
-document.getElementById("setBtn").addEventListener("click",()=>{
-  if(!checkCorrect()) return;
-
-  bossHP -= 34;
-  if(bossHP<0) bossHP=0;
-
-  document.getElementById("bossHPfill").style.width=bossHP+"%";
-  document.getElementById("bossScreen").style.display="flex";
-
-  setTimeout(()=>{
-    document.getElementById("bossScreen").style.display="none";
-    wires=[];
-    wireLayer.innerHTML="";
-    if(bossHP<=0){
-      alert("WORLD CLEAR");
-      bossHP=100;
-      round=1;
-    }else{
-      round++;
-    }
-    document.getElementById("round").textContent=round;
-    randomizeLayout();
-  },1500);
-});
-
-function centerJB(){
-  const r = board.getBoundingClientRect();
-  junction.style.left=r.width/2+"px";
-  junction.style.top=r.height/2+"px";
+function check(){
+  return has("power-L","jb")
+      && has("jb","switch-IN")
+      && has("switch-OUT","jb")
+      && has("jb","lamp-L")
+      && has("power-N","jb")
+      && has("jb","lamp-N");
 }
 
-function randomizeLayout(){
-  centerJB();
-  const ids=["power","switch","lamp"];
-  ids.forEach(id=>{
-    const el=document.getElementById(id);
-    const r=board.getBoundingClientRect();
-    el.style.left=(Math.random()*(r.width-140)+70)+"px";
-    el.style.top=(Math.random()*(r.height-140)+70)+"px";
-  });
-}
+document.getElementById("setBtn").onclick=async()=>{
+  if(!switchOn){alert("スイッチをONにしてください");return;}
+  if(!check()){
+    playerHP=Math.max(0,playerHP-20);
+    updateHP();
+    return;
+  }
 
-window.addEventListener("load",()=>{
-  centerJB();
-  randomizeLayout();
-});
-window.addEventListener("resize",centerJB);
+  bossScreen.style.display="flex";
+  await new Promise(r=>setTimeout(r,600));
+
+  bossHP-=34;
+  if(bossHP<0)bossHP=0;
+  updateBoss();
+
+  await new Promise(r=>setTimeout(r,800));
+  bossScreen.style.display="none";
+
+  if(bossHP<=0){
+    overlay.style.display="flex";
+    return;
+  }
+
+  roundNum++;
+  updateRound();
+  wireLayer.innerHTML="";
+  connections=[];
+};
+
+updateHP();
+updateBoss();
+updateRound();
 </script>
-
 </body>
 </html>
