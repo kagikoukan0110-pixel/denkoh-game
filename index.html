@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>俺らの電工 - WORLD1</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>俺らの電工 - WORLD1 安定版</title>
 
 <style>
 :root{
@@ -12,45 +12,31 @@
   --term-bg:#222;
   --wire:#ffd800;
   --wirew:4;
+  --device-w:86px;
+  --device-padding:8px;
 }
-
 html,body{
+  height:100%;
   margin:0;
-  height:100%;
-  background:#000;
+  background:var(--bg);
   color:#fff;
-  font-family:system-ui;
-  overflow:hidden;
-}
-
-/* ==================== 配線レイヤー ==================== */
-#wireLayer{
-  position:fixed;
-  top:0;left:0;
-  width:100vw;height:100vh;
-  pointer-events:none;
-  z-index:2000;
-}
-
-/* ==================== 配線画面 ==================== */
-#gameScreen{
-  width:100%;
-  height:100%;
-  display:none;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto;
+  touch-action:manipulation;
 }
 
 .header{
   display:flex;
   justify-content:space-between;
-  padding:12px;
+  padding:12px 18px;
 }
 
-.bar{height:12px;background:#222;border-radius:12px;overflow:hidden;width:200px;}
-.player{height:100%;width:100%;background:#34d058;}
+.bar{width:220px;height:12px;background:#222;border-radius:12px;overflow:hidden}
+.player{height:100%;background:#34d058;width:100%}
 
 #board-wrap{
   position:relative;
-  height:calc(100vh - 180px);
+  width:100%;
+  height:calc(100vh - 200px);
 }
 
 #board{
@@ -59,259 +45,191 @@ html,body{
   height:100%;
 }
 
+/* ✅ SVGはboard内 absolute */
+#wireLayer{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:10;
+}
+
 .device{
   position:absolute;
-  width:86px;
-  padding:8px;
-  background:#ddd;
-  border-radius:10px;
+  width:var(--device-w);
+  padding:var(--device-padding);
+  background:var(--panel);
+  border-radius:12px;
   color:#000;
   transform:translate(-50%,-50%);
   text-align:center;
+  z-index:20;
+}
+
+.device h3{
+  margin:4px 0 6px;
+  font-size:12px;
 }
 
 .terminal{
   display:inline-flex;
-  width:26px;height:26px;
-  background:#222;color:#fff;
-  border-radius:50%;
   justify-content:center;
   align-items:center;
+  width:26px;height:26px;
   margin:4px;
+  background:var(--term-bg);
+  color:#fff;
+  border-radius:50%;
+  font-size:12px;
   cursor:pointer;
 }
 
-.selected{outline:3px solid #ffd800;}
-
-#junction{left:38%;top:42%;background:#d6d6d6;}
-.jb-term{
-  width:18px;height:18px;
-  background:#222;border-radius:50%;
-  display:inline-block;margin:4px;cursor:pointer;
-}
+.selected{outline:3px solid #ffd800}
 
 .controls{
   text-align:center;
-  padding:10px;
+  padding:20px;
 }
 
-/* ==================== オープニング ==================== */
-#opening{
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:20px;
+  font-weight:bold;
+  margin:8px;
+}
+
+#setBtn{background:#ffd000}
+.small{background:#333;color:#fff}
+
+#overlay{
   position:fixed;
   inset:0;
-  background:#000;
-  display:flex;
-  justify-content:center;
+  display:none;
   align-items:center;
-  flex-direction:column;
-  z-index:9000;
-}
-
-/* ==================== クイズ ==================== */
-#quizScreen{
-  position:fixed;
-  inset:0;
-  background:#000;
-  display:none;
-  flex-direction:column;
   justify-content:center;
-  align-items:center;
-  z-index:9000;
+  font-size:48px;
+  background:#000;
+  color:#ffd800;
+  z-index:999;
 }
-
-/* ==================== ボス ==================== */
-#bossScreen{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:9000;
-  background:black;
-}
-
-#bossImage{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-#bossHPWrap{
-  position:absolute;
-  top:20px;
-  left:50%;
-  transform:translateX(-50%);
-  width:80%;
-  z-index:10;
-}
-
-#bossHPBar{
-  height:16px;
-  background:red;
-  width:100%;
-  transition:width .4s;
-}
-
-#rainbowOverlay{
-  position:fixed;
-  inset:0;
-  display:none;
-  z-index:10000;
-  animation: rainbow 0.6s linear infinite;
-}
-
-@keyframes rainbow{
-  0%{background:red;}
-  25%{background:yellow;}
-  50%{background:lime;}
-  75%{background:cyan;}
-  100%{background:red;}
-}
-
-#victoryText{
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%) scale(0);
-  font-size:90px;
-  font-weight:900;
-  color:white;
-  text-shadow:0 0 40px gold;
-  z-index:10001;
-}
-
-@keyframes victory{
-  0%{transform:translate(-50%,-50%) scale(0);}
-  50%{transform:translate(-50%,-50%) scale(1.5);}
-  100%{transform:translate(-50%,-50%) scale(1.2);}
-}
+#overlay.show{display:flex}
 </style>
 </head>
-
 <body>
 
-<svg id="wireLayer"></svg>
-
-<!-- オープニング -->
-<div id="opening">
-  <h1>俺らの電工</h1>
-  <button onclick="startQuiz()">START</button>
-</div>
-
-<!-- クイズ -->
-<div id="quizScreen">
-  <h2>電気でLは？</h2>
-  <button onclick="answerQuiz(false)">中性線</button>
-  <button onclick="answerQuiz(true)">活線</button>
-  <button onclick="answerQuiz(false)">地線</button>
-</div>
-
-<!-- ゲーム画面 -->
-<div id="gameScreen">
-
 <div class="header">
-  <div>WORLD1</div>
-  <div class="bar"><div id="playerHP" class="player"></div></div>
+  <div>俺らの電工 β</div>
+  <div>
+    PLAYER HP
+    <div class="bar"><div id="playerHP" class="player"></div></div>
+  </div>
 </div>
 
 <div id="board-wrap">
-<div id="board">
+  <div id="board">
 
-<div class="device" style="left:10%;top:22%;">
-<div class="terminal" data-id="power-L">L</div>
-<div class="terminal" data-id="power-N">N</div>
-</div>
+    <!-- ✅ SVGをboard内に移動 -->
+    <svg id="wireLayer"></svg>
 
-<div class="device" id="switch" style="left:80%;top:18%;">
-<div class="terminal" data-id="switch-IN">IN</div>
-<div class="terminal" data-id="switch-OUT">OUT</div>
-</div>
+    <div class="device" id="power" style="left:12%;top:25%;">
+      <h3>電源</h3>
+      <div>
+        <div class="terminal" data-id="power-L">L</div>
+        <div class="terminal" data-id="power-N">N</div>
+      </div>
+    </div>
 
-<div id="junction" class="device">
-<div class="jb-term" data-id="jb"></div>
-<div class="jb-term" data-id="jb"></div>
-<div class="jb-term" data-id="jb"></div>
-</div>
+    <div class="device" id="switch" style="left:78%;top:20%;background:#e7ffec;">
+      <h3>片切</h3>
+      <div>
+        <div class="terminal" data-id="switch-IN">IN</div>
+        <div class="terminal" data-id="switch-OUT">OUT</div>
+      </div>
+      <div id="switchState">Switch: OFF</div>
+    </div>
 
-<div class="device" style="left:78%;top:66%;">
-<div class="terminal" data-id="lamp-L">L</div>
-<div class="terminal" data-id="lamp-N">N</div>
-</div>
+    <div class="device" id="junction" style="left:40%;top:42%;width:110px;">
+      <h3>Joint Box</h3>
+      <div>
+        <div class="terminal" data-id="jb">●</div>
+        <div class="terminal" data-id="jb">●</div>
+        <div class="terminal" data-id="jb">●</div>
+        <div class="terminal" data-id="jb">●</div>
+      </div>
+    </div>
 
-</div>
+    <div class="device" id="lamp" style="left:78%;top:66%;">
+      <h3>ランプ</h3>
+      <div>
+        <div class="terminal" data-id="lamp-L">L</div>
+        <div class="terminal" data-id="lamp-N">N</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <div class="controls">
-<button onclick="toggleSwitch()">SWITCH</button>
-<button onclick="setCheck()">SET</button>
+  <button id="setBtn">SET</button>
+  <button id="resetWires" class="small">Reset</button>
 </div>
 
-</div>
-
-<!-- ボス -->
-<div id="bossScreen">
-<img id="bossImage" src="boss.png.jpg">
-<div id="bossHPWrap">
-<div id="bossHPBar"></div>
-</div>
-</div>
-
-<div id="rainbowOverlay"></div>
-<div id="victoryText">撃 破</div>
-<audio id="freezeSound" src="freeze.mp3"></audio>
+<div id="overlay">WORLD CLEAR</div>
 
 <script>
-/* ================== 画面遷移 ================== */
-function startQuiz(){
-  opening.style.display="none";
-  quizScreen.style.display="flex";
-}
-function answerQuiz(correct){
-  if(!correct){alert("不正解");return;}
-  quizScreen.style.display="none";
-  gameScreen.style.display="block";
-}
-
-/* ================== 配線エンジン（安定版そのまま） ================== */
-
-let switchOn=false;
 let selected=null;
 let connections=[];
-let bossHP=100;
+let switchOn=false;
+let playerHP=100;
 
 const wireLayer=document.getElementById("wireLayer");
 const board=document.getElementById("board");
+const playerBar=document.getElementById("playerHP");
+const overlay=document.getElementById("overlay");
+const switchState=document.getElementById("switchState");
 
 function resizeSVG(){
   const r=board.getBoundingClientRect();
   wireLayer.setAttribute("viewBox",`0 0 ${r.width} ${r.height}`);
-  wireLayer.style.left=r.left+'px';
-  wireLayer.style.top=r.top+'px';
-  wireLayer.style.width=r.width+'px';
-  wireLayer.style.height=r.height+'px';
 }
-window.addEventListener("load",resizeSVG);
 window.addEventListener("resize",resizeSVG);
+window.addEventListener("load",resizeSVG);
 
-document.querySelectorAll(".terminal,.jb-term").forEach(t=>{
+function normalizeId(id,el){
+  if(el.closest("#junction")) return "jb";
+  return id;
+}
+
+document.querySelectorAll(".terminal").forEach(t=>{
   t.addEventListener("click",()=>{
-    if(selected===t){t.classList.remove("selected");selected=null;return;}
-    if(!selected){selected=t;t.classList.add("selected");return;}
+    if(selected===t){
+      t.classList.remove("selected");
+      selected=null;
+      return;
+    }
+    if(!selected){
+      selected=t;
+      t.classList.add("selected");
+      return;
+    }
     connect(selected,t);
     selected.classList.remove("selected");
     selected=null;
   });
 });
 
-function normalizeId(id,el){
-  if(el.closest('#junction')) return "jb";
-  return id;
-}
+document.getElementById("switch").addEventListener("click",()=>{
+  switchOn=!switchOn;
+  switchState.textContent=switchOn?"Switch: ON":"Switch: OFF";
+});
 
 function connect(a,b){
   const idA=normalizeId(a.dataset.id,a);
   const idB=normalizeId(b.dataset.id,b);
-  connections.push([idA,idB]);
+  if(idA===idB) return;
 
   const rectA=a.getBoundingClientRect();
   const rectB=b.getBoundingClientRect();
@@ -330,50 +248,21 @@ function connect(a,b){
   line.setAttribute("stroke","#ffd800");
   line.setAttribute("stroke-width","4");
   line.setAttribute("stroke-linecap","round");
-
   wireLayer.appendChild(line);
+
+  connections.push([idA,idB]);
 }
 
-function connHas(a,b){
-  return connections.some(c=>(c[0]===a&&c[1]===b)||(c[0]===b&&c[1]===a));
-}
+document.getElementById("setBtn").addEventListener("click",()=>{
+  if(!switchOn){ alert("スイッチONにしてください"); return;}
+  overlay.classList.add("show");
+});
 
-function toggleSwitch(){switchOn=!switchOn;}
+document.getElementById("resetWires").addEventListener("click",()=>{
+  wireLayer.innerHTML="";
+  connections=[];
+});
 
-function setCheck(){
-  if(!switchOn){alert("スイッチONにしろ");return;}
-
-  if(
-    connHas("power-L","jb") &&
-    connHas("jb","switch-IN") &&
-    connHas("switch-OUT","jb") &&
-    connHas("jb","lamp-L") &&
-    connHas("power-N","jb") &&
-    connHas("jb","lamp-N")
-  ){
-    bossPhase();
-  }else{
-    alert("配線ミス");
-  }
-}
-
-/* ================== ボス戦 ================== */
-
-function bossPhase(){
-  bossScreen.style.display="block";
-  bossHP-=50;
-  document.getElementById("bossHPBar").style.width=bossHP+"%";
-
-  if(bossHP<=0){
-    setTimeout(()=>{
-      document.getElementById("rainbowOverlay").style.display="block";
-      document.getElementById("freezeSound").play();
-      const v=document.getElementById("victoryText");
-      v.style.animation="victory 1s forwards";
-    },800);
-  }
-}
 </script>
-
 </body>
 </html>
