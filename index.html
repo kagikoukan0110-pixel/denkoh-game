@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (boss flow)</title>
+<title>俺らの電工 - WORLD1 (full)</title>
 <style>
 :root{
   --bg:#000;
@@ -16,7 +16,9 @@
   --boss-hp-color:#e74c3c;
   --boss-hp-back:#332626;
 }
-html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;-webkit-font-smoothing:antialiased;touch-action:manipulation}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;-webkit-font-smoothing:antialiased;touch-action:manipulation}
+/* wireLayer must be direct child of body */
+#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:1200}
 
 /* header */
 .header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
@@ -25,7 +27,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 .bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
 .player{height:100%;width:100%;background:#34d058;border-radius:12px}
 
-/* board */
+/* board area */
 #board-wrap{position:relative;width:100%;height:calc(100vh - 230px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
 #board{position:relative;width:100%;height:100%}
 
@@ -40,51 +42,80 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 .jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
 
-/* SVG wire layer: front visually, pointer-events none so clicks pass through */
-#wireLayer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
-
-/* controls area */
+/* controls */
 .controls{height:180px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
 button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:800}
 button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
 .note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
-/* overlay clear */
-#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.96);display:none;align-items:center;justify-content:center;font-size:56px;z-index:1500;color:#ffd000}
+/* overlays & screens */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.96);display:none;align-items:center;justify-content:center;font-size:56px;z-index:1400;color:#ffd000}
 #overlay.show{display:flex}
 
-/* boss screen (full-screen) */
-#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:2000;color:#fff;background:rgba(0,0,0,0.9)}
-#bossFull{max-width:100%;max-height:60vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.7);}
+#titleScreen, #quizScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:1300;background:rgba(0,0,0,0.95);padding:24px;box-sizing:border-box}
+#titleScreen.show, #quizScreen.show{display:flex}
+.titleLogo{font-size:40px;font-weight:900;color:#ffd700;margin-bottom:18px}
+.startBtn{padding:12px 22px;border-radius:10px;border:none;background:#ffd000;color:#000;font-weight:800}
 
-/* boss panel with HP */
+/* quiz */
+.quizBox{width:100%;max-width:760px;background:#0f0f0f;border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.7);color:#fff}
+.qTitle{font-size:22px;color:#ffd200;margin-bottom:12px}
+.choice{background:#232323;padding:12px;border-radius:10px;margin:8px 0;cursor:pointer}
+.choice.correct{background:linear-gradient(90deg,#1b7b1b,#34d058)}
+.choice.wrong{background:#6a1b1b}
+
+/* boss screen */
+#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:1500;color:#fff;background:rgba(0,0,0,0.95)}
+#bossScreen.show{display:flex}
+#bossFull{width:100%;max-width:720px;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.7)}
 #bossPanel{display:flex;gap:18px;align-items:center;margin-top:18px}
 #bossName{font-size:28px;color:#ffd200;margin-right:12px;font-weight:800}
 .bossHPwrap{width:60vw;max-width:480px}
 .bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
 .bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 500ms linear;border-radius:12px}
 
-/* damage effect */
-@keyframes flashRed { 0%{filter:none}50%{filter:drop-shadow(0 0 18px rgba(231,76,60,0.95))}100%{filter:none} }
-@keyframes shake { 0%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}100%{transform:translateX(0)} }
-.boss-damage{animation: flashRed 360ms ease, shake 480ms ease}
+/* damage animations */
+@keyframes flashRed {0%{filter:none}25%{filter:drop-shadow(0 0 20px rgba(231,76,60,0.95))}50%{filter:none}75%{filter:drop-shadow(0 0 20px rgba(231,76,60,0.95))}100%{filter:none}}
+@keyframes shake {0%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}100%{transform:translateX(0)}}
+.boss-damage{animation:flashRed 400ms linear 0s 3, shake 480ms ease 0s 1}
 
-/* rainbow flash on clear */
-@keyframes rainbow {
-  0%{background:linear-gradient(90deg,#ff0044,#ffb600,#00ff88,#00aaff)}
-  50%{background:linear-gradient(90deg,#00aaff,#ff0044,#00ff88,#ffb600)}
-  100%{background:linear-gradient(90deg,#ff0044,#ffb600,#00ff88,#00aaff)}
-}
-.rainbowFlash{position:fixed;inset:0;z-index:2500;animation:rainbow 900ms linear;opacity:0.92;}
+/* continuous flash overlay (2s) */
+.flashOverlay{position:fixed;inset:0;z-index:1700;pointer-events:none;background:linear-gradient(90deg, rgba(255,0,68,0.06), rgba(255,216,0,0.06));animation:flashRed 200ms linear infinite}
+
+/* rainbow final */
+@keyframes rainbow {0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+.rainbowFlash{position:fixed;inset:0;z-index:1800;background:linear-gradient(90deg,#ff0044,#ffb600,#00ff88,#00aaff);opacity:0.95;animation:rainbow 900ms linear}
 
 /* flashy text */
-.flashText{font-size:5.2rem;color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:6px;text-shadow:0 6px 24px rgba(0,0,0,0.8)}
+.flashText{position:fixed;top:20%;left:50%;transform:translateX(-50%);z-index:1900;font-size:4rem;font-weight:900;color:#fff;text-shadow:0 8px 28px rgba(0,0,0,0.7);letter-spacing:6px}
 
 /* responsive */
-@media (max-width:480px){:root{--device-w:72px;} .flashText{font-size:3rem}}
+@media (max-width:480px){:root{--device-w:72px} .titleLogo{font-size:32px} .flashText{font-size:2rem}}
 </style>
 </head>
 <body>
+  <!-- wireLayer must be direct child -->
+  <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+
+  <!-- title screen -->
+  <div id="titleScreen">
+    <div class="titleLogo">俺らの電工 β — WORLD1</div>
+    <div style="margin-bottom:12px;color:#ccc">学科 + 配線でボスを倒せ</div>
+    <button id="startBtn" class="startBtn">START</button>
+  </div>
+
+  <!-- quiz screen -->
+  <div id="quizScreen">
+    <div class="quizBox">
+      <div class="qTitle" id="quizQuestionTitle">学科問題</div>
+      <div id="choices"></div>
+      <div style="text-align:right;margin-top:12px">
+        <button id="quizNext" class="small">次へ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- header -->
   <div class="header">
     <div style="display:flex;align-items:center;gap:12px">
       <div class="title">俺らの電工 β</div>
@@ -95,13 +126,13 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
       <div class="bar"><div id="playerHP" class="player" style="width:100%"></div></div>
     </div>
     <div style="text-align:right;font-size:12px;color:#aaa;">
-      STATE<br><strong id="stateLabel">play</strong>
+      STATE<br><strong id="stateLabel">title</strong>
     </div>
   </div>
 
+  <!-- board -->
   <div id="board-wrap">
     <div id="board">
-      <!-- devices -->
       <div class="device" id="power" style="left:12%; top:26%;">
         <h3 style="font-size:12px">電源</h3>
         <div style="text-align:center;">
@@ -145,12 +176,10 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
           <div class="terminal" data-id="spare-2">•</div>
         </div>
       </div>
-
-      <!-- SVG wires: placed inside board for coordinate math, but z-index ensures front -->
-      <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
     </div>
   </div>
 
+  <!-- controls -->
   <div class="controls" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
     <button id="setBtn">SET</button>
     <div style="margin-top:10px;">
@@ -162,7 +191,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
   <div id="overlay">WORLD1 CLEAR</div>
 
-  <!-- Boss screen -->
+  <!-- boss screen -->
   <div id="bossScreen" aria-hidden="true">
     <img id="bossFull" src="boss.png.jpg" alt="boss" />
     <div id="bossPanel">
@@ -174,10 +203,13 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
+  <!-- audio -->
   <audio id="freezeSnd" src="freeze.mp3" preload="auto"></audio>
 
 <script>
-/* ----- state ----- */
+/* -------------------------
+   State & elements
+   ------------------------- */
 let bossHP = 100;
 let playerHP = 100;
 let roundNum = 1;
@@ -185,8 +217,8 @@ let switchOn = false;
 let selected = null;
 let connections = [];
 
-const board = document.getElementById("board");
 const wireLayer = document.getElementById("wireLayer");
+const board = document.getElementById("board");
 const playerBar = document.getElementById("playerHP");
 const bossHPbar = document.getElementById("bossHPbar");
 const overlay = document.getElementById("overlay");
@@ -199,25 +231,104 @@ const switchState = document.getElementById("switchState");
 const roundLabel = document.getElementById("roundLabel");
 const stateLabel = document.getElementById("stateLabel");
 
-/* ----- svg sizing ----- */
+const titleScreen = document.getElementById("titleScreen");
+const startBtn = document.getElementById("startBtn");
+const quizScreen = document.getElementById("quizScreen");
+const quizQuestionTitle = document.getElementById("quizQuestionTitle");
+const choicesEl = document.getElementById("choices");
+const quizNext = document.getElementById("quizNext");
+
+/* -------------------------
+   Questions (simple set)
+   ------------------------- */
+const questions = [
+  {q:"1. 電気で L は何を表す？", choices:["中性線","活線(L)","地線","照明"], answer:1},
+  {q:"2. N は何を表す？", choices:["活線","中性線(N)","アース","負荷"], answer:1},
+  {q:"3. 断線するとどうなる？", choices:["電流が流れない","電流が増える","電力が回復する","変わらない"], answer:0},
+  {q:"4. ランプを点けるにはどの線が必要？", choices:["L と N","L と アース","N と アース","どれでも良い"], answer:0}
+];
+let currentQ = 0;
+
+/* -------------------------
+   SVG sizing: map board coords to svg size
+   ------------------------- */
 function resizeSVG(){
   const r = board.getBoundingClientRect();
-  // set viewBox to board internal coords
   wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
-  // also set pixel width/height for absolute positioning (keeps lines crisp)
   wireLayer.style.width = r.width + 'px';
   wireLayer.style.height = r.height + 'px';
-  wireLayer.style.left = '0px';
-  wireLayer.style.top = '0px';
+  wireLayer.style.left = r.left + 'px';
+  wireLayer.style.top = r.top + 'px';
 }
 window.addEventListener("resize", resizeSVG);
 window.addEventListener("load", ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
 
-/* ----- helpers ----- */
+/* -------------------------
+   UI updates
+   ------------------------- */
 function updateHP(){ playerBar.style.width = playerHP + "%"; }
 function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + "%"; }
 function updateRound(){ roundLabel.textContent = roundNum; }
 
+/* -------------------------
+   Quiz flow
+   ------------------------- */
+function showTitle(){
+  titleScreen.classList.add("show");
+  stateLabel.textContent = 'title';
+}
+function hideTitle(){ titleScreen.classList.remove("show"); }
+function showQuiz(){
+  quizScreen.classList.add("show");
+  stateLabel.textContent = 'quiz';
+  currentQ = 0;
+  renderQuestion();
+}
+function hideQuiz(){ quizScreen.classList.remove("show"); }
+function renderQuestion(){
+  const q = questions[currentQ];
+  quizQuestionTitle.textContent = "学科問題";
+  choicesEl.innerHTML = `<div style="color:#fff;margin-bottom:6px;font-weight:700">${q.q}</div>`;
+  q.choices.forEach((c,i)=>{
+    const d = document.createElement('div');
+    d.className = 'choice';
+    d.textContent = c;
+    d.addEventListener('click', ()=>{
+      // visual feedback
+      if(i===q.answer){
+        d.classList.add('correct');
+        setTimeout(()=>{ nextQuestion(true); }, 450);
+      } else {
+        d.classList.add('wrong');
+        // penalize player quickly and allow to continue
+        playerHP = Math.max(0, playerHP - 10); updateHP();
+        setTimeout(()=>{ nextQuestion(false); }, 650);
+      }
+    });
+    choicesEl.appendChild(d);
+  });
+}
+function nextQuestion(correct){
+  if(!correct){
+    // just move to next or allow retry — we'll move on but penalized
+  }
+  currentQ++;
+  if(currentQ >= questions.length){
+    hideQuiz();
+    enterPlay(); // go to wiring part
+  } else {
+    renderQuestion();
+  }
+}
+startBtn.addEventListener('click', ()=>{
+  hideTitle();
+  showQuiz();
+});
+quizNext.addEventListener('click', ()=>{ nextQuestion(false); });
+
+/* -------------------------
+   Terminal interactions (unchanged logic)
+   ------------------------- */
 function normalizeId(id, el){
   if(!id && el) id = el.dataset.id;
   if(!id) return id;
@@ -225,51 +336,43 @@ function normalizeId(id, el){
   return id;
 }
 
-/* ----- terminal click handling ----- */
-document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
-  t.addEventListener("click", (e)=>{
-    // make jb terminals normalized
-    if(t.closest('#junction')) t.dataset.id = 'jb';
-    if(selected === t){ t.classList.remove("selected"); selected = null; return; }
-    if(!selected){ selected = t; t.classList.add("selected"); return; }
-    if(selected !== t){ connect(selected, t); }
-    if(selected) selected.classList.remove("selected");
-    selected = null;
+/* attach terminal handlers */
+function setupTerminals(){
+  document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
+    t.addEventListener("click", (e)=>{
+      if(t.closest('#junction')) t.dataset.id = 'jb';
+      if(selected === t){ t.classList.remove("selected"); selected = null; return; }
+      if(!selected){ selected = t; t.classList.add("selected"); return; }
+      if(selected !== t){ connect(selected, t); }
+      if(selected) selected.classList.remove("selected");
+      selected = null;
+    });
   });
-});
+}
+setupTerminals();
 
-/* switch click */
-switchEl.addEventListener("click", ()=>{
-  switchOn = !switchOn;
-  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
-  switchEl.style.background = switchOn ? "#e7ffec" : "";
-});
-
-/* ----- connect/draw ----- */
+/* -------------------------
+   Connect / draw wires
+   ------------------------- */
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
   if(!idA || !idB) return;
   if(idA === idB) return;
-
-  // toggle remove if exists
+  // toggle remove
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
-      // remove line(s)
       const existing = wireLayer.querySelectorAll(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
       existing.forEach(n=>n.remove());
       connections.splice(i,1);
       return;
     }
   }
-
   connections.push([idA,idB]);
-
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
   const boardRect = board.getBoundingClientRect();
-
   const x1 = rectA.left - boardRect.left + rectA.width/2;
   const y1 = rectA.top - boardRect.top + rectA.height/2;
   const x2 = rectB.left - boardRect.left + rectB.width/2;
@@ -282,177 +385,26 @@ function connect(a,b){
   line.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 6);
   line.setAttribute("stroke-linecap","round");
   line.setAttribute("data-from", idA); line.setAttribute("data-to", idB);
-
-  // for animation
   const len = (line.getTotalLength) ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
   line.style.strokeDasharray = len;
-  line.style.strokeDashoffset = len; // hidden initially for flow
+  line.style.strokeDashoffset = len;
   wireLayer.appendChild(line);
 }
 
-/* helper connection check */
+/* helper */
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
 
-/* validation - JB normalized */
+/* validation (JB normalized) */
 function checkSolution(){
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
   return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
 }
 
-/* animate lines forward (reveal) */
+/* animate lines reveal */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const lines = Array.from(wireLayer.querySelectorAll("line"));
     if(lines.length===0){ setTimeout(res, ms); return; }
-    lines.forEach(l=>{
-      const len = l.getTotalLength ? l.getTotalLength() : 200;
-      l.style.transition = 'none';
-      l.style.strokeDasharray = len;
-      l.style.strokeDashoffset = len;
-      // force layout
-      void l.getBoundingClientRect();
-      l.style.transition = `stroke-dashoffset ${ms}ms linear`;
-      l.style.strokeDashoffset = 0;
-    });
-    setTimeout(res, ms + 80);
-  });
-}
-
-/* ----- boss sequence ----- */
-async function doBossSequence(){
-  stateLabel.textContent = 'boss';
-  // show boss full-screen
-  bossScreen.style.display = 'flex';
-  bossScreen.setAttribute('aria-hidden','false');
-
-  // small wait
-  await new Promise(r=>setTimeout(r,300));
-
-  // play sound (user-interaction allowed because SET clicked)
-  try{ freezeSnd.currentTime = 0; await freezeSnd.play(); }catch(e){ /* ignore autoplay errors */ }
-
-  // animate boss panel (flash + shake)
-  const panel = document.getElementById("bossPanel");
-  panel.classList.add('boss-damage');
-  await new Promise(r=>setTimeout(r,600));
-  panel.classList.remove('boss-damage');
-
-  // damage
-  const dmg = 40;
-  bossHP -= dmg;
-  updateBossHP();
-
-  // flashy text overlay
-  const txt = document.createElement('div');
-  txt.className = 'flashText';
-  txt.style.position = 'absolute';
-  txt.style.top = '18%';
-  txt.style.left = '50%';
-  txt.style.transform = 'translateX(-50%)';
-  txt.style.zIndex = 2200;
-  txt.textContent = `HIT -${dmg}`;
-  bossScreen.appendChild(txt);
-  // animate scale & fade
-  txt.animate([{transform:'translateX(-50%) scale(0.8)',opacity:0},{transform:'translateX(-50%) scale(1.05)',opacity:1},{transform:'translateX(-50%) scale(1.4)',opacity:0}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)'});
-  setTimeout(()=>{ if(txt && txt.parentNode) txt.parentNode.removeChild(txt); },1000);
-
-  // if boss dead or final round -> clear
-  if(bossHP <= 0 || roundNum >= 3){
-    await new Promise(r=>setTimeout(r,600));
-    bossScreen.style.display = 'none';
-    // rainbow flash
-    const rf = document.createElement('div'); rf.className='rainbowFlash';
-    document.body.appendChild(rf);
-    setTimeout(()=>{ rf.remove(); overlay.classList.add('show'); stateLabel.textContent='clear'; },700);
-    return;
-  }
-
-  // else: return to board after delay
-  await new Promise(r=>setTimeout(r,700));
-  bossScreen.style.display = 'none';
-  bossScreen.setAttribute('aria-hidden','true');
-
-  // clear wires & selection
-  document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
-  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
-  connections = []; selected = null;
-
-  // increment round & update
-  roundNum++;
-  updateRound();
-
-  // reposition devices (random non-overlap)
-  randomizeDevicePositions();
-
-  stateLabel.textContent = 'play';
-}
-
-/* random placement avoiding heavy overlap */
-function randomizeDevicePositions(){
-  const devices = Array.from(document.querySelectorAll('.device'));
-  const boardRect = board.getBoundingClientRect();
-  const attempts = 50;
-  // We'll place in percent positions; keep junction nearer center
-  const occupied = [];
-  function intersects(x,y,w,h){
-    for(const r of occupied){
-      if(!(x+w < r.x || x > r.x+r.w || y+h < r.y || y > r.y+r.h)) return true;
-    }
-    return false;
-  }
-  devices.forEach(dev=>{
-    const w = dev.offsetWidth;
-    const h = dev.offsetHeight;
-    let placed=false;
-    for(let i=0;i<attempts;i++){
-      // prefer junction near center
-      let left, top;
-      if(dev.id === 'junction'){
-        left = 30 + Math.random()*40; // 30%..70%
-        top = 30 + Math.random()*30;  // 30%..60%
-      } else {
-        left = 8 + Math.random()*84; // 8%..92%
-        top = 14 + Math.random()*72; // 14%..86%
-      }
-      const px = boardRect.width * (left/100) - w/2;
-      const py = boardRect.height * (top/100) - h/2;
-      if(px < 6 || py < 6 || (px + w) > (boardRect.width - 6) || (py + h) > (boardRect.height - 6)) continue;
-      if(!intersects(px,py,w,h)){
-        occupied.push({x:px,y:py,w,h});
-        dev.style.left = left + '%';
-        dev.style.top = top + '%';
-        placed = true; break;
-      }
-    }
-    if(!placed){
-      // fallback: keep original percent or a safe corner
-      if(!dev.style.left) dev.style.left = '12%';
-      if(!dev.style.top) dev.style.top = '20%';
-    }
-  });
-  // after moving, recalc svg
-  setTimeout(resizeSVG,60);
-}
-
-/* SET button */
-setBtn.addEventListener("click", async ()=>{
-  if(!switchOn){ alert("スイッチがOFFです。スイッチをタップでONにしてください。"); return; }
-  if(!checkSolution()){
-    playerHP = Math.max(0, playerHP - 20);
-    updateHP();
-    if(playerHP <= 0) alert("PLAYER HP 0 - GAME OVER");
-    return;
-  }
-  // success -> animate flow then boss
-  await animateLinesForward(2000);
-  await doBossSequence();
-});
-
-/* animate lines reveal (re-used) */
-function animateLinesForward(ms){
-  return new Promise(res=>{
-    const lines = Array.from(wireLayer.querySelectorAll("line"));
-    if(lines.length===0){ setTimeout(res,ms); return; }
     lines.forEach(l=>{
       const len = l.getTotalLength ? l.getTotalLength() : 200;
       l.style.transition='none';
@@ -461,18 +413,135 @@ function animateLinesForward(ms){
       void l.getBoundingClientRect();
       l.style.transition = `stroke-dashoffset ${ms}ms linear`;
       l.style.strokeDashoffset = 0;
-      // optionally thicken while flowing
-      l.animate([{strokeWidth:2},{strokeWidth:10},{strokeWidth:6}],{duration:ms,fill:'forwards'});
+      l.animate([{strokeWidth:2},{strokeWidth:12},{strokeWidth:6}],{duration:ms,fill:'forwards'});
     });
     setTimeout(res, ms + 80);
   });
 }
 
-/* reset / restart */
+/* -------------------------
+   Boss sequence + enhanced damage effects
+   ------------------------- */
+async function doBossSequence(){
+  stateLabel.textContent = 'boss';
+  bossScreen.classList.add('show'); bossScreen.style.display='flex';
+  bossScreen.setAttribute('aria-hidden','false');
+
+  // small delay
+  await new Promise(r=>setTimeout(r,300));
+
+  // play freeze sound (user interacted by pressing SET, so should be allowed)
+  try{ freezeSnd.currentTime = 0; await freezeSnd.play(); }catch(e){ /* ignore */ }
+
+  // add continuous flash overlay for ~2s
+  const flash = document.createElement('div'); flash.className='flashOverlay';
+  document.body.appendChild(flash);
+  // boss panel flash+shake
+  const panel = document.getElementById("bossPanel");
+  panel.classList.add('boss-damage');
+
+  // flashy damage text that scales and fades
+  const dmg = 40;
+  const txt = document.createElement('div'); txt.className='flashText'; txt.textContent = `HIT -${dmg}`;
+  document.body.appendChild(txt);
+  txt.animate([{transform:'translateX(-50%) scale(0.9)',opacity:0},{transform:'translateX(-50%) scale(1.05)',opacity:1},{transform:'translateX(-50%) scale(1.4)',opacity:0}],{duration:1200,easing:'cubic-bezier(.2,.8,.2,1)'});
+  // keep overlay for 2s total
+  await new Promise(r=>setTimeout(r,2000));
+
+  // remove flash and temporary elements
+  panel.classList.remove('boss-damage');
+  if(flash && flash.parentNode) flash.parentNode.removeChild(flash);
+  if(txt && txt.parentNode) txt.parentNode.removeChild(txt);
+
+  // apply damage
+  bossHP -= dmg;
+  updateBossHP();
+
+  // if boss dead or final round -> victory
+  if(bossHP <= 0 || roundNum >= 3){
+    bossScreen.classList.remove('show'); bossScreen.style.display='none';
+    // rainbow final flash
+    const rf = document.createElement('div'); rf.className='rainbowFlash';
+    document.body.appendChild(rf);
+    // big clear text
+    const big = document.createElement('div'); big.className='flashText'; big.style.fontSize='5rem'; big.textContent='WORLD1 CLEAR';
+    document.body.appendChild(big);
+    setTimeout(()=>{ rf.remove(); if(big && big.parentNode) big.parentNode.removeChild(big); overlay.classList.add('show'); stateLabel.textContent='clear'; },900);
+    return;
+  }
+
+  // if not dead, return to board
+  await new Promise(r=>setTimeout(r,500));
+  bossScreen.classList.remove('show'); bossScreen.style.display='none';
+  bossScreen.setAttribute('aria-hidden','true');
+
+  // clear wires & selected
+  document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
+  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  connections = []; selected = null;
+
+  // increment round and reposition
+  roundNum++; updateRound();
+  randomizeDevicePositions();
+  stateLabel.textContent = 'play';
+}
+
+/* -------------------------
+   Random placement without overlap
+   ------------------------- */
+function randomizeDevicePositions(){
+  const devices = Array.from(document.querySelectorAll('.device'));
+  const boardRect = board.getBoundingClientRect();
+  const occupied = [];
+  function intersects(x,y,w,h){
+    for(const r of occupied){
+      if(!(x+w < r.x || x > r.x+r.w || y+h < r.y || y > r.y+r.h)) return true;
+    }
+    return false;
+  }
+  devices.forEach(dev=>{
+    const w = dev.offsetWidth; const h = dev.offsetHeight;
+    let placed=false;
+    for(let i=0;i<40;i++){
+      let left = 8 + Math.random()*84;
+      let top = 14 + Math.random()*72;
+      if(dev.id==='junction'){ left = 30 + Math.random()*40; top = 30 + Math.random()*30; }
+      const px = boardRect.width * (left/100) - w/2;
+      const py = boardRect.height * (top/100) - h/2;
+      if(px < 6 || py < 6 || (px + w) > (boardRect.width - 6) || (py + h) > (boardRect.height - 6)) continue;
+      if(!intersects(px,py,w,h)){
+        occupied.push({x:px,y:py,w,h});
+        dev.style.left = left + '%'; dev.style.top = top + '%';
+        placed = true; break;
+      }
+    }
+    if(!placed){ /* fallback: keep current */ }
+  });
+  setTimeout(resizeSVG,80);
+}
+
+/* -------------------------
+   SET button behavior
+   ------------------------- */
+setBtn.addEventListener("click", async ()=>{
+  if(stateLabel.textContent !== 'play'){ return; } // only active in play state
+  if(!switchOn){ alert("スイッチがOFFです。スイッチをタップでONにしてください。"); return; }
+  if(!checkSolution()){
+    playerHP = Math.max(0, playerHP - 20); updateHP();
+    if(playerHP <= 0) alert("PLAYER HP 0 - game over");
+    return;
+  }
+  // correct: show flow then boss
+  await animateLinesForward(2000);
+  await doBossSequence();
+});
+
+/* -------------------------
+   Reset / Restart
+   ------------------------- */
 document.getElementById("resetWires").addEventListener("click", ()=>{
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
-  connections = [];
-  selected = null;
+  connections = []; selected = null;
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
 });
 document.getElementById("restart").addEventListener("click", ()=>{
@@ -480,19 +549,35 @@ document.getElementById("restart").addEventListener("click", ()=>{
   updateHP(); updateBossHP(); updateRound();
   overlay.classList.remove("show");
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
-  connections = []; selected = null; switchOn=false; switchState.textContent="Switch: OFF"; stateLabel.textContent="play";
+  connections = []; selected = null; switchOn=false; switchState.textContent="Switch: OFF"; stateLabel.textContent="title";
   // reset positions
   document.getElementById('power').style.left='12%'; document.getElementById('power').style.top='26%';
   document.getElementById('switch').style.left='78%'; document.getElementById('switch').style.top='18%';
   document.getElementById('junction').style.left='40%'; document.getElementById('junction').style.top='42%';
   document.getElementById('lamp').style.left='78%'; document.getElementById('lamp').style.top='66%';
   document.getElementById('spare').style.left='18%'; document.getElementById('spare').style.top='68%';
+  hideQuiz(); showTitle();
   setTimeout(resizeSVG,60);
 });
 
-/* initial */
+/* -------------------------
+   Enter play (after quiz)
+   ------------------------- */
+function enterPlay(){
+  stateLabel.textContent = 'play';
+  updateRound();
+  resizeSVG();
+}
+
+/* -------------------------
+   initialize
+   ------------------------- */
 updateHP(); updateBossHP(); updateRound();
-resizeSVG();
+showTitle(); // start at title
+
+// allow switching on device itself (tap)
+switchEl.addEventListener('click', ()=>{ switchOn = !switchOn; switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF"; switchEl.style.background = switchOn ? "#e7ffec" : ""; });
+
 </script>
 </body>
 </html>
