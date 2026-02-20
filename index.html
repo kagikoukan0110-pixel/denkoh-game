@@ -3,15 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-<title>俺らの電工 - WORLD1 安定版</title>
-
+<title>俺らの電工 - WORLD1 (wires front)</title>
 <style>
 :root{
   --bg:#000;
   --panel:#ddd;
   --term-bg:#222;
   --wire:#ffd800;
-  --wirew:4;
+  --wirew:6;
   --device-w:86px;
   --device-padding:8px;
 }
@@ -20,42 +19,32 @@ html,body{
   margin:0;
   background:var(--bg);
   color:#fff;
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+  -webkit-font-smoothing:antialiased;
   touch-action:manipulation;
 }
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  padding:12px 18px;
-}
+/* header */
+.header{display:flex;justify-content:space-between;padding:12px 18px;align-items:center}
+.title{font-weight:700}
 
+/* player HP */
 .bar{width:220px;height:12px;background:#222;border-radius:12px;overflow:hidden}
 .player{height:100%;background:#34d058;width:100%}
 
-#board-wrap{
-  position:relative;
-  width:100%;
-  height:calc(100vh - 200px);
-}
+/* board area */
+#board-wrap{position:relative;width:100%;height:calc(100vh - 200px);overflow:hidden}
+#board{position:relative;width:100%;height:100%}
 
-#board{
-  position:relative;
-  width:100%;
-  height:100%;
-}
-
-/* ✅ SVGはboard内 absolute */
+/* SVG wire layer: FRONT of everything (high z-index), but pointer-events:none so clicks pass through */
 #wireLayer{
   position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+  top:0;left:0;width:100%;height:100%;
   pointer-events:none;
-  z-index:10;
+  z-index:999; /* <- high so wires are visually on top */
 }
 
+/* devices */
 .device{
   position:absolute;
   width:var(--device-w);
@@ -66,75 +55,45 @@ html,body{
   transform:translate(-50%,-50%);
   text-align:center;
   z-index:20;
+  box-shadow:0 12px 30px rgba(0,0,0,0.4);
 }
-
-.device h3{
-  margin:4px 0 6px;
-  font-size:12px;
-}
-
+.device h3{margin:4px 0 6px;font-size:12px}
 .terminal{
-  display:inline-flex;
-  justify-content:center;
-  align-items:center;
-  width:26px;height:26px;
-  margin:4px;
-  background:var(--term-bg);
-  color:#fff;
-  border-radius:50%;
-  font-size:12px;
-  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;margin:4px;border-radius:50%;
+  background:var(--term-bg);color:#fff;font-size:12px;cursor:pointer;
+  user-select:none;
 }
+.selected{outline:3px solid var(--wire)}
 
-.selected{outline:3px solid #ffd800}
-
-.controls{
-  text-align:center;
-  padding:20px;
-}
-
-button{
-  padding:12px 30px;
-  border:none;
-  border-radius:20px;
-  font-weight:bold;
-  margin:8px;
-}
-
+/* controls */
+.controls{text-align:center;padding:18px}
+button{padding:12px 28px;border-radius:22px;border:none;font-weight:700;margin:6px}
 #setBtn{background:#ffd000}
 .small{background:#333;color:#fff}
 
-#overlay{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:48px;
-  background:#000;
-  color:#ffd800;
-  z-index:999;
-}
+/* overlay */
+#overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;font-size:48px;color:#ffd800;background:rgba(0,0,0,0.95);z-index:2000}
 #overlay.show{display:flex}
+
+/* small */
+@media(max-width:480px){:root{--device-w:72px}}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>俺らの電工 β</div>
-  <div>
-    PLAYER HP
-    <div class="bar"><div id="playerHP" class="player"></div></div>
+  <div class="title">俺らの電工 β</div>
+  <div style="text-align:right">
+    <div style="font-size:12px;color:#ccc;margin-bottom:6px;">PLAYER HP</div>
+    <div class="bar"><div id="playerHP" class="player" style="width:100%"></div></div>
   </div>
 </div>
 
 <div id="board-wrap">
   <div id="board">
-
-    <!-- ✅ SVGをboard内に移動 -->
-    <svg id="wireLayer"></svg>
-
-    <div class="device" id="power" style="left:12%;top:25%;">
+    <!-- DEVICES (normal order) -->
+    <div class="device" id="power" style="left:12%; top:25%;">
       <h3>電源</h3>
       <div>
         <div class="terminal" data-id="power-L">L</div>
@@ -142,26 +101,27 @@ button{
       </div>
     </div>
 
-    <div class="device" id="switch" style="left:78%;top:20%;background:#e7ffec;">
+    <div class="device" id="switch" style="left:78%; top:20%; background:#e7ffec;">
       <h3>片切</h3>
       <div>
         <div class="terminal" data-id="switch-IN">IN</div>
         <div class="terminal" data-id="switch-OUT">OUT</div>
       </div>
-      <div id="switchState">Switch: OFF</div>
+      <div id="switchState" style="font-size:11px;margin-top:6px;color:#333">Switch: OFF</div>
     </div>
 
-    <div class="device" id="junction" style="left:40%;top:42%;width:110px;">
+    <div class="device" id="junction" style="left:40%; top:42%; width:110px;">
       <h3>Joint Box</h3>
-      <div>
+      <div style="margin-top:6px;">
         <div class="terminal" data-id="jb">●</div>
         <div class="terminal" data-id="jb">●</div>
         <div class="terminal" data-id="jb">●</div>
         <div class="terminal" data-id="jb">●</div>
       </div>
+      <div style="font-size:11px;color:#666;margin-top:6px">端子は導通のみ。どの端子でもOK。</div>
     </div>
 
-    <div class="device" id="lamp" style="left:78%;top:66%;">
+    <div class="device" id="lamp" style="left:78%; top:66%;">
       <h3>ランプ</h3>
       <div>
         <div class="terminal" data-id="lamp-L">L</div>
@@ -169,98 +129,162 @@ button{
       </div>
     </div>
 
+    <!-- SVG wireLayer AFTER devices in DOM is OK but z-index ensures visual order.
+         Keeping it inside #board keeps coordinate math simple. -->
+    <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+
   </div>
 </div>
 
 <div class="controls">
   <button id="setBtn">SET</button>
-  <button id="resetWires" class="small">Reset</button>
+  <button id="resetWires" class="small">Reset Wires</button>
+  <button id="restart" class="small">Restart</button>
+  <div style="margin-top:10px;color:#bbb;font-size:13px">端子クリック→もう一つの端子クリックで配線。選択してクリックで削除。</div>
 </div>
 
-<div id="overlay">WORLD CLEAR</div>
+<div id="overlay">WORLD1 CLEAR</div>
 
 <script>
-let selected=null;
-let connections=[];
-let switchOn=false;
-let playerHP=100;
+/* state */
+let selected = null;
+let connections = [];
+let switchOn = false;
+let playerHP = 100;
 
-const wireLayer=document.getElementById("wireLayer");
-const board=document.getElementById("board");
-const playerBar=document.getElementById("playerHP");
-const overlay=document.getElementById("overlay");
-const switchState=document.getElementById("switchState");
+const board = document.getElementById('board');
+const wireLayer = document.getElementById('wireLayer');
+const playerBar = document.getElementById('playerHP');
+const switchEl = document.getElementById('switch');
+const switchState = document.getElementById('switchState');
+const overlay = document.getElementById('overlay');
 
+/* ensure svg matches board size */
 function resizeSVG(){
-  const r=board.getBoundingClientRect();
-  wireLayer.setAttribute("viewBox",`0 0 ${r.width} ${r.height}`);
+  const r = board.getBoundingClientRect();
+  wireLayer.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+  wireLayer.style.width = r.width + 'px';
+  wireLayer.style.height = r.height + 'px';
 }
-window.addEventListener("resize",resizeSVG);
-window.addEventListener("load",resizeSVG);
+window.addEventListener('resize', resizeSVG);
+window.addEventListener('load', ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
 
-function normalizeId(id,el){
-  if(el.closest("#junction")) return "jb";
+function normalizeId(id, el){
+  if(!id && el) id = el.dataset.id;
+  if(!id) return id;
+  if(el && el.closest && el.closest('#junction')) return 'jb';
   return id;
 }
 
-document.querySelectorAll(".terminal").forEach(t=>{
-  t.addEventListener("click",()=>{
-    if(selected===t){
-      t.classList.remove("selected");
-      selected=null;
-      return;
+/* terminal click */
+document.querySelectorAll('.terminal').forEach(t=>{
+  t.addEventListener('click', (e)=>{
+    // normalize jb terminals data-id
+    if(t.closest('#junction')) t.dataset.id = 'jb';
+    if(selected === t){
+      t.classList.remove('selected'); selected = null; return;
     }
     if(!selected){
-      selected=t;
-      t.classList.add("selected");
-      return;
+      selected = t; t.classList.add('selected'); return;
     }
-    connect(selected,t);
-    selected.classList.remove("selected");
-    selected=null;
+    if(selected !== t){
+      connect(selected, t);
+    }
+    if(selected){ selected.classList.remove('selected'); }
+    selected = null;
   });
 });
 
-document.getElementById("switch").addEventListener("click",()=>{
-  switchOn=!switchOn;
-  switchState.textContent=switchOn?"Switch: ON":"Switch: OFF";
+/* switch toggle (single tap) */
+switchEl.addEventListener('click', ()=>{
+  switchOn = !switchOn;
+  switchState.textContent = switchOn ? 'Switch: ON' : 'Switch: OFF';
+  switchEl.style.background = switchOn ? '#e7ffec' : '';
 });
 
+/* connect - draw line and record connection */
 function connect(a,b){
-  const idA=normalizeId(a.dataset.id,a);
-  const idB=normalizeId(b.dataset.id,b);
-  if(idA===idB) return;
+  const idA = normalizeId(a.dataset.id,a);
+  const idB = normalizeId(b.dataset.id,b);
+  if(!idA || !idB) return;
+  if(idA === idB) return;
 
-  const rectA=a.getBoundingClientRect();
-  const rectB=b.getBoundingClientRect();
-  const boardRect=board.getBoundingClientRect();
+  // toggle remove if exists
+  for(let i=0;i<connections.length;i++){
+    const c = connections[i];
+    if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
+      // remove corresponding line(s)
+      const existing = wireLayer.querySelectorAll(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
+      existing.forEach(n=>n.remove());
+      connections.splice(i,1);
+      return;
+    }
+  }
 
-  const x1=rectA.left-boardRect.left+rectA.width/2;
-  const y1=rectA.top-boardRect.top+rectA.height/2;
-  const x2=rectB.left-boardRect.left+rectB.width/2;
-  const y2=rectB.top-boardRect.top+rectB.height/2;
-
-  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1);
-  line.setAttribute("y1",y1);
-  line.setAttribute("x2",x2);
-  line.setAttribute("y2",y2);
-  line.setAttribute("stroke","#ffd800");
-  line.setAttribute("stroke-width","4");
-  line.setAttribute("stroke-linecap","round");
-  wireLayer.appendChild(line);
-
+  // add connection record
   connections.push([idA,idB]);
+
+  // coordinates relative to board
+  const rectA = a.getBoundingClientRect();
+  const rectB = b.getBoundingClientRect();
+  const boardRect = board.getBoundingClientRect();
+
+  const x1 = rectA.left - boardRect.left + rectA.width/2;
+  const y1 = rectA.top - boardRect.top + rectA.height/2;
+  const x2 = rectB.left - boardRect.left + rectB.width/2;
+  const y2 = rectB.top - boardRect.top + rectB.height/2;
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1);
+  line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2);
+  line.setAttribute('y2', y2);
+  line.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800');
+  line.setAttribute('stroke-width', getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
+  line.setAttribute('stroke-linecap','round');
+  line.setAttribute('data-from', idA);
+  line.setAttribute('data-to', idB);
+
+  // prepare dash for optional animation (but visible immediately)
+  const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
+  line.style.strokeDasharray = len;
+  line.style.strokeDashoffset = 0; // visible immediately
+  wireLayer.appendChild(line);
 }
 
-document.getElementById("setBtn").addEventListener("click",()=>{
-  if(!switchOn){ alert("スイッチONにしてください"); return;}
-  overlay.classList.add("show");
+/* check solution (JB normalized) */
+function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
+function checkSolution(){
+  if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
+  return connHas('power-L','jb') && connHas('jb','switch-IN') && connHas('switch-OUT','jb') && connHas('jb','lamp-L') && connHas('power-N','jb') && connHas('jb','lamp-N');
+}
+
+/* SET behavior */
+document.getElementById('setBtn').addEventListener('click', async ()=>{
+  if(!switchOn){ alert('スイッチがOFFです。'); return; }
+  if(!checkSolution()){
+    playerHP = Math.max(0, playerHP - 20);
+    playerBar.style.width = playerHP + '%';
+    if(playerHP <= 0) alert('PLAYER HP 0 - GAME OVER');
+    return;
+  }
+  // correct: optional animate then overlay
+  // simple reveal animation (stroke-dashoffset -> 0) could be added per-line
+  overlay.classList.add('show');
 });
 
-document.getElementById("resetWires").addEventListener("click",()=>{
-  wireLayer.innerHTML="";
-  connections=[];
+/* reset / restart */
+document.getElementById('resetWires').addEventListener('click', ()=>{
+  wireLayer.querySelectorAll('line').forEach(l=>l.remove());
+  connections = [];
+  selected = null;
+  document.querySelectorAll('.terminal.selected').forEach(t=>t.classList.remove('selected'));
+});
+document.getElementById('restart').addEventListener('click', ()=>{
+  playerHP = 100; playerBar.style.width = '100%';
+  overlay.classList.remove('show');
+  wireLayer.querySelectorAll('line').forEach(l=>l.remove());
+  connections = []; selected = null; switchOn=false; switchState.textContent='Switch: OFF';
 });
 
 </script>
