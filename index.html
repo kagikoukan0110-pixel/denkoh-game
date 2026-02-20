@@ -1,66 +1,863 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>俺らの電工 β</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>俺らの電工 β — WORLD1 (β)</title>
+<style>
+/* ===== reset & base ===== */
+:root{
+  --bg:#0b0b0b;
+  --panel:#111;
+  --text:#fff;
+  --accent:#ffd400;
+  --muted:#888;
+  --ok:#4caf50;
+  --bad:#e53935;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;-webkit-tap-highlight-color:transparent}
+.app{height:100%;display:flex;flex-direction:column;align-items:stretch;}
+
+/* ===== Header / HP bars ===== */
+.header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{font-size:18px;font-weight:700;letter-spacing:0.5px}
+.hud{display:flex;gap:10px;align-items:center}
+.hp{min-width:160px;max-width:320px}
+.barBox{height:12px;background:#222;border-radius:8px;overflow:hidden}
+.bar{height:100%;width:100%;transition:width .4s linear;background:linear-gradient(90deg,var(--ok),#6fdc6f)}
+.labelSmall{font-size:12px;color:var(--muted)}
+
+/* ===== Main area ===== */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:12px}
+.screen{width:100%;max-width:640px;background:linear-gradient(180deg,#0f0f0f,#0b0b0b);border-radius:12px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,.6);min-height:520px;position:relative;overflow:hidden}
+
+/* ===== Title screen ===== */
+.titleScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+.logo{font-size:32px;font-weight:800;color:var(--accent);text-shadow:0 0 8px rgba(255,212,0,.08)}
+.betaTag{font-size:12px;color:var(--muted);margin-top:6px}
+.startBtn{margin-top:28px;padding:12px 28px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:700;box-shadow:0 6px 18px rgba(255,212,0,.12);font-size:16px}
+
+/* ===== Quiz UI ===== */
+.quizArea{display:flex;flex-direction:column;gap:10px}
+.qtop{display:flex;justify-content:space-between;align-items:center}
+.qtext{font-size:18px;line-height:1.5;background:#0b0b0b;padding:12px;border-radius:10px;border:1px solid #151515}
+.choices{display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px}
+.choiceBtn{padding:12px;border-radius:10px;background:#1a1a1a;border:1px solid #222;color:var(--text);font-weight:600;cursor:pointer}
+.choiceBtn:active{transform:translateY(1px)}
+.choiceBtn.correct{background:var(--ok);color:#041}
+.choiceBtn.wrong{background:var(--bad);color:#300}
+
+/* ===== Transition / overlay ===== */
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.0);pointer-events:none;transition:background .3s}
+.transitionText{color:#fff;font-weight:700;font-size:20px;padding:12px 18px;border-radius:10px;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+
+/* ===== Boss UI ===== */
+.bossArea{display:flex;flex-direction:column;height:100%;gap:10px}
+.bossTop{display:flex;justify-content:space-between;align-items:center}
+.bossName{font-weight:800;color:var(--accent);font-size:20px}
+.bossHPwrap{flex:1;margin-left:12px}
+.bossBar{height:14px;background:#2b2b2b;border-radius:999px;overflow:hidden}
+.bossFill{height:100%;width:100%;background:linear-gradient(90deg,#ff6b6b,#ff1f1f);transition:width .6s linear}
+
+.boardWrap{flex:1;display:flex;gap:12px;align-items:stretch}
+.workArea{flex:1;background:#070707;border-radius:8px;padding:8px;position:relative;overflow:hidden}
+.palette{width:160px;background:#0d0d0d;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:8px}
+.palette h4{font-size:13px;margin:0;color:var(--muted)}
+.deviceItem{padding:8px;border-radius:8px;background:#121212;border:1px solid #222;color:var(--muted);text-align:center;cursor:grab}
+.deviceItem[draggable="true"]{user-select:none}
+.term{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#111;color:#fff;border:1px solid #222;font-size:12px;cursor:pointer}
+.terminalLabel{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+
+/* make small */
+.smallNote{font-size:12px;color:var(--muted)}
+
+/* SVG wire layer absolute */
+#wireLayer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+/* line clickable overlay (to remove) */
+.lineClickable{pointer-events:auto;cursor:pointer}
+
+/* bottom controls */
+.controls{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
+.btn{padding:10px 14px;border-radius:8px;background:#151515;border:1px solid #222;color:var(--text);cursor:pointer}
+.btn.primary{background:var(--accent);color:#111;border:none}
+
+/* small helpers */
+.hidden{display:none}
+.center{display:flex;align-items:center;justify-content:center}
+.footerNote{font-size:12px;color:var(--muted);margin-top:6px;text-align:center}
+@media(max-width:420px){
+  .palette{width:120px}
+  .screen{padding:10px}
+  .workArea{padding:6px}
+  .logo{font-size:26px}
+}
+</style>
 </head>
 <body>
-
-<h1>俺らの電工 β</h1>
-
-<div class="hp-area">
-  <div>BOSS</div>
-  <div class="bar"><div id="bossHP" class="boss"></div></div>
-  <div>PLAYER</div>
-  <div class="bar"><div id="playerHP" class="player"></div></div>
-</div>
-<div id="board">
-
-  <svg id="wireLayer" width="100%" height="100%"></svg>
-
-  <!-- 電源 -->
-  <div class="device" id="power">
-    <h3>電源</h3>
-    <div class="terminal" data-id="power-L">L</div>
-    <div class="terminal" data-id="power-N">N</div>
+<div class="app">
+  <!-- header -->
+  <div class="header">
+    <div class="title">俺らの電工 <span class="betaTag">β</span></div>
+    <div class="hud">
+      <div class="hp" title="Player HP">
+        <div class="labelSmall">PLAYER HP</div>
+        <div class="barBox" style="margin-top:6px">
+          <div id="playerBar" class="bar" style="width:100%"></div>
+        </div>
+      </div>
+      <div style="width:120px;text-align:right">
+        <div class="labelSmall">STATE</div>
+        <div id="stateLabel" style="margin-top:6px;font-weight:700;color:var(--muted)">title</div>
+      </div>
+    </div>
   </div>
 
-  <!-- 片切 -->
-  <div class="device" id="switch">
-    <h3>片切</h3>
-    <div class="terminal" data-id="switch-IN">IN</div>
-    <div class="terminal" data-id="switch-OUT">OUT</div>
+  <!-- main -->
+  <div class="main">
+    <div class="screen" id="screen">
+
+      <!-- TITLE -->
+      <div id="titleScreen" class="titleScreen">
+        <div class="logo">俺らの電工</div>
+        <div class="betaTag">β version — WORLD1</div>
+        <button id="startBtn" class="startBtn">▶ START</button>
+        <div class="footerNote">学科 + 実技（配線）でボスを倒せ</div>
+      </div>
+
+      <!-- QUIZ -->
+      <div id="quizScreen" class="quizArea hidden" aria-hidden="true">
+        <div class="qtop">
+          <div id="quizCounter" class="labelSmall">Q 1 / 5</div>
+          <div id="quizSetNote" class="labelSmall">Set 1 / 3</div>
+        </div>
+        <div id="qtext" class="qtext">問題テキスト</div>
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <!-- TRANSITION OVERLAY (reused) -->
+      <div id="overlay" class="overlay hidden"><div id="overlayText" class="transitionText">電気は流れた...</div></div>
+
+      <!-- BOSS -->
+      <div id="bossScreen" class="bossArea hidden" aria-hidden="true">
+        <div class="bossTop">
+          <div class="bossName">汚ねえ大工</div>
+          <div class="bossHPwrap">
+            <div class="labelSmall">BOSS HP</div>
+            <div class="bossBar" style="margin-top:6px">
+              <div id="bossBarFill" class="bossFill" style="width:100%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="boardWrap">
+          <div id="workArea" class="workArea">
+            <!-- devices rendered here -->
+            <svg id="wireLayer" viewBox="0 0 800 560" preserveAspectRatio="xMinYMin meet"></svg>
+
+            <!-- devices (absolute positions inside workArea) -->
+            <div id="dev_power" class="device small" style="position:absolute;left:28px;top:60px;width:110px;padding:8px;background:#111;border-radius:8px;border:1px solid #222;color:#ddd">
+              <div style="font-weight:700">電源</div>
+              <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+                <div class="term" data-id="power-L" data-type="terminal">L</div>
+                <div class="term" data-id="power-N" data-type="terminal">N</div>
+              </div>
+            </div>
+
+            <div id="dev_switch" class="device small" style="position:absolute;right:120px;top:36px;width:110px;padding:8px;background:#111;border-radius:8px;border:1px solid #222;color:#ddd">
+              <div style="font-weight:700">片切</div>
+              <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+                <div class="term" data-id="switch-IN" data-type="terminal">IN</div>
+                <div class="term" data-id="switch-OUT" data-type="terminal">OUT</div>
+              </div>
+              <div style="text-align:center;margin-top:6px">
+                <button id="switchToggle" class="btn" title="Toggle switch (OFF by default)">Switch: OFF</button>
+              </div>
+            </div>
+
+            <div id="dev_lamp" class="device small" style="position:absolute;right:36px;bottom:48px;width:110px;padding:8px;background:#111;border-radius:8px;border:1px solid #222;color:#ddd">
+              <div style="font-weight:700">ランプ</div>
+              <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+                <div class="term" data-id="lamp-L" data-type="terminal">L</div>
+                <div class="term" data-id="lamp-N" data-type="terminal">N</div>
+              </div>
+            </div>
+
+            <div id="dev_jb" class="device small" style="position:absolute;left:42%;top:45%;width:120px;padding:10px;background:#0f0f0f;border-radius:8px;border:1px solid #222;color:#ddd;text-align:center">
+              <div style="font-weight:700">Junction Box</div>
+              <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+                <div class="term jb" data-id="jb-1" data-type="terminal"></div>
+                <div class="term jb" data-id="jb-2" data-type="terminal"></div>
+                <div class="term jb" data-id="jb-3" data-type="terminal"></div>
+                <div class="term jb" data-id="jb-4" data-type="terminal"></div>
+              </div>
+            </div>
+
+            <!-- little note -->
+            <div style="position:absolute;left:8px;bottom:8px;font-size:12px;color:var(--muted)">端子をクリック→もう一つの端子をクリックで配線。配線を選択してクリックすると削除。</div>
+          </div>
+
+          <div class="palette">
+            <h4>Controls</h4>
+            <div class="smallNote">Round: <span id="roundLabel">1</span> / 3</div>
+            <div class="smallNote">操作可能時だけ接続できます</div>
+            <div style="margin-top:8px" class="center"><button id="setBtn" class="btn primary">SET</button></div>
+            <div style="margin-top:6px" class="center"><button id="resetWires" class="btn">Reset Wires</button></div>
+            <div style="margin-top:6px" class="center"><button id="restartBtn" class="btn">Restart Game</button></div>
+            <div style="margin-top:8px" class="smallNote">端子を繋いで電路を完成させよう</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CLEAR -->
+      <div id="clearScreen" class="center hidden" style="flex-direction:column;gap:10px">
+        <div style="font-size:36px;font-weight:800;color:var(--accent)">WORLD1 CLEAR</div>
+        <div style="font-size:16px;color:var(--muted)">称号：街の電気屋</div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- ランプ -->
-  <div class="device" id="lamp">
-    <h3>ランプ</h3>
-    <div class="terminal" data-id="lamp-L">L</div>
-    <div class="terminal" data-id="lamp-N">N</div>
+  <!-- footer -->
+  <div style="padding:12px 14px;background:transparent;text-align:center">
+    <div class="footerNote">公開β — テストモードでプレイしてフィードバックをください</div>
   </div>
-
-  <!-- J/B -->
-  <div id="junction">
-    <h3>J/B</h3>
-    <div class="terminal jb" data-id="jb-1"></div>
-    <div class="terminal jb" data-id="jb-2"></div>
-    <div class="terminal jb" data-id="jb-3"></div>
-    <div class="terminal jb" data-id="jb-4"></div>
-  </div>
-
-</div>
-  
-
 </div>
 
-<button id="setBtn">SET</button>
+<script>
+/*
+  WORLD1 single-file implementation
+  - State machine: title -> quiz -> transition -> boss -> clear
+  - Quiz: randomized 5-per-set from pool
+  - Boss: 3 rounds. Each round requires correct wiring:
+      L -> (through switch when applicable) -> lamp -> N (via JB allowed)
+    Pathfinding from power-L to lamp-L then to lamp-N to power-N.
+  - Guard checks prevent input during non-allowed states
+  - Wires drawn as SVG paths
+  - No external assets required
+*/
 
-<div id="overlay" class="hidden">
-  <h1>CLEAR</h1>
-</div>
+/* =======================
+   Utilities & sound (tiny)
+   ======================= */
+function beep(freq=440, dur=0.06, gain=0.02){
+  try{
+    const ctx = window._WA || (window._WA = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.value = gain;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    setTimeout(()=>{ o.stop(); }, dur*1000);
+  }catch(e){/* no op */ }
+}
 
-<script src="main.js"></script>
+/* =======================
+   State & game vars
+   ======================= */
+const STATE = {
+  TITLE:'title', QUIZ:'quiz', TRANS:'transition', BOSS:'boss', CLEAR:'clear'
+};
+let state = STATE.TITLE;
+let playerHP = 100;
+let round = 1;
+let bossHP = 100; // will set per round
+let selectedTerminal = null; // element clicked
+let connections = []; // pairs of ids
+let svgNS = "http://www.w3.org/2000/svg";
+
+/* DOM */
+const startBtn = document.getElementById('startBtn');
+const titleScreen = document.getElementById('titleScreen');
+const quizScreen = document.getElementById('quizScreen');
+const bossScreen = document.getElementById('bossScreen');
+const clearScreen = document.getElementById('clearScreen');
+const overlay = document.getElementById('overlay');
+const overlayText = document.getElementById('overlayText');
+const playerBar = document.getElementById('playerBar');
+const stateLabel = document.getElementById('stateLabel');
+const quizCounter = document.getElementById('quizCounter');
+const quizSetNote = document.getElementById('quizSetNote');
+const qtext = document.getElementById('qtext');
+const choicesEl = document.getElementById('choices');
+const setBtn = document.getElementById('setBtn');
+const wireLayer = document.getElementById('wireLayer');
+const switchToggle = document.getElementById('switchToggle');
+const roundLabel = document.getElementById('roundLabel');
+const bossBarFill = document.getElementById('bossBarFill');
+const overlayEl = document.getElementById('overlay');
+const devTerms = document.querySelectorAll('.term');
+const resetWiresBtn = document.getElementById('resetWires');
+const restartBtn = document.getElementById('restartBtn');
+
+/* Quiz pool (15 q) */
+const QUIZ_POOL = [
+  {q:"電源の非接地側（ライブ）に通常使う色は？", choices:["白","黒","赤","緑"], a:1},
+  {q:"接地側（N線）の色は？", choices:["白","黒","赤","青"], a:0},
+  {q:"片切スイッチで切るのは通常どれ？", choices:["N線","L線","接地線","任意"], a:1},
+  {q:"三路スイッチの共通端子は何と呼ぶ？", choices:["中性","接地","共通端子","渡り線"], a:2},
+  {q:"VVF 2心の色組は？", choices:["黒・赤","白・赤","黒・白","青・白"], a:2},
+  {q:"三路スイッチは最低何個で機能する？", choices:["1個","2個","3個","4個"], a:1},
+  {q:"スイッチをOFFにしてもランプが点灯する一般的原因は？", choices:["N線を切った","L線を切った","短絡","電圧低下"], a:0},
+  {q:"ジョイントボックスの主要な役割は？", choices:["発電","分岐接続","電圧変換","保護接地"], a:1},
+  {q:"LとNを直接接続すると何が起きやすい？", choices:["正常","過電流（ショート）","電圧上昇","抵抗減少"], a:1},
+  {q:"三路の渡り線は何本？", choices:["1","2","3","4"], a:1},
+  {q:"ランプが点灯する条件は？", choices:["Lが接続されてればOK","Nが接続されてればOK","LとNが回路でつながること","スイッチがONだけでOK"], a:2},
+  {q:"片切スイッチはどの線側に入れるのが一般的？", choices:["N線側","L線側","接地線","任意"], a:1},
+  {q:"白線をスイッチに使うときの注意は？", choices:["そのままでOK","赤に塗る","黒テープなどで表示","接地する"], a:2},
+  {q:"短絡防止で大事なのは？", choices:["色分け","太さ","長さ","電圧"], a:0},
+  {q:"三路配線で間違うと起きるのは？", choices:["点灯不可","同時点灯","常時通電","電圧低下"], a:0}
+];
+
+/* game flow state for quiz */
+let quizOrder = []; // indices for current 5
+let quizIndex = 0;  // 0..4 within set
+let setNumber = 1;  // 1..3
+
+/* =======================
+   Helper & State functions
+   ======================= */
+function setState(s){
+  state = s;
+  stateLabel.textContent = s;
+  // show/hide screens
+  titleScreen.classList.toggle('hidden', s !== STATE.TITLE);
+  quizScreen.classList.toggle('hidden', s !== STATE.QUIZ);
+  bossScreen.classList.toggle('hidden', s !== STATE.BOSS);
+  clearScreen.classList.toggle('hidden', s !== STATE.CLEAR);
+  // during transition overlay used
+  if(s === STATE.TRANS) {
+    overlayEl.classList.remove('hidden');
+    overlayEl.style.pointerEvents = 'auto';
+  } else {
+    overlayEl.classList.add('hidden');
+    overlayEl.style.pointerEvents = 'none';
+  }
+  // input gating via pointer-events on screen root
+  document.getElementById('screen').style.pointerEvents = (s===STATE.TRANS || s===STATE.CLEAR) ? 'none' : 'auto';
+}
+
+/* reset wires */
+function clearWires(){
+  connections = [];
+  // remove all path nodes
+  while (wireLayer.firstChild) wireLayer.removeChild(wireLayer.firstChild);
+}
+
+/* draw an svg path between two DOM terminal elements */
+function drawWire(idA,idB){
+  const elA = document.querySelector(`[data-id="${idA}"]`);
+  const elB = document.querySelector(`[data-id="${idB}"]`);
+  if(!elA||!elB) return;
+  const rectA = elA.getBoundingClientRect();
+  const rectB = elB.getBoundingClientRect();
+  const boardRect = document.getElementById('workArea').getBoundingClientRect();
+
+  // normalize to SVG coordinates (we set viewBox 0..800 x 0..560)
+  const scaleX = 800 / boardRect.width;
+  const scaleY = 560 / boardRect.height;
+  const x1 = (rectA.left - boardRect.left + rectA.width/2) * scaleX;
+  const y1 = (rectA.top - boardRect.top + rectA.height/2) * scaleY;
+  const x2 = (rectB.left - boardRect.left + rectB.width/2) * scaleX;
+  const y2 = (rectB.top - boardRect.top + rectB.height/2) * scaleY;
+
+  // create gentle polyline via midpoint control
+  const dx = Math.abs(x2-x1);
+  const mx = (x1 + x2)/2;
+  const my = (y1 + y2)/2;
+  const offset = Math.min(80, dx*0.3) + Math.abs(y2-y1)*0.1;
+
+  const path = document.createElementNS(svgNS,'path');
+  // using cubic bezier for smoothness
+  const cp1x = mx; const cp1y = y1 - offset;
+  const cp2x = mx; const cp2y = y2 + offset;
+  const d = `M ${x1},${y1} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${x2},${y2}`;
+  path.setAttribute('d',d);
+  path.setAttribute('stroke','#ffd400');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke-width','4');
+  path.setAttribute('stroke-linecap','round');
+  path.setAttribute('class','wire path-'+idA+'-'+idB);
+  // make clickable for removal
+  path.classList.add('lineClickable');
+  path.addEventListener('click', (ev)=>{
+    if(state !== STATE.BOSS) return;
+    // remove that connection
+    removeConnection(idA,idB);
+    ev.stopPropagation();
+  });
+  wireLayer.appendChild(path);
+}
+
+/* redraw all wires (clear then draw for each connection) */
+function redrawWires(){
+  while (wireLayer.firstChild) wireLayer.removeChild(wireLayer.firstChild);
+  connections.forEach(pair=>{
+    drawWire(pair[0],pair[1]);
+  });
+}
+
+/* add connection if not duplicate and not same terminal */
+function addConnection(a,b){
+  if(a===b) return;
+  // canonical order to avoid duplicates
+  const exists = connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a));
+  if(exists) return;
+  connections.push([a,b]);
+  redrawWires();
+}
+
+/* remove connection by ids (either order) */
+function removeConnection(a,b){
+  connections = connections.filter(c => !( (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a) ));
+  redrawWires();
+}
+
+/* =======================
+   Wiring path checking (graph traversal)
+   - Build adjacency from connections array
+   - DFS/BFS from power-L to lamp-L, then from lamp-L to lamp-N, then to power-N
+   - Also check direct L-N short
+   ======================= */
+function checkCircuit(){
+  // Unallowed states should not call
+  if(state !== STATE.BOSS) return false;
+
+  // quick short-circuit: if direct L-N connection anywhere -> short (fail)
+  const directShort = connections.some(pair => {
+    return (pair.includes('power-L') && pair.includes('power-N')) || (pair.includes('power-L') && pair.includes('lamp-N') && pair.includes('lamp-L'));}
+  );
+  // We'll instead check specifically if power-L connected to power-N through any path -> invalid
+  if (isConnected('power-L','power-N')) {
+    // short detected
+    return false;
+  }
+
+  // must reach lamp-L from power-L
+  if(!isConnected('power-L','lamp-L')) return false;
+  // from lamp-L must be able to reach lamp-N (within same connected component)
+  if(!isConnected('lamp-L','lamp-N')) return false;
+  // and lamp-N must reach power-N
+  if(!isConnected('lamp-N','power-N')) return false;
+
+  // also switch must be on if path uses switch between IN/OUT
+  const usesSwitch = pathUsesSwitch('power-L','lamp-L') || pathUsesSwitch('lamp-N','power-N') || pathUsesSwitch('power-L','power-N');
+  if(usesSwitch && !switchOn) return false;
+
+  // if all checks pass, considered valid
+  return true;
+}
+
+/* helper to check connectivity via BFS */
+function isConnected(a,b){
+  const adj = buildAdj();
+  if(!adj[a] || !adj[b]) return false;
+  const q=[a]; const seen=new Set([a]);
+  while(q.length){
+    const cur=q.shift();
+    if(cur===b) return true;
+    (adj[cur]||[]).forEach(nb=>{
+      if(!seen.has(nb)){ seen.add(nb); q.push(nb); }
+    });
+  }
+  return false;
+}
+
+/* build adjacency list */
+function buildAdj(){
+  const adj = {};
+  connections.forEach(pair=>{
+    const [x,y]=pair;
+    adj[x]=adj[x]||[]; adj[y]=adj[y]||[];
+    adj[x].push(y); adj[y].push(x);
+  });
+  return adj;
+}
+
+/* check whether any path between start and end uses switch terminals IN/OUT */
+function pathUsesSwitch(start,end){
+  // BFS track predecessors, then reconstruct path and check for switch-IN / switch-OUT nodes
+  const adj = buildAdj();
+  if(!adj[start]||!adj[end]) return false;
+  const q=[start]; const seen=new Set([start]); const prev={};
+  while(q.length){
+    const cur=q.shift();
+    if(cur===end) break;
+    (adj[cur]||[]).forEach(nb => {
+      if(!seen.has(nb)){ seen.add(nb); prev[nb]=cur; q.push(nb); }
+    });
+  }
+  if(!prev[end] && start!==end) return false;
+  // reconstruct
+  let cur=end;
+  while(cur!==start){
+    const p = prev[cur];
+    if(!p) break;
+    // check if p or cur is switch terminal
+    if(p === 'switch-IN' || p === 'switch-OUT' || cur === 'switch-IN' || cur === 'switch-OUT') return true;
+    cur = p;
+  }
+  return false;
+}
+
+/* =======================
+   Event handlers (terminals)
+   ======================= */
+let switchOn = false;
+switchToggle.addEventListener('click', ()=>{
+  if(state !== STATE.BOSS) return;
+  switchOn = !switchOn;
+  switchToggle.textContent = "Switch: " + (switchOn ? "ON":"OFF");
+  switchToggle.classList.toggle('active', switchOn);
+  beep(switchOn?880:220,0.06,0.03);
+});
+
+/* terminal clicks: click one terminal then another to connect.
+   During boss state only. Prevent double click misbehavior by guarding state */ 
+devTerms.forEach(t=>{
+  t.addEventListener('click', (ev)=>{
+    if(state !== STATE.BOSS) return;
+    const id = t.dataset.id;
+    // toggle selection
+    if(!selectedTerminal){
+      selectedTerminal = t;
+      t.classList.add('selected');
+    } else if(selectedTerminal === t){
+      // cancel
+      selectedTerminal.classList.remove('selected');
+      selectedTerminal = null;
+    } else {
+      const idA = selectedTerminal.dataset.id;
+      const idB = id;
+      addConnection(idA,idB);
+      selectedTerminal.classList.remove('selected');
+      selectedTerminal = null;
+      beep(660,0.04,0.02);
+    }
+  });
+});
+
+/* reset wires / restart */
+resetWiresBtn.addEventListener('click', ()=>{
+  if(state !== STATE.BOSS) return;
+  clearWires();
+  beep(440,0.04,0.02);
+});
+restartBtn.addEventListener('click', ()=>{
+  initGame();
+});
+
+/* SET button */
+setBtn.addEventListener('click', ()=>{
+  if(state !== STATE.BOSS) return;
+  // disable rapid click
+  setBtn.disabled = true;
+  setTimeout(()=>setBtn.disabled=false, 800);
+  // validate circuit
+  const ok = checkCircuit();
+  if(ok){
+    // success -> damage boss
+    beep(880,0.06,0.03);
+    // damage calculation: fixed per round (simple)
+    const dmg = (round===1?35:(round===2?35:30));
+    damageBoss(dmg);
+  } else {
+    // failure -> damage player
+    beep(220,0.06,0.05);
+    damagePlayer(20);
+  }
+});
+
+/* lines removal by clicking path already set up in drawWire */
+
+/* =======================
+   HP & round functions
+   ======================= */
+function updatePlayerHP(){
+  playerBar.style.width = Math.max(0,Math.min(100,playerHP)) + '%';
+  if(playerHP<=0){
+    // game over - just reset to title after small pause
+    setState(STATE.CLEAR);
+    overlayText.textContent = "GAME OVER";
+    overlayEl.classList.remove('hidden');
+    setTimeout(()=>{ initGame(); }, 1200);
+  }
+}
+
+function updateBossHP(){
+  bossBarFill.style.width = Math.max(0,Math.min(100,bossHP)) + '%';
+}
+
+/* damage player (only one place) */
+function damagePlayer(amount){
+  if(state !== STATE.BOSS) return;
+  playerHP -= amount;
+  if(playerHP < 0) playerHP = 0;
+  updatePlayerHP();
+  // after loss, if HP>0 allow retry same round (state remains) but brief feedback
+  flashOverlay("MISSED! -"+amount, 700);
+}
+
+/* damage boss (only one place) */
+function damageBoss(amount){
+  if(state !== STATE.BOSS) return;
+  // visual: play transition to boss damage sequence
+  // lock input
+  stateLock(true);
+  // small intro: show boss damage overlay then apply
+  flashOverlay("HIT!", 400);
+  // animate boss HP decrease smoothly
+  const prev = bossHP;
+  bossHP = Math.max(0, bossHP - amount);
+  updateBossHP();
+  // if boss dies
+  setTimeout(()=>{
+    if(bossHP<=0){
+      // progress round or clear
+      if(round < 3){
+        // next round
+        round++;
+        roundLabel.textContent = round;
+        // prepare next round
+        setTimeout(()=>{ startNextRound(); }, 700);
+      } else {
+        // clear
+        setTimeout(()=>{ doClearSequence(); }, 700);
+      }
+    }
+    // unlock input
+    stateLock(false);
+  }, 600);
+}
+
+/* ui lock/unlock during animation */
+function stateLock(lock){
+  // when locked, disable pointer events for controls
+  document.getElementById('screen').style.pointerEvents = lock? 'none':'auto';
+  // but leave overlay clickable? we keep it locked
+}
+
+/* overlay message helper */
+function flashOverlay(text,ms=800){
+  overlayText.textContent = text;
+  overlayEl.classList.remove('hidden');
+  overlayEl.style.background = "rgba(0,0,0,0.6)";
+  setTimeout(()=>{ overlayEl.classList.add('hidden'); overlayEl.style.background='rgba(0,0,0,0)'; }, ms);
+}
+
+/* start next round (re-init bossHP and reset wires) */
+function startNextRound(){
+  // ensure state remains boss but reinit environment
+  bossHP = (round===1?100:(round===2?120:150));
+  updateBossHP();
+  clearWires();
+  switchOn = false;
+  switchToggle.textContent = "Switch: OFF";
+  flashOverlay("ROUND " + round, 700);
+}
+
+/* clear sequence (victory) */
+function doClearSequence(){
+  // hide boss UI, show CLEAR screen after short animation
+  setState(STATE.CLEAR);
+  overlayEl.classList.remove('hidden');
+  overlayText.textContent = "WORLD1 CLEAR";
+  // small delay then display clearScreen content
+  setTimeout(()=>{
+    overlayEl.classList.add('hidden');
+    clearScreen.classList.remove('hidden');
+    // after a pause, return to title (and init)
+    setTimeout(()=>{ initGame(); }, 2200);
+  }, 900);
+}
+
+/* =======================
+   Quiz functions
+   ======================= */
+function pickQuizSet(){
+  // shuffle indices and pick 5 unique per set
+  const idxs = QUIZ_POOL.map((_,i)=>i);
+  shuffleArray(idxs);
+  quizOrder = idxs.slice(0,5);
+  quizIndex = 0;
+  quizCounter.textContent = `Q ${quizIndex+1} / 5`;
+  quizSetNote.textContent = `Set ${setNumber} / 3`;
+}
+
+function shuffleArray(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+}
+
+function showQuiz(){
+  setState(STATE.QUIZ);
+  pickQuizSet();
+  quizScreen.classList.remove('hidden');
+  titleScreen.classList.add('hidden');
+  bossScreen.classList.add('hidden');
+  clearScreen.classList.add('hidden');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const qobj = QUIZ_POOL[quizOrder[quizIndex]];
+  qtext.textContent = qobj.q;
+  choicesEl.innerHTML = '';
+  qobj.choices.forEach((txt,i)=>{
+    const btn = document.createElement('button');
+    btn.className='choiceBtn';
+    btn.textContent = `${i+1}. ${txt}`;
+    btn.addEventListener('click', ()=> handleChoice(i,btn,qobj.a));
+    choicesEl.appendChild(btn);
+  });
+  quizCounter.textContent = `Q ${quizIndex+1} / 5`;
+  quizSetNote.textContent = `Set ${setNumber} / 3`;
+}
+
+function handleChoice(selectedIdx,btn,correctIdx){
+  if(state !== STATE.QUIZ) return; // guard
+  // lock temporarily
+  document.getElementById('screen').style.pointerEvents = 'none';
+  if(selectedIdx === correctIdx){
+    btn.classList.add('correct');
+    beep(880,0.06,0.03);
+    setTimeout(()=>{ nextQuiz(true); }, 300);
+  } else {
+    btn.classList.add('wrong');
+    // show correct
+    const allBtns = choicesEl.querySelectorAll('button');
+    if(allBtns[correctIdx]) allBtns[correctIdx].classList.add('correct');
+    playerHP -= 15;
+    if(playerHP < 0) playerHP = 0;
+    updatePlayerHP();
+    beep(200,0.12,0.05);
+    setTimeout(()=>{ nextQuiz(false); }, 700);
+  }
+}
+
+function nextQuiz(wasCorrect){
+  // unlock
+  document.getElementById('screen').style.pointerEvents = 'auto';
+  quizIndex++;
+  if(quizIndex < 5){
+    renderQuestion();
+  } else {
+    // set finished -> transition then boss
+    if(setNumber < 3){
+      // prepare boss round after transition
+      beginTransitionToBoss();
+    } else {
+      // last set done -> final boss entry
+      beginTransitionToBoss();
+    }
+  }
+}
+
+/* =======================
+   TRANSITION -> boss sequence
+   (full animation controlled, with state guards)
+   ======================= */
+function beginTransitionToBoss(){
+  // freeze inputs and set state TRANS
+  setState(STATE.TRANS);
+  document.getElementById('screen').style.pointerEvents='none';
+  overlayEl.classList.remove('hidden');
+  overlayText.textContent = "電気は流れた...";
+  beep(200,0.1,0.04);
+  // stage 1
+  setTimeout(()=>{
+    overlayText.textContent = "電気は…流れた";
+    // small electric fx by briefly flashing overlay
+    overlayEl.style.background = 'rgba(255,255,255,0.02)';
+  }, 600);
+  // stage 2: darken (dramatic)
+  setTimeout(()=>{
+    overlayText.textContent = "汚ねえ大工が現れた";
+    overlayEl.style.background = 'rgba(0,0,0,0.85)';
+    beep(120,0.12,0.06);
+  }, 1600);
+  // stage 3: reveal boss
+  setTimeout(()=>{
+    // hide overlay and show boss
+    overlayEl.classList.add('hidden');
+    overlayEl.style.background='rgba(0,0,0,0)';
+    // switch UI
+    setState(STATE.BOSS);
+    // set up boss HP for this round
+    bossHP = (round===1?100:(round===2?120:150));
+    updateBossHP();
+    // ensure boss screen visible
+    quizScreen.classList.add('hidden');
+    titleScreen.classList.add('hidden');
+    bossScreen.classList.remove('hidden');
+    // ensure wires initial state cleared
+    clearWires();
+    switchOn = false;
+    switchToggle.textContent = "Switch: OFF";
+    // allow input again
+    document.getElementById('screen').style.pointerEvents='auto';
+  }, 2600);
+}
+
+/* =======================
+   CLEAR / init game
+   ======================= */
+function initGame(){
+  // reset everything to title
+  // guard: remove overlay
+  overlayEl.classList.add('hidden');
+  overlayEl.style.background='rgba(0,0,0,0)';
+  playerHP = 100;
+  round = 1;
+  setNumber = 1;
+  quizIndex = 0;
+  quizOrder = [];
+  bossHP = 100;
+  clearWires();
+  updatePlayerHP();
+  updateBossHP();
+  // reset UI
+  titleScreen.classList.remove('hidden');
+  quizScreen.classList.add('hidden');
+  bossScreen.classList.add('hidden');
+  clearScreen.classList.add('hidden');
+  setState(STATE.TITLE);
+  // reset controls
+  switchOn = false; switchToggle.textContent="Switch: OFF";
+  roundLabel.textContent = round;
+}
+
+/* do final clear sequence (called by damageBoss when round===3 kill) */
+function doVictoryAndReturn(){
+  // final screen already shown by doClearSequence
+  initGame();
+}
+
+/* =======================
+   Start handlers
+   ======================= */
+startBtn.addEventListener('click', ()=>{
+  // start quiz set 1
+  setNumber = 1;
+  quizIndex = 0;
+  pickQuizSet();
+  showQuiz();
+});
+
+
+// start game at title
+initGame();
+
+/* ensure resize redraw wires (so lines match positions) */
+window.addEventListener('resize', ()=>{ redrawWires(); });
+
+/* small debug: show connections in console (disabled in prod) */
+// window.debugConnections = () => console.log(connections);
+
+/* END */
+</script>
 </body>
 </html>
