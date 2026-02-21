@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (video fix)</title>
+<title>俺らの電工 - WORLD1 (dynamic lamps)</title>
 <style>
 :root{
   --bg:#000;
@@ -17,7 +17,8 @@
   --boss-hp-back:#332626;
 }
 html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;-webkit-font-smoothing:antialiased;}
-#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2000}
+/* wire layer must be topmost visually */
+#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3000}
 
 /* header */
 .header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
@@ -36,7 +37,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 .terminal{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
 .selected{outline:3px solid #ffd800}
 
-/* junction */
+/* junction (fixed center-ish) */
 #junction{left:40%;top:42%;width:120px;padding:10px;background:#d6d6d6;border-radius:14px;z-index:70;transform:translate(-50%,-50%)}
 .jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
@@ -47,10 +48,10 @@ button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd00
 button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
 .note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
-/* modals / boss */
+/* modal / boss */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500;pointer-events:auto}
 .modal-backdrop.show{display:flex}
-.titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:18px}
+.titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:12px}
 .quizBox{background:#111;padding:18px;border-radius:12px;max-width:760px;color:#fff}
 #bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9000;color:#fff}
 #bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
@@ -59,18 +60,19 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 .bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
 .bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 500ms linear;border-radius:12px}
 
-/* final video overlay (fixed and definitely on top) */
+/* final video overlay */
 #finalVideoWrap{position:fixed;inset:0;display:none;z-index:2147483646;background:rgba(0,0,0,0.95);align-items:center;justify-content:center}
 #finalVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2147483647;display:block}
 
 /* version */
 #versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:5000}
 
-/* responsive */
+/* small adjustments */
 @media (max-width:480px){:root{--device-w:72px;} .title{font-size:18px}}
 </style>
 </head>
 <body>
+  <!-- wireLayer must be a direct child so its absolute coordinates align with board -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
   <div id="versionBadge">version: 2026-02-20T1900</div>
@@ -91,7 +93,8 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
   <div id="board-wrap">
     <div id="board">
-      <div id="junction" class="device" style="left:40%; top:42%;">
+      <!-- Junction fixed -->
+      <div id="junction" class="device">
         <h3 style="font-size:12px">Joint Box</h3>
         <div class="jb-dots" style="margin-top:6px;">
           <div class="jb-term" data-id="jb"></div>
@@ -102,6 +105,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
         <div style="font-size:11px;color:#666;margin-top:6px;">端子は導通のみ。どの端子でもOK。</div>
       </div>
 
+      <!-- Power -->
       <div class="device" id="power" style="left:12%; top:26%;">
         <h3 style="font-size:12px">電源</h3>
         <div style="text-align:center;">
@@ -110,6 +114,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
         </div>
       </div>
 
+      <!-- Switch (片切) -->
       <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
         <h3 style="font-size:12px">片切</h3>
         <div style="text-align:center;">
@@ -119,13 +124,9 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
         <div id="switchState" style="color:#333;margin-top:6px;font-size:11px;">Switch: OFF</div>
       </div>
 
-      <div class="device" id="lamp" style="left:78%; top:66%;">
-        <h3 style="font-size:12px">ランプ</h3>
-        <div style="text-align:center;">
-          <div class="terminal" data-id="lamp-L">L</div>
-          <div class="terminal" data-id="lamp-N">N</div>
-        </div>
-      </div>
+      <!-- Lamps container (dynamic) -->
+      <div id="lampsContainer"></div>
+
     </div>
   </div>
 
@@ -141,14 +142,19 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
   <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
+  <!-- title modal -->
   <div id="titleScreen" class="modal-backdrop show" aria-hidden="false">
-    <div class="titleBig">WORLD1</div>
-    <div style="color:#fff;margin-bottom:18px">俺らの電工 - チュートリアル</div>
-    <div style="display:flex;gap:12px">
-      <button id="toQuiz" class="small" style="padding:12px 18px">開始 (学科問題へ)</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:14px;color:#fff;margin-bottom:8px">produce by 貴電</div>
+      <div class="titleBig">WORLD1</div>
+      <div style="color:#fff;margin-bottom:12px">俺らの電工 - チュートリアル</div>
+      <div style="display:flex;gap:12px">
+        <button id="toQuiz" class="small" style="padding:12px 18px">開始 (学科問題へ)</button>
+      </div>
     </div>
   </div>
 
+  <!-- quiz modal -->
   <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
     <div class="titleBig">学科問題</div>
     <div class="quizBox" id="quizBox">
@@ -162,6 +168,7 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
+  <!-- boss panel (hidden) -->
   <div id="bossScreen" aria-hidden="true">
     <div id="bossPanel">
       <img id="bossImg" src="boss.png.jpg" alt="boss" style="width:220px;height:220px;object-fit:cover;border-radius:8px" />
@@ -173,9 +180,8 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
-  <!-- final video overlay (fixed front) -->
+  <!-- final video overlay -->
   <div id="finalVideoWrap" style="display:none;align-items:center;justify-content:center;">
-    <!-- playsinline と muted を必ず付けておく（モバイルでの自動再生許可のため） -->
     <video id="finalVideo" src="black.mp4" preload="auto" playsinline muted></video>
   </div>
 
@@ -214,8 +220,9 @@ const roundLabel = document.getElementById("roundLabel");
 const quizQuestion = document.getElementById("quizQuestion");
 const quizOptions = document.getElementById("quizOptions");
 const quizIndex = document.getElementById("quizIndex");
+const lampsContainer = document.getElementById("lampsContainer");
 
-/* svg sizing */
+/* ---------- utilities ---------- */
 function resizeSVG(){
   const r = board.getBoundingClientRect();
   wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
@@ -227,7 +234,6 @@ function resizeSVG(){
 window.addEventListener("resize", resizeSVG);
 window.addEventListener("load", ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
 
-/* UI helpers */
 function updateHP(){ playerBar.style.width = playerHP + "%"; }
 function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + "%"; }
 function updateRound(){ roundLabel.textContent = roundNum; }
@@ -267,7 +273,7 @@ function renderQuiz(){
   quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
 }
 
-/* terminal clicks (only active in play state) */
+/* ---------- terminal handling (works for dynamic lamps too) ---------- */
 function normalizeId(id, el){
   if(!id && el) id = el.dataset.id;
   if(!id) return id;
@@ -275,42 +281,73 @@ function normalizeId(id, el){
   if(el && el.closest && el.closest('#junction')) return 'jb';
   return id;
 }
-document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
-  t.addEventListener("click", (e)=>{
-    if(state !== 'play') return;
-    if(t.classList.contains('jb-term')) t.dataset.id = 'jb';
-    if(selected === t){ t.classList.remove("selected"); selected = null; return; }
-    if(!selected){ selected = t; t.classList.add("selected"); return; }
-    if(selected !== t){
-      connect(selected, t);
-    }
-    if(selected) selected.classList.remove("selected");
-    selected = null;
+
+function attachTerminalListeners(root){
+  root.querySelectorAll(".terminal, .jb-term").forEach(t=>{
+    // remove duplicate listeners by cloning
+    const clone = t.cloneNode(true);
+    t.parentNode.replaceChild(clone, t);
+    clone.addEventListener("click", (e)=>{
+      if(state !== 'play') return;
+      if(clone.classList.contains('jb-term')) clone.dataset.id = 'jb';
+      if(selected === clone){ clone.classList.remove("selected"); selected = null; return; }
+      if(!selected){ selected = clone; clone.classList.add("selected"); return; }
+      if(selected !== clone){
+        connect(selected, clone);
+      }
+      if(selected) selected.classList.remove("selected");
+      selected = null;
+    });
   });
-});
+}
 
-/* switch toggles */
-switchBtn.addEventListener("click", ()=>{
-  switchOn = !switchOn;
-  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
-  document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
-});
+/* attach to static elements now */
+attachTerminalListeners(document);
 
-/* connect/wire functions */
+/* ---------- dynamic lamp creation ---------- */
+function createLamps(count){
+  // remove existing lamps
+  Array.from(document.querySelectorAll("[id^='lamp-']")).forEach(el=>el.remove());
+  // create N lamps
+  for(let i=1;i<=count;i++){
+    const id = `lamp-${i}`;
+    const div = document.createElement('div');
+    div.className = 'device';
+    div.id = id;
+    // initial left/top will be randomized later
+    div.style.left = (20 + i*10) + '%';
+    div.style.top = (40 + (i%2)*18) + '%';
+    div.innerHTML = `<h3 style="font-size:12px">ランプ</h3>
+      <div style="text-align:center;">
+        <div class="terminal" data-id="${id}-L">L</div>
+        <div class="terminal" data-id="${id}-N">N</div>
+      </div>`;
+    lampsContainer.appendChild(div);
+    // attach terminal listeners just for this new lamp
+    attachTerminalListeners(div);
+  }
+  // allow layout recompute then randomize positions to avoid overlap
+  setTimeout(()=>{ randomizeDevicePositions(); resizeSVG(); }, 60);
+}
+
+/* ---------- wiring logic ---------- */
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
   if(!idA || !idB) return;
   if(idA === idB) return;
+  // toggle remove existing connection
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
+      // remove svg line by matching attributes
       const existing = wireLayer.querySelector(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
       if(existing) existing.remove();
       connections.splice(i,1);
       return;
     }
   }
+  // add connection
   connections.push([idA,idB]);
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
@@ -329,13 +366,28 @@ function connect(a,b){
   const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
   line.style.strokeDasharray = len;
   line.style.strokeDashoffset = len;
+  // append to wireLayer (on top)
   wireLayer.appendChild(line);
 }
+
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
+
+/* checkSolution: JB normalized; require power-L -> jb, jb->switch-IN, switch-OUT->jb, power-N->jb, and at least one lamp fully connected (jb->lampX-L AND jb->lampX-N) */
+function getLampIds(){
+  return Array.from(document.querySelectorAll("[id^='lamp-']")).map(el=>el.id);
+}
 function checkSolution(){
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
-  return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
+  const baseOk = connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("power-N","jb");
+  if(!baseOk) return false;
+  const lamps = getLampIds();
+  for(const lid of lamps){
+    if(connHas("jb", `${lid}-L`) && connHas("jb", `${lid}-N`)) return true;
+  }
+  return false;
 }
+
+/* animate lines reveal */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const lines = Array.from(wireLayer.querySelectorAll("line"));
@@ -353,7 +405,47 @@ function animateLinesForward(ms){
   });
 }
 
-/* boss sequence with video fix */
+/* ---------- positioning avoiding overlap (junction fixed) ---------- */
+function randomizeDevicePositions(){
+  const boardRect = board.getBoundingClientRect();
+  // collect movable devices (exclude junction)
+  const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
+  const placed = [];
+  function getSize(el){ return {w: el.offsetWidth || 86, h: el.offsetHeight || 86}; }
+  // compute junction local rect to avoid overlap
+  const junctionEl = document.getElementById('junction');
+  const jRectAbs = junctionEl.getBoundingClientRect();
+  const jLocal = {left:jRectAbs.left - boardRect.left, top:jRectAbs.top - boardRect.top, right:jRectAbs.right - boardRect.left, bottom:jRectAbs.bottom - boardRect.top};
+
+  devices.forEach(dev=>{
+    const size = getSize(dev);
+    let attempts = 0;
+    while(attempts++ < 300){
+      // choose random within board padding
+      const leftPx = Math.random() * (boardRect.width - size.w) + size.w/2;
+      const topPx = Math.random() * (boardRect.height - size.h) + size.h/2;
+      const rect = {left:leftPx - size.w/2, top:topPx - size.h/2, right:leftPx + size.w/2, bottom:topPx + size.h/2};
+      // avoid junction
+      const overlapJ = !(rect.right < jLocal.left || rect.left > jLocal.right || rect.bottom < jLocal.top || rect.top > jLocal.bottom);
+      if(overlapJ) continue;
+      // avoid overlaps with placed
+      let ok=true;
+      for(const p of placed){
+        const overlap = !(rect.right < p.left || rect.left > p.right || rect.bottom < p.top || rect.top > p.bottom);
+        if(overlap){ ok=false; break; }
+      }
+      if(!ok) continue;
+      placed.push(rect);
+      // set percentage positions relative to board
+      dev.style.left = (leftPx / boardRect.width * 100) + '%';
+      dev.style.top = (topPx / boardRect.height * 100) + '%';
+      break;
+    }
+  });
+  setTimeout(resizeSVG,80);
+}
+
+/* ---------- boss sequence ---------- */
 async function doBossSequence(){
   stateLabel.textContent = 'boss';
   bossScreen.style.display = 'flex';
@@ -362,7 +454,7 @@ async function doBossSequence(){
   const panel = document.getElementById("bossPanel");
   // play freeze sound
   try{ freezeSound.currentTime = 0; freezeSound.play().catch(()=>{}); }catch(e){console.log('freeze play err',e)}
-  // flash effect for ~2s
+  // flash effect (approx 2s)
   const flashCount = 6;
   for(let i=0;i<flashCount;i++){
     panel.classList.add('boss-damage');
@@ -374,32 +466,29 @@ async function doBossSequence(){
   bossHP -= dmg;
   updateBossHP();
 
+  // final / clear
   if(bossHP <= 0 || roundNum >= 3){
     bossScreen.style.display = 'none';
-    // --- VIDEO SHOW ---
+    // show video overlay (3s) - muted for autoplay; visual effect
     try{
-      // ensure muted for autoplay/play policy; visual only
       finalVideo.muted = true;
       finalVideo.currentTime = 0;
       finalVideoWrap.style.display = 'flex';
       finalVideo.play().then(()=> {
-        // hide after 3s (as requested)
         setTimeout(()=>{ try{ finalVideo.pause(); }catch(e){} finalVideoWrap.style.display='none'; }, 3000);
       }).catch(err=>{
         console.warn('finalVideo play err', err);
-        // fallback: still show overlay even if video won't play
         finalVideoWrap.style.display='none';
       });
-      // also hide if video ends normally
       finalVideo.onended = ()=>{ finalVideoWrap.style.display='none'; };
-    } catch(e){
-      console.log('video show error', e);
-    }
-    // final overlay
+    } catch(e){ console.log('video error', e); }
+
+    // show overlay clear
     setTimeout(()=>{ overlay.style.display = 'flex'; overlay.textContent = 'WORLD1 CLEAR'; stateLabel.textContent='clear'; }, 700);
     return;
   }
 
+  // not dead -> continue
   await new Promise(r=>setTimeout(r,700));
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
@@ -412,50 +501,13 @@ async function doBossSequence(){
   roundNum++;
   updateRound();
 
-  randomizeDevicePositions();
+  // recreate lamps for new round count and randomize positions
+  createLamps(roundNum);
 
   stateLabel.textContent = 'play';
 }
 
-/* avoid overlaps when randomizing devices (junction fixed) */
-function randomizeDevicePositions(){
-  const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
-  const boardRect = board.getBoundingClientRect();
-  const placed = [];
-  function getSize(el){ return {w:el.offsetWidth||86, h:el.offsetHeight||86}; }
-
-  devices.forEach(dev=>{
-    let attempts = 0;
-    const size = getSize(dev);
-    while(attempts++ < 200){
-      const leftPct = Math.random() * 70 + 10; // 10..80
-      const topPct = Math.random() * 60 + 18;  // 18..78
-      const leftPx = (leftPct/100) * boardRect.width;
-      const topPx = (topPct/100) * boardRect.height;
-      const rect = {left:leftPx - size.w/2, top:topPx - size.h/2, right:leftPx + size.w/2, bottom:topPx + size.h/2};
-      // avoid JB area
-      const junctionEl = document.getElementById('junction');
-      const jRect = junctionEl.getBoundingClientRect();
-      const boardLeft = boardRect.left, boardTop = boardRect.top;
-      const jLocal = {left:jRect.left - boardLeft, top:jRect.top - boardTop, right:jRect.right - boardLeft, bottom:jRect.bottom - boardTop};
-      const overlapJ = !(rect.right < jLocal.left || rect.left > jLocal.right || rect.bottom < jLocal.top || rect.top > jLocal.bottom);
-      if(overlapJ) continue;
-      let ok=true;
-      for(const p of placed){
-        const overlap = !(rect.right < p.left || rect.left > p.right || rect.bottom < p.top || rect.top > p.bottom);
-        if(overlap){ ok=false; break; }
-      }
-      if(!ok) continue;
-      placed.push(rect);
-      dev.style.left = leftPct + '%';
-      dev.style.top = topPct + '%';
-      break;
-    }
-  });
-  setTimeout(resizeSVG,80);
-}
-
-/* SET behavior */
+/* ---------- flow control ---------- */
 setBtn.addEventListener("click", async ()=>{
   if(state !== 'play'){ alert('配線パートで実行してください'); return; }
   if(!switchOn){ alert("スイッチがOFFです。SWITCH を押して ON にしてください。"); return; }
@@ -483,7 +535,14 @@ document.getElementById("restart").addEventListener("click", ()=>{
   setState('title');
 });
 
-/* quiz flow handlers */
+/* switch button toggles */
+switchBtn.addEventListener("click", ()=>{
+  switchOn = !switchOn;
+  switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
+  document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
+});
+
+/* ---------- quiz handlers ---------- */
 toQuiz.addEventListener("click", ()=>{ quizIdx = 0; renderQuiz(); setState('quiz'); });
 skipQuiz.addEventListener("click", ()=>{ startPlay(); });
 
@@ -501,21 +560,25 @@ answerBtn.addEventListener("click", ()=>{
   else { startPlay(); }
 });
 
+/* ---------- start play (create lamps per round, randomize positions) ---------- */
 function startPlay(){
   setState('play');
   stateLabel.textContent = 'play';
-  quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true');
+  // ensure initial JB fixed
   document.getElementById('junction').style.left = '40%';
   document.getElementById('junction').style.top = '42%';
-  randomizeDevicePositions();
-  setTimeout(resizeSVG,120);
+  // create lamps based on roundNum (first time roundNum==1)
+  createLamps(roundNum);
+  // clear wires
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
+  setTimeout(resizeSVG,120);
 }
 
-/* init */
-updateHP(); updateBossHP(); updateRound(); setState('title');
+/* ---------- init ---------- */
+updateHP(); updateBossHP(); updateRound();
+setState('title');
 resizeSVG();
 </script>
 </body>
