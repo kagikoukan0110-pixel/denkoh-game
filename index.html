@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (5-quiz + JB fixed)</title>
+<title>俺らの電工 - WORLD1 (video fix)</title>
 <style>
 :root{
   --bg:#000;
@@ -17,7 +17,6 @@
   --boss-hp-back:#332626;
 }
 html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;-webkit-font-smoothing:antialiased;}
-/* wire layer (must be body direct child) */
 #wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2000}
 
 /* header */
@@ -48,13 +47,11 @@ button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd00
 button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
 .note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
-/* modals */
+/* modals / boss */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500;pointer-events:auto}
 .modal-backdrop.show{display:flex}
 .titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:18px}
 .quizBox{background:#111;padding:18px;border-radius:12px;max-width:760px;color:#fff}
-
-/* boss screen */
 #bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9000;color:#fff}
 #bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
 #bossName{font-size:20px;color:#ffd200;margin-right:12px;font-weight:800;white-space:nowrap}
@@ -62,25 +59,18 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 .bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
 .bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 500ms linear;border-radius:12px}
 
-/* effects */
-@keyframes flashRed { 0%{filter:none}50%{filter:drop-shadow(0 0 14px rgba(231,76,60,0.9))}100%{filter:none} }
-@keyframes shake { 0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}100%{transform:translateX(0)} }
-.boss-damage{animation: flashRed 300ms ease, shake 420ms ease}
-
-/* final video overlay */
-#finalVideoWrap{position:fixed;inset:0;display:none;z-index:99999;background:rgba(0,0,0,0.9);align-items:center;justify-content:center}
-#finalVideo{width:100%;height:100%;object-fit:cover}
+/* final video overlay (fixed and definitely on top) */
+#finalVideoWrap{position:fixed;inset:0;display:none;z-index:2147483646;background:rgba(0,0,0,0.95);align-items:center;justify-content:center}
+#finalVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2147483647;display:block}
 
 /* version */
 #versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:5000}
-.quizOpt.chosen{outline:3px solid #ffd200}
 
 /* responsive */
 @media (max-width:480px){:root{--device-w:72px;} .title{font-size:18px}}
 </style>
 </head>
 <body>
-  <!-- wire layer must be direct child -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
   <div id="versionBadge">version: 2026-02-20T1900</div>
@@ -101,7 +91,6 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
   <div id="board-wrap">
     <div id="board">
-      <!-- fixed JB center -->
       <div id="junction" class="device" style="left:40%; top:42%;">
         <h3 style="font-size:12px">Joint Box</h3>
         <div class="jb-dots" style="margin-top:6px;">
@@ -152,7 +141,6 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 
   <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
-  <!-- title screen -->
   <div id="titleScreen" class="modal-backdrop show" aria-hidden="false">
     <div class="titleBig">WORLD1</div>
     <div style="color:#fff;margin-bottom:18px">俺らの電工 - チュートリアル</div>
@@ -161,14 +149,11 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
-  <!-- quiz screen -->
   <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
     <div class="titleBig">学科問題</div>
     <div class="quizBox" id="quizBox">
       <div id="quizQuestion" style="margin-bottom:12px">質問...</div>
-      <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
-        <!-- options injected -->
-      </div>
+      <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
       <div style="display:flex;gap:12px">
         <button id="answerBtn" class="small">回答</button>
         <button id="skipQuiz" class="small">スキップ (デバッグ)</button>
@@ -177,7 +162,6 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
-  <!-- boss screen -->
   <div id="bossScreen" aria-hidden="true">
     <div id="bossPanel">
       <img id="bossImg" src="boss.png.jpg" alt="boss" style="width:220px;height:220px;object-fit:cover;border-radius:8px" />
@@ -189,9 +173,10 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
     </div>
   </div>
 
-  <!-- final video wrapper -->
+  <!-- final video overlay (fixed front) -->
   <div id="finalVideoWrap" style="display:none;align-items:center;justify-content:center;">
-    <video id="finalVideo" src="black.mp4" preload="auto"></video>
+    <!-- playsinline と muted を必ず付けておく（モバイルでの自動再生許可のため） -->
+    <video id="finalVideo" src="black.mp4" preload="auto" playsinline muted></video>
   </div>
 
   <audio id="freezeSound" src="freeze.mp3" preload="auto"></audio>
@@ -254,7 +239,7 @@ function setState(s){
   else if(s === 'play'){ titleScreen.classList.remove('show'); quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true'); titleScreen.setAttribute('aria-hidden','true'); resizeSVG(); }
 }
 
-/* ---------- quiz data (5問) ---------- */
+/* ---------- quiz (5問) ---------- */
 const questions = [
   {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
   {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
@@ -282,7 +267,7 @@ function renderQuiz(){
   quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
 }
 
-/* ---------- terminals click handling (only in play state) ---------- */
+/* terminal clicks (only active in play state) */
 function normalizeId(id, el){
   if(!id && el) id = el.dataset.id;
   if(!id) return id;
@@ -304,14 +289,14 @@ document.querySelectorAll(".terminal, .jb-term").forEach(t=>{
   });
 });
 
-/* switch control */
+/* switch toggles */
 switchBtn.addEventListener("click", ()=>{
   switchOn = !switchOn;
   switchState.textContent = switchOn ? "Switch: ON" : "Switch: OFF";
   document.getElementById("switch").style.background = switchOn ? "#e7ffec" : "";
 });
 
-/* ---------- connect / wires ---------- */
+/* connect/wire functions */
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
@@ -346,17 +331,11 @@ function connect(a,b){
   line.style.strokeDashoffset = len;
   wireLayer.appendChild(line);
 }
-
-/* helper */
 function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
-
-/* solution check */
 function checkSolution(){
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
   return connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("jb","lamp-L") && connHas("power-N","jb") && connHas("jb","lamp-N");
 }
-
-/* animate lines */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const lines = Array.from(wireLayer.querySelectorAll("line"));
@@ -374,16 +353,16 @@ function animateLinesForward(ms){
   });
 }
 
-/* ---------- boss sequence ---------- */
+/* boss sequence with video fix */
 async function doBossSequence(){
   stateLabel.textContent = 'boss';
   bossScreen.style.display = 'flex';
   bossScreen.setAttribute('aria-hidden','false');
   await new Promise(r=>setTimeout(r,350));
   const panel = document.getElementById("bossPanel");
-  freezeSound.currentTime = 0;
-  freezeSound.play().catch(()=>{});
-  // additional continuous flash for ~2s (multiple pulses)
+  // play freeze sound
+  try{ freezeSound.currentTime = 0; freezeSound.play().catch(()=>{}); }catch(e){console.log('freeze play err',e)}
+  // flash effect for ~2s
   const flashCount = 6;
   for(let i=0;i<flashCount;i++){
     panel.classList.add('boss-damage');
@@ -397,16 +376,27 @@ async function doBossSequence(){
 
   if(bossHP <= 0 || roundNum >= 3){
     bossScreen.style.display = 'none';
-    // play final video (black.mp4) - ensure file exists on server
-    finalVideoWrap.style.display = 'flex';
-    finalVideo.currentTime = 0;
-    finalVideo.play().catch(()=>{});
-    // stop audio
-    freezeSound.pause(); freezeSound.currentTime = 0;
-    // show overlay after short delay
+    // --- VIDEO SHOW ---
+    try{
+      // ensure muted for autoplay/play policy; visual only
+      finalVideo.muted = true;
+      finalVideo.currentTime = 0;
+      finalVideoWrap.style.display = 'flex';
+      finalVideo.play().then(()=> {
+        // hide after 3s (as requested)
+        setTimeout(()=>{ try{ finalVideo.pause(); }catch(e){} finalVideoWrap.style.display='none'; }, 3000);
+      }).catch(err=>{
+        console.warn('finalVideo play err', err);
+        // fallback: still show overlay even if video won't play
+        finalVideoWrap.style.display='none';
+      });
+      // also hide if video ends normally
+      finalVideo.onended = ()=>{ finalVideoWrap.style.display='none'; };
+    } catch(e){
+      console.log('video show error', e);
+    }
+    // final overlay
     setTimeout(()=>{ overlay.style.display = 'flex'; overlay.textContent = 'WORLD1 CLEAR'; stateLabel.textContent='clear'; }, 700);
-    // hide final video after 3s
-    setTimeout(()=>{ finalVideo.pause(); finalVideoWrap.style.display='none'; }, 3000);
     return;
   }
 
@@ -414,7 +404,7 @@ async function doBossSequence(){
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
 
-  // clear wires / selected
+  // reset wires and selected
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
@@ -422,74 +412,50 @@ async function doBossSequence(){
   roundNum++;
   updateRound();
 
-  // rearrange devices but keep junction fixed (and avoid overlap)
   randomizeDevicePositions();
 
   stateLabel.textContent = 'play';
 }
 
-/* ---------- randomize positions (no-overlap, JB fixed) ---------- */
+/* avoid overlaps when randomizing devices (junction fixed) */
 function randomizeDevicePositions(){
   const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
   const boardRect = board.getBoundingClientRect();
-  const marginPx = 40; // margin from edges
-  const maxAttempts = 200;
   const placed = [];
-
-  // target bounding sizes (approx)
-  function getSize(el){
-    const w = el.offsetWidth || 86;
-    const h = el.offsetHeight || 86;
-    return {w,h};
-  }
-
-  // clear existing positions for randomness
-  devices.forEach(d => {
-    d.style.left = '10%';
-    d.style.top = '20%';
-  });
+  function getSize(el){ return {w:el.offsetWidth||86, h:el.offsetHeight||86}; }
 
   devices.forEach(dev=>{
-    const size = getSize(dev);
     let attempts = 0;
-    while(attempts++ < maxAttempts){
-      // pick percent-based positions but convert to px for collision test
-      const leftPct = Math.random() * 80 + 8; // 8%..88%
-      const topPct = Math.random() * 60 + 16; // 16%..76%
+    const size = getSize(dev);
+    while(attempts++ < 200){
+      const leftPct = Math.random() * 70 + 10; // 10..80
+      const topPct = Math.random() * 60 + 18;  // 18..78
       const leftPx = (leftPct/100) * boardRect.width;
       const topPx = (topPct/100) * boardRect.height;
       const rect = {left:leftPx - size.w/2, top:topPx - size.h/2, right:leftPx + size.w/2, bottom:topPx + size.h/2};
-
-      // avoid overlapping junction region
+      // avoid JB area
       const junctionEl = document.getElementById('junction');
       const jRect = junctionEl.getBoundingClientRect();
       const boardLeft = boardRect.left, boardTop = boardRect.top;
       const jLocal = {left:jRect.left - boardLeft, top:jRect.top - boardTop, right:jRect.right - boardLeft, bottom:jRect.bottom - boardTop};
       const overlapJ = !(rect.right < jLocal.left || rect.left > jLocal.right || rect.bottom < jLocal.top || rect.top > jLocal.bottom);
       if(overlapJ) continue;
-
-      // check collision with already placed
-      let ok = true;
+      let ok=true;
       for(const p of placed){
         const overlap = !(rect.right < p.left || rect.left > p.right || rect.bottom < p.top || rect.top > p.bottom);
         if(overlap){ ok=false; break; }
       }
       if(!ok) continue;
-
-      // accept
       placed.push(rect);
       dev.style.left = leftPct + '%';
       dev.style.top = topPct + '%';
       break;
     }
-    // if couldn't place after many tries, leave it as-is (fallback)
   });
-
-  // after reposition, re-run svg resize so wires align
   setTimeout(resizeSVG,80);
 }
 
-/* ---------- SET behavior ---------- */
+/* SET behavior */
 setBtn.addEventListener("click", async ()=>{
   if(state !== 'play'){ alert('配線パートで実行してください'); return; }
   if(!switchOn){ alert("スイッチがOFFです。SWITCH を押して ON にしてください。"); return; }
@@ -499,7 +465,6 @@ setBtn.addEventListener("click", async ()=>{
     if(playerHP <= 0){ alert("PLAYER HP 0 - game over"); }
     return;
   }
-  // animate wires then boss
   await animateLinesForward(2000);
   await doBossSequence();
 });
@@ -518,73 +483,40 @@ document.getElementById("restart").addEventListener("click", ()=>{
   setState('title');
 });
 
-/* ---------- quiz flow ---------- */
+/* quiz flow handlers */
 toQuiz.addEventListener("click", ()=>{ quizIdx = 0; renderQuiz(); setState('quiz'); });
 skipQuiz.addEventListener("click", ()=>{ startPlay(); });
 
 answerBtn.addEventListener("click", ()=>{
-  // require chosen
   const chosen = Array.from(document.querySelectorAll('.quizOpt')).find(x=>x.classList.contains('chosen'));
   if(!chosen){ alert('選択肢を選んでください。'); return; }
   const selectedIndex = Number(chosen.dataset.index);
   const correctIndex = questions[quizIdx].correct;
-  if(selectedIndex === correctIndex){
-    // correct
-  } else {
-    // wrong
+  if(selectedIndex !== correctIndex){
     playerHP = Math.max(0, playerHP - 10);
     updateHP();
   }
   quizIdx++;
-  if(quizIdx < questions.length){
-    renderQuiz();
-  } else {
-    // finished all questions -> play
-    startPlay();
-  }
+  if(quizIdx < questions.length){ renderQuiz(); }
+  else { startPlay(); }
 });
 
-function renderQuiz(){
-  const q = questions[quizIdx];
-  quizQuestion.textContent = q.q;
-  quizOptions.innerHTML = '';
-  q.opts.forEach((opt,i)=>{
-    const b = document.createElement('button');
-    b.className = 'quizOpt small';
-    b.textContent = opt;
-    b.dataset.index = i;
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
-      b.classList.add('chosen');
-    });
-    quizOptions.appendChild(b);
-  });
-  quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
-}
-
-/* start play */
 function startPlay(){
   setState('play');
   stateLabel.textContent = 'play';
   quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true');
-  // ensure junction remains at desired place
   document.getElementById('junction').style.left = '40%';
   document.getElementById('junction').style.top = '42%';
-  // reposition other devices non-overlapping
   randomizeDevicePositions();
   setTimeout(resizeSVG,120);
-  // reset selected & wires
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
   wireLayer.querySelectorAll("line").forEach(l=>l.remove());
   connections = []; selected = null;
 }
 
-/* ---------- init ---------- */
+/* init */
 updateHP(); updateBossHP(); updateRound(); setState('title');
 resizeSVG();
-
-/* prevent mobile double-tap zoom zoom issues lightly */
-document.addEventListener('touchstart', ()=>{}, {passive:true});
 </script>
 </body>
 </html>
