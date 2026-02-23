@@ -4,7 +4,8 @@
   --term-bg:#222;
   --wire:#ffd800;
   --wirew:6;
-  --device-w:96px;
+  /* 20% downscale from 96px => 76.8 ~ 77px */
+  --device-w:77px;
   --device-padding:8px;
   --boss-hp-color:#e74c3c;
   --boss-hp-back:#2b1818;
@@ -27,11 +28,12 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 /* devices */
 .device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:60;overflow:visible}
 .device h3{margin:6px 0 8px 0;font-size:12px}
-.terminal{display:inline-flex;justify-content:center;align-items:center;width:28px;height:28px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
+/* terminal reduced a bit to match smaller device size */
+.terminal{display:inline-flex;justify-content:center;align-items:center;width:24px;height:24px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
 .selected{outline:3px solid #ffd800}
 
 /* icons */
-.device .icon{width:56px;height:56px;display:block;margin:6px auto}
+.device .icon{width:48px;height:48px;display:block;margin:6px auto}
 .icon svg{width:100%;height:100%}
 
 /* junction */
@@ -100,4 +102,4 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 #versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:5000}
 
 /* responsive */
-@media (max-width:480px){:root{--device-w:78px;} .title{font-size:18px}}
+@media (max-width:480px){:root{--device-w:62px;} .title{font-size:18px}}
