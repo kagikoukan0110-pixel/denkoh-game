@@ -213,7 +213,6 @@ function animateLinesForward(ms){
 /* ---------- improved layout avoiding overlap ---------- */
 function randomizeDevicePositions(){
   const boardRect = board.getBoundingClientRect();
-  // safe-guard: if header/controls not rendered yet, do a simple randomize fallback
   const headerEl = document.querySelector('.header');
   const controlsEl = document.querySelector('.controls');
   let headerRect = {bottom: 0};
@@ -221,17 +220,16 @@ function randomizeDevicePositions(){
   try{ headerRect = headerEl.getBoundingClientRect(); } catch(e){}
   try{ controlsRect = controlsEl.getBoundingClientRect(); } catch(e){}
 
-  const topMargin = Math.max( (headerRect.bottom - boardRect.top) + 12, 20 ); // ヘッダ下 + 12px
-  const bottomMargin = Math.max( boardRect.height - (controlsRect.top - boardRect.top) + 12, 20 ); // コントロール上から下へ + 12
+  const topMargin = Math.max( (headerRect.bottom - boardRect.top) + 12, 20 );
+  const bottomMargin = Math.max( boardRect.height - (controlsRect.top - boardRect.top) + 12, 20 );
 
   const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
   const placed = [];
   const jRect = document.getElementById('junction').getBoundingClientRect();
   const jLocal = {left:jRect.left - boardRect.left, top:jRect.top - boardRect.top, right:jRect.right - boardRect.left, bottom:jRect.bottom - boardRect.top};
 
-  const MARGIN = 12; // デバイス間の余白(px)
+  const MARGIN = 24; // increased margin to avoid overlap
   devices.forEach((dev, idx)=>{
-    // get actual size after styles applied
     const devRect = dev.getBoundingClientRect();
     const w = devRect.width || (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--device-w')) || 86);
     const h = devRect.height || 86;
@@ -239,7 +237,6 @@ function randomizeDevicePositions(){
     let attempts = 0;
     let placedRect = null;
 
-    // allowed bounds
     const minX = 20 + w/2;
     const maxX = Math.max( minX, boardRect.width - 20 - w/2 );
     const minY = Math.max(20 + h/2, topMargin + h/2);
@@ -250,11 +247,9 @@ function randomizeDevicePositions(){
       const topPx = Math.random() * (maxY - minY) + minY;
       const rect = {left:leftPx - w/2, top:topPx - h/2, right:leftPx + w/2, bottom:topPx + h/2};
 
-      // avoid junction area with margin
       const overlapJ = !(rect.right < jLocal.left - MARGIN || rect.left > jLocal.right + MARGIN || rect.bottom < jLocal.top - MARGIN || rect.top > jLocal.bottom + MARGIN);
       if(overlapJ) continue;
 
-      // avoid placed devices with margin
       let ok=true;
       for(const p of placed){
         const overlap = !(rect.right < p.left - MARGIN || rect.left > p.right + MARGIN || rect.bottom < p.top - MARGIN || rect.top > p.bottom + MARGIN);
@@ -262,7 +257,6 @@ function randomizeDevicePositions(){
       }
       if(!ok) continue;
 
-      // accept
       placed.push(rect);
       placedRect = rect;
       dev.style.left = (leftPx / boardRect.width * 100) + '%';
@@ -270,7 +264,6 @@ function randomizeDevicePositions(){
       break;
     }
 
-    // fallback grid-style if not placed
     if(!placedRect){
       const cols = Math.max(1, Math.round(Math.sqrt(devices.length)));
       const col = idx % cols;
@@ -287,9 +280,8 @@ function randomizeDevicePositions(){
   setTimeout(resizeSVG, 80);
 }
 
-/* ---------- enhanced boss sequence (louder + particles + flash) ---------- */
+/* ---------- enhanced boss sequence (unchanged) ---------- */
 function makeParticles(centerX, centerY, count=28){
-  const particles = [];
   for(let i=0;i<count;i++){
     const p = document.createElement('div');
     p.className = 'particle';
@@ -306,10 +298,8 @@ function makeParticles(centerX, centerY, count=28){
       p.style.transform = `translate(${dx}px, ${dy}px) scale(${0.6 + Math.random()*1.2})`;
       p.style.opacity = 0;
     });
-    particles.push(p);
-    setTimeout(()=>{ p.remove(); }, 1000);
+    setTimeout(()=> p.remove(), 1000);
   }
-  return particles;
 }
 
 async function doBossSequence(){
@@ -318,7 +308,7 @@ async function doBossSequence(){
   bossScreen.setAttribute('aria-hidden','false');
   await new Promise(r=>setTimeout(r,220));
 
-  try{ freezeSound.currentTime = 0; await freezeSound.play(); } catch(e){ /* ignore */ }
+  try{ freezeSound.currentTime = 0; await freezeSound.play(); } catch(e){}
 
   const dmg = 50;
   hitText.style.display = 'block';
@@ -339,12 +329,10 @@ async function doBossSequence(){
     void explosionEl.offsetWidth;
     explosionEl.style.transition = 'transform 900ms cubic-bezier(.2,.9,.2,1), opacity 1000ms linear';
     explosionEl.style.transform = 'translate(-50%,-50%) scale(1.6)';
-    try{ explodeSound.currentTime = 0; await explodeSound.play(); } catch(e){ /* ignore */ }
+    try{ explodeSound.currentTime = 0; await explodeSound.play(); } catch(e){}
 
     const bpRect = bossPanel.getBoundingClientRect();
-    const cx = bpRect.left + bpRect.width/2;
-    const cy = bpRect.top + bpRect.height/2;
-    makeParticles(cx, cy, 34);
+    makeParticles(bpRect.left + bpRect.width/2, bpRect.top + bpRect.height/2, 34);
 
     if(navigator.vibrate) navigator.vibrate([120,60,120,60,200]);
 
@@ -420,6 +408,7 @@ setBtn.addEventListener("click", async ()=>{
   await animateLinesForward(1000);
 
   if(checkSolution()){
+    // ランプ点灯演出（短め）
     const lamps = getLampIds();
     lamps.forEach(id=>{
       const lit = connHas("jb", `${id}-L`) && connHas("jb", `${id}-N`);
@@ -434,7 +423,8 @@ setBtn.addEventListener("click", async ()=>{
       }
     });
 
-    await new Promise(r=>setTimeout(r,360));
+    // 既存の短い待ち(360ms)に加え +2000ms（合計 2360ms）待ってからボス演出へ
+    await new Promise(r=>setTimeout(r, 2360));
     await doBossSequence();
     return;
   }
@@ -507,7 +497,6 @@ function startPlay(){
   let idx = 0;
   function tryNext(){
     if(idx >= candidates.length){
-      // fallback SVG + text
       bossEl.innerHTML = `<svg viewBox="0 0 64 64" width="80" height="80" aria-hidden><rect x="4" y="4" width="56" height="56" rx="8" fill="#333" /></svg><div style="margin-left:8px">汚ねえ大工</div>`;
       bossEl.style.display = 'flex';
       bossEl.style.gap = '8px';
@@ -525,7 +514,6 @@ function startPlay(){
       setTimeout(resizeSVG,120);
     };
     img.onerror = () => { tryNext(); };
-    // slight delay
     setTimeout(()=>{ img.src = candidate; }, 50);
   }
   tryNext();
