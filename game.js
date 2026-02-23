@@ -62,7 +62,7 @@ function setState(s){
   else { titleScreen.classList.remove('show'); quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true'); }
 }
 
-/* ---------- quiz ---------- */
+/* ---------- quiz (unchanged) ---------- */
 const questions = [
   {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
   {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
@@ -104,8 +104,15 @@ function removePreview(){
   board.removeEventListener('mousemove', onMouseMovePreview);
 }
 
+function getPreviewColorFromId(id){
+  if(!id) return '#ffffff';
+  const s = id.toLowerCase();
+  if(s.includes('-n') || s.endsWith('n')) return '#ffffff';
+  return '#0b0b0b';
+}
+
 function onMouseMovePreview(e){
-  if(!selected) return;
+  if(!selected || !previewPath) return;
   const boardRect = board.getBoundingClientRect();
   const startRect = selected.getBoundingClientRect();
   const x1 = startRect.left - boardRect.left + startRect.width/2;
@@ -116,6 +123,27 @@ function onMouseMovePreview(e){
   previewPath.setAttribute('d', d);
 }
 
+/* create preview path and attach mousemove */
+function createPreviewFor(selectedEl){
+  removePreview();
+  if(!selectedEl) return;
+  const color = getPreviewColorFromId(selectedEl.dataset.id);
+  previewPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+  previewPath.setAttribute("stroke", color);
+  previewPath.setAttribute("stroke-width", color === '#ffffff' ? "2" : "3");
+  previewPath.setAttribute("fill","none");
+  previewPath.setAttribute("stroke-linecap","round");
+  previewPath.style.pointerEvents = 'none';
+  // append last so preview is on top
+  wireLayer.appendChild(previewPath);
+  board.addEventListener('mousemove', onMouseMovePreview);
+  // initialize small segment so user sees it immediately
+  const r = selectedEl.getBoundingClientRect(), br = board.getBoundingClientRect();
+  const sx = r.left - br.left + r.width/2, sy = r.top - br.top + r.height/2;
+  previewPath.setAttribute('d', `M ${sx} ${sy} Q ${sx} ${sy} ${sx+1} ${sy+1}`);
+}
+
+/* attach listeners */
 function attachTerminalListeners(root){
   root.querySelectorAll(".terminal, .jb-term").forEach(t=>{
     const clone = t.cloneNode(true);
@@ -124,31 +152,20 @@ function attachTerminalListeners(root){
       if(state !== 'play') return;
       if(clone.classList.contains('jb-term')) clone.dataset.id = 'jb';
 
-      // deselect same
-      if(selected === clone){ clone.classList.remove("selected"); selected = null; removePreview(); return; }
+      // deselect if same
+      if(selected === clone){
+        clone.classList.remove("selected"); selected = null; removePreview(); return;
+      }
 
-      // set new selection if none
+      // select start
       if(!selected){
         selected = clone;
         clone.classList.add("selected");
-        // create preview path
-        removePreview();
-        previewPath = document.createElementNS("http://www.w3.org/2000/svg","path");
-        previewPath.setAttribute("stroke","#ffffff");
-        previewPath.setAttribute("stroke-width","2");
-        previewPath.setAttribute("fill","none");
-        previewPath.setAttribute("stroke-linecap","round");
-        previewPath.style.pointerEvents = 'none';
-        wireLayer.appendChild(previewPath);
-        board.addEventListener('mousemove', onMouseMovePreview);
-        // immediately draw initial tiny segment
-        const r = clone.getBoundingClientRect(), br = board.getBoundingClientRect();
-        const sx = r.left - br.left + r.width/2, sy = r.top - br.top + r.height/2;
-        previewPath.setAttribute('d', `M ${sx} ${sy} Q ${sx} ${sy} ${sx+1} ${sy+1}`);
+        createPreviewFor(selected);
         return;
       }
 
-      // second click -> attempt to connect
+      // second click -> connect
       if(selected !== clone){
         connect(selected, clone);
       }
@@ -191,7 +208,7 @@ function createLamps(count){
 }
 function getLampIds(){ return Array.from(document.querySelectorAll("[id^='lamp-']")).map(el=>el.id); }
 
-/* ---------- wiring: curved path, simple color rules ---------- */
+/* ---------- wiring: curved path, World1 color rules ---------- */
 function pathForPoints(x1,y1,x2,y2, offset=0){
   const mx = (x1 + x2)/2;
   const my = (y1 + y2)/2;
@@ -207,9 +224,9 @@ function pathForPoints(x1,y1,x2,y2, offset=0){
   return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
 }
 
+/* World1: N系（-N）= white, それ以外 = black */
 function pickWireColor(idA, idB){
-  // World1 rule: 接地（N系） = white, 非接地 = black
-  const a = idA.toLowerCase(), b = idB.toLowerCase();
+  const a = (idA||'').toLowerCase(), b = (idB||'').toLowerCase();
   if(a.includes('-n') || b.includes('-n') || a.endsWith('n') || b.endsWith('n')) return '#ffffff';
   return '#0b0b0b';
 }
@@ -227,6 +244,7 @@ function connect(a,b){
   if(!idA || !idB) return;
   if(idA === idB) return;
 
+  // toggle remove existing
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
@@ -256,7 +274,6 @@ function connect(a,b){
   path.setAttribute("d", d);
   const color = pickWireColor(idA, idB);
   path.setAttribute("stroke", color);
-  // white preview/small stroke; black uses default width
   if(color === '#ffffff'){
     path.setAttribute("stroke-width", "2");
     path.setAttribute("stroke-opacity", "0.98");
@@ -292,7 +309,7 @@ function checkSolution(){
   return false;
 }
 
-/* animate wires forward */
+/* animate wires forward (excludes previewPath) */
 function animateLinesForward(ms){
   return new Promise(res=>{
     const els = Array.from(wireLayer.querySelectorAll("path, line")).filter(el => el !== previewPath);
@@ -310,7 +327,9 @@ function animateLinesForward(ms){
   });
 }
 
-/* ---------- layout (power/switch/junction anchored) ---------- */
+/* ---------- layout (anchor power/switch/junction) ---------- */
+/* (same as prior: randomizeDevicePositions anchors power/switch/junction) */
+/* ... reuse existing layout function from previous iteration ... */
 function randomizeDevicePositions(){
   const boardRect = board.getBoundingClientRect();
   const headerEl = document.querySelector('.header');
@@ -521,7 +540,7 @@ setBtn.addEventListener("click", async ()=>{
       }
     });
 
-    // wait extra 2000ms (+ previous small delay) before boss sequence
+    // wait extra 2000ms (+ small delay) before boss sequence
     await new Promise(r=>setTimeout(r, 2360));
     await doBossSequence();
     return;
