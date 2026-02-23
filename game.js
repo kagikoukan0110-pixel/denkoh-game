@@ -4,7 +4,7 @@ let playerHP = 100;
 let roundNum = 1;
 let switchOn = false;
 let selected = null;
-let connections = [];
+let connections = []; // array of [idA,idB,pathElement]
 let state = 'title';
 
 /* elements */
@@ -61,7 +61,7 @@ function setState(s){
   else { titleScreen.classList.remove('show'); quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true'); }
 }
 
-/* ---------- quiz (unchanged) ---------- */
+/* ---------- quiz (unchanged logic; visual updated) ---------- */
 const questions = [
   {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
   {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
@@ -88,7 +88,7 @@ function renderQuiz(){
   quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
 }
 
-/* ---------- terminals attach ---------- */
+/* ---------- terminals attach (unchanged) ---------- */
 function normalizeId(id, el){
   if(!id && el) id = el.dataset.id;
   if(!id) return id;
@@ -115,7 +115,7 @@ function attachTerminalListeners(root){
 }
 attachTerminalListeners(document);
 
-/* ---------- dynamic lamps (with bulb SVG + halo) ---------- */
+/* ---------- dynamic lamps ---------- */
 function createLamps(count){
   Array.from(document.querySelectorAll("[id^='lamp-']")).forEach(el=>el.remove());
   for(let i=1;i<=count;i++){
@@ -144,22 +144,60 @@ function createLamps(count){
 }
 function getLampIds(){ return Array.from(document.querySelectorAll("[id^='lamp-']")).map(el=>el.id); }
 
-/* ---------- wiring ---------- */
+/* ---------- wiring: draw curved path, color mapping, parallel offset ---------- */
+function pathForPoints(x1,y1,x2,y2, offset=0){
+  // quadratic control point at midpoint plus perpendicular offset
+  const mx = (x1 + x2)/2;
+  const my = (y1 + y2)/2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx,dy) || 1;
+  const nx = -dy / len; // unit perpendicular
+  const ny = dx / len;
+  const ox = nx * offset;
+  const oy = ny * offset;
+  const cx = mx + ox;
+  const cy = my + oy;
+  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+}
+
+function pickWireColor(idA, idB){
+  const a=idA.toLowerCase(), b=idB.toLowerCase();
+  // neutral priority
+  if(a.includes('-n') || b.includes('-n') || a.includes('power-n') || b.includes('power-n')) return '#ffffff';
+  // any switch involvement -> red
+  if(a.includes('switch') || b.includes('switch') ) return '#ff3b30';
+  // L lines -> black
+  if(a.includes('-l') || b.includes('-l') || a.includes('power-l') || b.includes('power-l')) return '#0b0b0b';
+  // fallback yellow
+  return getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800';
+}
+
+function findParallelCount(idA, idB){
+  // count existing connections between same unordered pair
+  return connections.filter(c=>{
+    const a=c[0], b=c[1];
+    return (a===idA && b===idB) || (a===idB && b===idA);
+  }).length;
+}
+
 function connect(a,b){
   const idA = normalizeId(a.dataset.id,a);
   const idB = normalizeId(b.dataset.id,b);
   if(!idA || !idB) return;
   if(idA === idB) return;
+
+  // if path between same pair exists, clicking again should remove it
   for(let i=0;i<connections.length;i++){
     const c = connections[i];
     if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
-      const existing = wireLayer.querySelector(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
-      if(existing) existing.remove();
+      if(c[2] && c[2].parentNode) c[2].remove();
       connections.splice(i,1);
       return;
     }
   }
-  connections.push([idA,idB]);
+
+  // compute endpoints in board-local coords
   const rectA = a.getBoundingClientRect();
   const rectB = b.getBoundingClientRect();
   const boardRect = board.getBoundingClientRect();
@@ -167,20 +205,48 @@ function connect(a,b){
   const y1 = rectA.top - boardRect.top + rectA.height/2;
   const x2 = rectB.left - boardRect.left + rectB.width/2;
   const y2 = rectB.top - boardRect.top + rectB.height/2;
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1); line.setAttribute("y1",y1); line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-  line.setAttribute("stroke", getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800');
-  line.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
-  line.setAttribute("stroke-linecap","round");
-  line.setAttribute("data-from", idA); line.setAttribute("data-to", idB);
-  const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
-  line.style.strokeDasharray = len;
-  line.style.strokeDashoffset = len;
-  wireLayer.appendChild(line);
-}
-function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
 
-/* validation */
+  // determine offset for parallel lines
+  const baseCount = findParallelCount(idA, idB);
+  const offsetStep = 14; // px
+  const offsetIndex = baseCount; // 0..n
+  const total = baseCount + 1;
+  // center them around 0
+  const centerIndex = (total - 1) / 2;
+  const offset = (offsetIndex - centerIndex) * offsetStep;
+
+  // create path
+  const d = pathForPoints(x1,y1,x2,y2, offset);
+  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+  path.setAttribute("d", d);
+  const color = pickWireColor(idA, idB);
+  path.setAttribute("stroke", color);
+  // white wires are thin and semi-opaque so they show on black bg
+  if(color === '#ffffff'){
+    path.setAttribute("stroke-width", Math.max(2, (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wirew'))||6) - 3));
+    path.setAttribute("stroke-opacity", "0.95");
+  } else {
+    path.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
+    path.setAttribute("stroke-opacity", "1");
+  }
+  path.setAttribute("fill","none");
+  path.setAttribute("stroke-linecap","round");
+  path.setAttribute("data-from", idA);
+  path.setAttribute("data-to", idB);
+  // animate draw
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  wireLayer.appendChild(path);
+
+  connections.push([idA, idB, path]);
+}
+
+function connHas(a,b){
+  return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a));
+}
+
+/* ---------- validation (unchanged) ---------- */
 function checkSolution(){
   if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
   const baseOk = connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("power-N","jb");
@@ -192,25 +258,25 @@ function checkSolution(){
   return false;
 }
 
-/* animate wires */
+/* animate wires forward (works on path and line) */
 function animateLinesForward(ms){
   return new Promise(res=>{
-    const lines = Array.from(wireLayer.querySelectorAll("line"));
-    if(lines.length===0){ setTimeout(res,ms); return; }
-    lines.forEach(l=>{
-      const len = l.getTotalLength ? l.getTotalLength() : 200;
-      l.style.transition='none';
-      l.style.strokeDasharray = len;
-      l.style.strokeDashoffset = len;
-      void l.getBoundingClientRect();
-      l.style.transition = `stroke-dashoffset ${ms}ms linear`;
-      l.style.strokeDashoffset = 0;
+    const els = Array.from(wireLayer.querySelectorAll("path, line"));
+    if(els.length===0){ setTimeout(res,ms); return; }
+    els.forEach(el=>{
+      const len = el.getTotalLength ? el.getTotalLength() : 200;
+      el.style.transition='none';
+      el.style.strokeDasharray = len;
+      el.style.strokeDashoffset = len;
+      void el.getBoundingClientRect();
+      el.style.transition = `stroke-dashoffset ${ms}ms linear`;
+      el.style.strokeDashoffset = 0;
     });
     setTimeout(res, ms + 60);
   });
 }
 
-/* ---------- improved layout avoiding overlap ---------- */
+/* ---------- layout: keep power/switch/junction fixed; randomize others with larger margin ---------- */
 function randomizeDevicePositions(){
   const boardRect = board.getBoundingClientRect();
   const headerEl = document.querySelector('.header');
@@ -223,7 +289,9 @@ function randomizeDevicePositions(){
   const topMargin = Math.max( (headerRect.bottom - boardRect.top) + 12, 20 );
   const bottomMargin = Math.max( boardRect.height - (controlsRect.top - boardRect.top) + 12, 20 );
 
-  const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
+  // exclude anchored devices so they don't get moved
+  const anchoredIds = new Set(['junction','power','switch']);
+  const devices = Array.from(document.querySelectorAll('.device')).filter(d=>!anchoredIds.has(d.id));
   const placed = [];
   const jRect = document.getElementById('junction').getBoundingClientRect();
   const jLocal = {left:jRect.left - boardRect.left, top:jRect.top - boardRect.top, right:jRect.right - boardRect.left, bottom:jRect.bottom - boardRect.top};
@@ -247,9 +315,11 @@ function randomizeDevicePositions(){
       const topPx = Math.random() * (maxY - minY) + minY;
       const rect = {left:leftPx - w/2, top:topPx - h/2, right:leftPx + w/2, bottom:topPx + h/2};
 
+      // avoid junction area with margin
       const overlapJ = !(rect.right < jLocal.left - MARGIN || rect.left > jLocal.right + MARGIN || rect.bottom < jLocal.top - MARGIN || rect.top > jLocal.bottom + MARGIN);
       if(overlapJ) continue;
 
+      // avoid placed devices with margin
       let ok=true;
       for(const p of placed){
         const overlap = !(rect.right < p.left - MARGIN || rect.left > p.right + MARGIN || rect.bottom < p.top - MARGIN || rect.top > p.bottom + MARGIN);
@@ -257,6 +327,7 @@ function randomizeDevicePositions(){
       }
       if(!ok) continue;
 
+      // accept
       placed.push(rect);
       placedRect = rect;
       dev.style.left = (leftPx / boardRect.width * 100) + '%';
@@ -264,6 +335,7 @@ function randomizeDevicePositions(){
       break;
     }
 
+    // fallback grid-style if not placed
     if(!placedRect){
       const cols = Math.max(1, Math.round(Math.sqrt(devices.length)));
       const col = idx % cols;
@@ -277,10 +349,11 @@ function randomizeDevicePositions(){
     }
   });
 
+  // ensure anchored items still get resizeSVG called
   setTimeout(resizeSVG, 80);
 }
 
-/* ---------- enhanced boss sequence (unchanged) ---------- */
+/* ---------- effects / particles (unchanged) ---------- */
 function makeParticles(centerX, centerY, count=28){
   for(let i=0;i<count;i++){
     const p = document.createElement('div');
@@ -302,13 +375,14 @@ function makeParticles(centerX, centerY, count=28){
   }
 }
 
+/* ---------- boss sequence (unchanged timing, but kept here) ---------- */
 async function doBossSequence(){
   stateLabel.textContent = 'boss';
   bossScreen.style.display = 'flex';
   bossScreen.setAttribute('aria-hidden','false');
   await new Promise(r=>setTimeout(r,220));
 
-  try{ freezeSound.currentTime = 0; await freezeSound.play(); } catch(e){}
+  try{ freezeSound.currentTime = 0; await freezeSound.play(); } catch(e){ /* ignore */ }
 
   const dmg = 50;
   hitText.style.display = 'block';
@@ -329,7 +403,7 @@ async function doBossSequence(){
     void explosionEl.offsetWidth;
     explosionEl.style.transition = 'transform 900ms cubic-bezier(.2,.9,.2,1), opacity 1000ms linear';
     explosionEl.style.transform = 'translate(-50%,-50%) scale(1.6)';
-    try{ explodeSound.currentTime = 0; await explodeSound.play(); } catch(e){}
+    try{ explodeSound.currentTime = 0; await explodeSound.play(); } catch(e){ /* ignore */ }
 
     const bpRect = bossPanel.getBoundingClientRect();
     makeParticles(bpRect.left + bpRect.width/2, bpRect.top + bpRect.height/2, 34);
@@ -388,8 +462,9 @@ async function doBossSequence(){
   bossScreen.style.display = 'none';
   bossScreen.setAttribute('aria-hidden','true');
 
+  // remove wires and reset
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
-  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  wireLayer.querySelectorAll("path, line").forEach(l=>l.remove());
   connections = []; selected = null;
 
   roundNum++;
@@ -405,10 +480,10 @@ setBtn.addEventListener("click", async ()=>{
   if(state !== 'play'){ alert('配線パートで実行してください'); return; }
   if(!switchOn){ alert("スイッチがOFFです。SWITCH を押して ON にしてください。"); return; }
 
+  // draw animation (1s)
   await animateLinesForward(1000);
 
   if(checkSolution()){
-    // ランプ点灯演出（短め）
     const lamps = getLampIds();
     lamps.forEach(id=>{
       const lit = connHas("jb", `${id}-L`) && connHas("jb", `${id}-N`);
@@ -423,7 +498,7 @@ setBtn.addEventListener("click", async ()=>{
       }
     });
 
-    // 既存の短い待ち(360ms)に加え +2000ms（合計 2360ms）待ってからボス演出へ
+    // 延長演出：以前の360ms + 2000ms = 2360ms（合計）待ってからボス演出に移行
     await new Promise(r=>setTimeout(r, 2360));
     await doBossSequence();
     return;
@@ -440,14 +515,14 @@ setBtn.addEventListener("click", async ()=>{
 
 /* reset / restart */
 document.getElementById("resetWires").addEventListener("click", ()=>{
-  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  wireLayer.querySelectorAll("path, line").forEach(l=>l.remove());
   connections = []; selected = null;
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
 });
 document.getElementById("restart").addEventListener("click", ()=>{
   playerHP = 100; bossHP = 100; roundNum = 1; updateHP(); updateBossHP(); updateRound();
   overlay.style.display = 'none';
-  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  wireLayer.querySelectorAll("path, line").forEach(l=>l.remove());
   connections = []; selected = null; switchOn=false; switchState.textContent="Switch: OFF"; stateLabel.textContent="title";
   document.querySelectorAll('.lamp').forEach(l=>l.classList.remove('lit'));
   setState('title');
@@ -485,9 +560,9 @@ function startPlay(){
   document.getElementById('junction').style.top = '42%';
   createLamps(roundNum);
   document.querySelectorAll(".terminal.selected").forEach(t=>t.classList.remove("selected"));
-  wireLayer.querySelectorAll("line").forEach(l=>l.remove());
+  wireLayer.querySelectorAll("path, line").forEach(l=>l.remove());
   connections = []; selected = null;
-  setTimeout(resizeSVG,120);
+  setTimeout(()=>{ randomizeDevicePositions(); resizeSVG(); },120);
 }
 
 /* ---------- boss image loader (safe fallback) ---------- */
