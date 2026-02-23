@@ -4,12 +4,13 @@
   --term-bg:#222;
   --wire:#ffd800;
   --wirew:6;
-  /* 20% downscale from 96px => 76.8 ~ 77px */
-  --device-w:77px;
+  --device-w:77px; /* 20% down */
   --device-padding:8px;
   --boss-hp-color:#e74c3c;
   --boss-hp-back:#2b1818;
   --lamp-glow: rgba(255,220,80,0.95);
+  --quiz-chosen-bg:#ffd900;
+  --quiz-chosen-color:#000;
 }
 html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased}
 #wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3000}
@@ -31,6 +32,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 /* terminal reduced a bit to match smaller device size */
 .terminal{display:inline-flex;justify-content:center;align-items:center;width:24px;height:24px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
 .selected{outline:3px solid #ffd800}
+
+/* quiz options visual */
+.quizOpt{padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,0.06);background:transparent;color:#fff;text-align:left}
+.quizOpt.chosen{background:var(--quiz-chosen-bg);color:var(--quiz-chosen-color);border-color:#000;font-weight:700}
 
 /* icons */
 .device .icon{width:48px;height:48px;display:block;margin:6px auto}
@@ -65,27 +70,17 @@ button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;backgrou
 /* hit text */
 #hitText{position:absolute;top:8%;left:50%;transform:translateX(-50%);font-size:56px;color:#fff;z-index:9300;display:none;text-shadow:0 6px 18px rgba(0,0,0,0.6);font-weight:900}
 
-/* damage animations */
+/* animations */
 @keyframes flashRed { 0%{filter:none;opacity:1}25%{filter:drop-shadow(0 0 30px rgba(231,76,60,0.98));opacity:1}50%{filter:none;opacity:0.95}75%{filter:drop-shadow(0 0 30px rgba(231,76,60,0.98));opacity:1}100%{filter:none;opacity:1} }
 @keyframes shakeStrong { 0%{transform:translateX(0)}10%{transform:translateX(-18px)}20%{transform:translateX(18px)}30%{transform:translateX(-14px)}40%{transform:translateX(14px)}50%{transform:translateX(-8px)}60%{transform:translateX(8px)}70%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)} }
 .boss-damage{animation: flashRed 360ms ease-in-out 0s 6 both, shakeStrong 420ms ease-in-out 0s 4 both}
-
-/* more intense body shake */
 @keyframes bodyShake { 0%{transform:none}10%{transform:translate(6px,4px) rotate(-0.8deg)}20%{transform:translate(-6px,-3px) rotate(0.6deg)}30%{transform:translate(8px,-6px) rotate(-1deg)}40%{transform:translate(-8px,6px) rotate(0.8deg)}50%{transform:none}100%{transform:none} }
 .body-shake{animation: bodyShake 700ms ease-in-out}
 
-/* explosion */
+/* explosion, particles, flash (same as before) */
 #explosion{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.01);width:360px;height:360px;border-radius:50%;pointer-events:none;z-index:9400;display:none;background:radial-gradient(circle at 50% 50%, rgba(255,250,200,0.95) 0%, rgba(255,180,60,0.92) 30%, rgba(220,60,10,0.9) 60%, rgba(0,0,0,0) 72%);box-shadow:0 0 80px rgba(255,180,60,0.6)}
-#explosion::after{content:"";position:absolute;inset:0;border-radius:50%;filter:blur(40px);opacity:0.9}
-@keyframes explodeScale { 0%{transform:translate(-50%,-50%) scale(0.01);opacity:1} 30%{transform:translate(-50%,-50%) scale(1.15);opacity:1} 70%{transform:translate(-50%,-50%) scale(1.4);opacity:0.65} 100%{transform:translate(-50%,-50%) scale(1.8);opacity:0} }
-
-/* particles */
 .particle{position:fixed;width:8px;height:8px;border-radius:50%;background:rgba(255,230,120,0.95);z-index:9450;pointer-events:none}
-
-/* defeat dialog */
 #defeatDialog{position:fixed;left:50%;top:62%;transform:translate(-50%,-50%);z-index:9450;display:none;padding:18px 22px;border-radius:12px;background:rgba(0,0,0,0.85);color:#ffd200;font-weight:800;font-size:20px}
-
-/* full-screen flash (撃破時) */
 #flashOverlay{position:fixed;inset:0;display:none;z-index:2147483646;background:white;opacity:0;pointer-events:none}
 
 /* lamp lit */
