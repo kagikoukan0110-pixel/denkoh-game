@@ -1,84 +1,86 @@
-/* reset / base */
+:root{
+  --device-scale: 0.78;
+  --panel:#e6e6e6;
+  --term-bg:#222;
+  --wire:#ffd800;
+  --wirew:6;
+}
+
+/* base */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-.header{padding:20px 12px 6px;display:flex;align-items:center;justify-content:space-between}
-.titleMain{font-size:40px;font-weight:800;letter-spacing:1px}
-.hpwrap{width:56%;max-width:600px}
-.hpbar{width:100%;height:14px;background:#222;border-radius:10px;overflow:hidden}
-.bossHPbar{height:100%;width:100%;background:#e74c3c;transition:width 420ms cubic-bezier(.2,.9,.2,1)}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+.title{font-size:20px;margin:0;font-weight:700}
+.hp-area{width:36%;min-width:160px}
+.bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
+.player{height:100%;width:100%;background:#34d058;border-radius:12px}
 
 /* board */
-.board{position:relative;width:100%;height:560px;margin:14px 0;overflow:hidden}
-
-/* device base (absolute fixed layout) */
-.device{position:absolute;background:#e6e6e6;color:#000;border-radius:14px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
-
-/* terminals */
-.terminal{width:34px;height:34px;background:#222;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:6px;cursor:pointer;font-size:13px;user-select:none}
-.termRow{display:flex;gap:10px;align-items:center}
-.termCol{display:flex;flex-direction:column;gap:8px;align-items:center}
-
-/* power */
-.power{width:120px;height:64px}
-
-/* switches */
-.sw{width:120px;height:120px}
-.swBtn{background:#fff;border-radius:10px;padding:8px 10px;border:none;cursor:pointer;margin-bottom:8px}
-
-/* junction */
-.junction{width:240px;height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.jbTitle{font-weight:700;margin-bottom:8px}
-.jbRow{display:flex;gap:10px;align-items:center;justify-content:center}
-
-/* lamps */
-.lamp{width:96px;height:130px;border-radius:16px;padding-top:12px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
-.lampBulb{width:44px;height:60px;background:#f2f2f2;border-radius:50% 50% 40% 40%;box-shadow:inset 0 6px 10px rgba(0,0,0,0.05)}
-.lamp.lit{background:#ffd54a;box-shadow:0 0 60px #ffd54a}
-.lamp.lit .lampBulb{background:#fff;filter:drop-shadow(0 12px 40px rgba(255,200,80,0.6))}
-
-/* wire svg */
+.board{position:relative;width:100%;height:calc(100vh - 240px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
 #wireLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10}
 
-/* controls */
-.controls{display:flex;gap:14px;align-items:center;justify-content:center;padding:20px}
-.primary{background:#ffd000;border:none;padding:12px 28px;border-radius:28px;font-weight:800;cursor:pointer}
-.ghost{background:#333;border:none;padding:10px 18px;border-radius:18px;cursor:pointer;color:#fff}
+/* generic device */
+.device{position:absolute;width:var(--device-w,120px);padding:10px;background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%) scale(var(--device-scale));text-align:center;z-index:60}
+.device h3{margin:4px 0 8px 0;font-size:12px}
+.terminal{display:inline-flex;justify-content:center;align-items:center;width:34px;height:34px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
+.selected{outline:3px solid #ffd800}
 
-/* boss image */
-.bossWrap{display:flex;align-items:center;justify-content:center;padding:18px}
-#bossImg{width:160px;height:auto;border-radius:8px;transition:transform 360ms ease,opacity 360ms ease}
+/* power (breaker) */
+.power{width:110px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.powerToggle{width:48px;height:28px;border-radius:6px;background:#111;display:flex;align-items:center;justify-content:space-between;padding:3px}
+.powerToggle .toggle-on{width:16px;height:22px;background:#ffd000;border-radius:4px}
+.powerToggle .toggle-off{width:16px;height:22px;background:#999;border-radius:4px}
+
+/* switches */
+.sw{width:110px;height:110px}
+.swBtn{background:#fff;border-radius:8px;padding:6px 8px;border:none;cursor:pointer;margin-bottom:6px}
+
+/* junction */
+.junction{width:230px;height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.jbTitle{font-weight:700;margin-bottom:8px;color:#fff}
+
+/* lamp */
+.lamp{width:96px;height:120px;border-radius:12px;padding-top:12px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.lampBulb{width:44px;height:60px;background:#f2f2f2;border-radius:50% 50% 40% 40%;box-shadow:inset 0 6px 10px rgba(0,0,0,0.06);transition:transform .18s, filter .18s}
+.lamp.lit{background:#ffd54a;box-shadow:0 0 60px #ffd54a}
+.lamp.lit .lampBulb{background:#fff;filter:drop-shadow(0 12px 40px rgba(255,200,80,0.6));transform:scale(1.02)}
+
+/* controls */
+.controls{height:140px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+button.primary{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:700}
+button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
+
+/* modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500;pointer-events:auto}
+.modal-backdrop.show{display:flex}
+.titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:12px}
+.quizBox{background:#111;padding:18px;border-radius:12px;max-width:760px;color:#fff}
+
+/* boss panel */
+#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9200;color:#fff}
+#bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
+#bossImg{width:220px;height:220px;object-fit:cover;border-radius:8px}
+.bossHPback{width:100%;height:18px;background:#2b1818;border-radius:12px;overflow:hidden}
+.bossHPbar{height:100%;width:100%;background:#e74c3c;transition:width 700ms ease;border-radius:12px}
+
+/* hit text */
+#hitText{position:absolute;top:8%;left:50%;transform:translateX(-50%);font-size:56px;color:#fff;z-index:9300;display:none;text-shadow:0 6px 18px rgba(0,0,0,0.6);font-weight:900}
+
+/* boss effects */
+@keyframes boss-shake { 0%{transform:translate3d(0,0,0) rotate(0deg)}10%{transform:translate3d(-12px,6px,0) rotate(-2deg)}20%{transform:translate3d(10px,-6px,0) rotate(2deg)}30%{transform:translate3d(-8px,4px,0) rotate(-1.5deg)}40%{transform:translate3d(6px,-3px,0) rotate(1deg)}50%{transform:translate3d(-4px,2px,0) rotate(-0.5deg)}60%{transform:translate3d(2px,-1px,0) rotate(0.3deg)}100%{transform:translate3d(0,0,0) rotate(0deg)} }
+body.boss-shake{animation:boss-shake 700ms ease-in-out both}
+#bossFlash{background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95) 0%, rgba(255,220,150,0.85)25%, rgba(255,100,50,0.7)50%, rgba(0,0,0,0)70%);opacity:0;transition:opacity 240ms ease}
+#bossImg.boss-hit{transform-origin:50% 50%;animation:boss-hit-pulse 520ms ease-in-out;filter:drop-shadow(0 12px 40px rgba(231,76,60,0.6))}
+@keyframes boss-hit-pulse { 0%{transform:translateY(0) scale(1)}30%{transform:translateY(-6px) scale(1.06)}60%{transform:translateY(2px) scale(0.98)}100%{transform:translateY(0) scale(1)}}
 
 /* overlay */
-.overlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(0,0,0,0.8);color:#ffd200;padding:18px 24px;border-radius:12px;font-weight:800;font-size:22px}
+#overlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(0,0,0,0.95);color:#ffd200;padding:18px 24px;border-radius:12px;font-weight:800;font-size:22px}
 
-/* boss effects styles (from earlier) */
-@keyframes boss-shake {
-  0% { transform: translate3d(0,0,0) rotate(0deg); }
-  10% { transform: translate3d(-12px,6px,0) rotate(-2deg); }
-  20% { transform: translate3d(10px,-6px,0) rotate(2deg); }
-  30% { transform: translate3d(-8px,4px,0) rotate(-1.5deg); }
-  40% { transform: translate3d(6px,-3px,0) rotate(1deg); }
-  50% { transform: translate3d(-4px,2px,0) rotate(-0.5deg); }
-  60% { transform: translate3d(2px,-1px,0) rotate(0.3deg); }
-  100% { transform: translate3d(0,0,0) rotate(0deg); }
-}
-body.boss-shake{animation:boss-shake 700ms ease-in-out both}
-#bossFlash{background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95) 0%, rgba(255,220,150,0.85) 25%, rgba(255,100,50,0.7) 50%, rgba(0,0,0,0) 70%);opacity:0;transition:opacity 240ms ease}
-#bossImg.boss-hit{transform-origin:50% 50%;animation:boss-hit-pulse 520ms ease-in-out;filter:drop-shadow(0 12px 40px rgba(231,76,60,0.6))}
-@keyframes boss-hit-pulse {
-  0% { transform: translateY(0) scale(1) rotate(0deg); }
-  30% { transform: translateY(-6px) scale(1.06) rotate(-2deg); }
-  60% { transform: translateY(2px) scale(0.98) rotate(1.5deg); filter: none; }
-  100% { transform: translateY(0) scale(1) rotate(0deg); filter: none; }
-}
-
-/* particle generic */
-.particle{position:absolute;pointer-events:none;will-change:transform,opacity;z-index:99995;mix-blend-mode:screen}
-
-/* responsive tweaks */
+/* responsive small adjustments */
 @media (max-width:480px){
-  .titleMain{font-size:28px}
-  .device{padding:8px}
-  .junction{width:200px}
-  .lamp{width:80px;height:110px}
+  :root{ --device-scale:0.74; }
+  .titleBig{font-size:28px}
+  .board{height:calc(100vh - 220px)}
 }
