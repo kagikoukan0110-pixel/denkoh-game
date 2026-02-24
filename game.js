@@ -1,230 +1,126 @@
-/* ===== 修正版 game.js ===== */
+let selected=null;
+let connections=[];
+let bossHP=160;
+let switch1State=0;
+let switch2State=0;
+let wiringCorrect=false;
 
-/* =========================
-   STATE
-========================= */
-let bossHP = 100;
-let playerHP = 100;
-let roundNum = 1;
-let switchOn = false;
-let selectedTerminal = null;
-let previewPath = null;
-let connections = [];
-let state = 'title';
+const board=document.getElementById("board");
+const wireLayer=document.getElementById("wireLayer");
+const bossHPbar=document.getElementById("bossHPbar");
 
-/* =========================
-   ELEMENTS
-========================= */
-const board = document.getElementById('board');
-const wireLayer = document.getElementById('wireLayer');
-const playerBar = document.getElementById('playerHP');
-const bossHPbar = document.getElementById('bossHPbar');
-const setBtn = document.getElementById('setBtn');
-const switchBtn = document.getElementById('switchBtn');
-const roundLabel = document.getElementById('roundLabel');
-const lampsContainer = document.getElementById('lampsContainer');
-
-/* =========================
-   BASIC
-========================= */
-function updateHP(){ playerBar.style.width = playerHP + '%'; }
-function updateBossHP(){ bossHPbar.style.width = bossHP + '%'; }
-function updateRound(){ roundLabel.textContent = roundNum; }
-function setState(s){
-  state = s;
-  document.getElementById('stateLabel').textContent = s;
-
-  const title = document.getElementById('titleScreen');
-  const quiz = document.getElementById('quizScreen');
-
-  if(s === 'title'){
-    title.classList.add('show');
-    quiz.classList.remove('show');
-  }
-  else if(s === 'quiz'){
-    title.classList.remove('show');
-    quiz.classList.add('show');
-  }
-  else{
-    title.classList.remove('show');
-    quiz.classList.remove('show');
-  }
+/* 固定レイアウト */
+function place(id,x,y){
+  const el=document.getElementById(id);
+  el.style.left=x+"px";
+  el.style.top=y+"px";
 }
 
-/* =========================
-   START BUTTON FIX
-========================= */
-document.getElementById('toQuiz').addEventListener('click', ()=>{
-  setState('quiz');
-  renderQuiz();
-});
-
-/* =========================
-   QUIZ
-========================= */
-const questions = [
-  {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
-  {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
-  {q:'接地(アース)の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチの代わり'], correct:2},
-  {q:'片切スイッチとは？', opts:['2か所で操作するスイッチ','1つの回路を入切するスイッチ','常時接続の端子','漏電遮断器'], correct:1},
-  {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護する','電圧を上げる','照明を点ける'], correct:1}
-];
-
-let quizIdx = 0;
-
-function renderQuiz(){
-  const q = questions[quizIdx];
-  document.getElementById('quizQuestion').textContent = q.q;
-  const box = document.getElementById('quizOptions');
-  box.innerHTML = '';
-
-  q.opts.forEach((opt,i)=>{
-    const b = document.createElement('button');
-    b.className = 'quizOpt small';
-    b.textContent = opt;
-    b.dataset.index = i;
-    b.onclick = ()=>{
-      document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
-      b.classList.add('chosen');
-    };
-    box.appendChild(b);
-  });
-
-  document.getElementById('quizIndex').textContent =
-    (quizIdx+1) + ' / ' + questions.length;
+function layout(){
+  const w=board.clientWidth;
+  place("power",w/2,60);
+  place("sw1",w/2-180,160);
+  place("sw2",w/2+180,160);
+  place("junction",w/2,280);
+  place("lamp1",w/2-100,420);
+  place("lamp2",w/2+100,420);
 }
+layout();
 
-document.getElementById('answerBtn').addEventListener('click', ()=>{
-  const chosen = document.querySelector('.quizOpt.chosen');
-  if(!chosen){ alert('選択肢を選んでください'); return; }
-
-  const sel = Number(chosen.dataset.index);
-  if(sel !== questions[quizIdx].correct){
-    playerHP = Math.max(0, playerHP - 10);
-    updateHP();
-  }
-
-  quizIdx++;
-  if(quizIdx < questions.length){
-    renderQuiz();
-  }else{
-    startPlay();
-  }
-});
-
-/* =========================
-   PLAY START
-========================= */
-function startPlay(){
-  setState('play');
-  createLamps(roundNum);
-  randomizeDevicePositions();
-}
-
-/* =========================
-   LAMPS
-========================= */
-function createLamps(count){
-  lampsContainer.innerHTML = '';
-  for(let i=1;i<=count;i++){
-    const div = document.createElement('div');
-    div.className = 'device lamp';
-    div.id = 'lamp-'+i;
-    div.innerHTML = `
-      <div class="light-halo"></div>
-      <svg viewBox="0 0 64 64" class="bulb-shape icon">
-        <circle cx="32" cy="28" r="14" fill="#f4f4f2"/>
-        <rect x="28" y="42" width="8" height="8" fill="#bbb"/>
-      </svg>
-      <div class="term-row">
-        <div class="terminal" data-id="lamp-${i}-L">L</div>
-        <div class="terminal" data-id="lamp-${i}-N">N</div>
-      </div>
-    `;
-    lampsContainer.appendChild(div);
-  }
-  attachTerminalListeners(document);
-}
-
-/* =========================
-   DEVICE POSITION (NO OVERLAP)
-========================= */
-function randomizeDevicePositions(){
-  const boardRect = board.getBoundingClientRect();
-  const devices = document.querySelectorAll('.device');
-  const placed = [];
-
-  devices.forEach(dev=>{
-    const w = dev.offsetWidth;
-    const h = dev.offsetHeight;
-
-    let tries=0;
-    while(tries++<1000){
-      const x = Math.random()*(boardRect.width - w);
-      const y = Math.random()*(boardRect.height - h - 150);
-
-      const rect = {x,y,w,h};
-      const overlap = placed.some(p =>
-        !(x + w < p.x - 20 || x > p.x + p.w + 20 ||
-          y + h < p.y - 20 || y > p.y + p.h + 20)
-      );
-      if(!overlap){
-        dev.style.left = x + 'px';
-        dev.style.top = y + 'px';
-        placed.push(rect);
-        break;
-      }
+/* 接続 */
+document.querySelectorAll(".terminal").forEach(t=>{
+  t.addEventListener("click",()=>{
+    if(!selected){
+      selected=t;
+      return;
     }
+    connect(selected,t);
+    selected=null;
   });
+});
+
+function connect(a,b){
+
+  const idA=a.dataset.id;
+  const idB=b.dataset.id;
+  if(idA===idB) return;
+
+  const r1=a.getBoundingClientRect();
+  const r2=b.getBoundingClientRect();
+  const br=board.getBoundingClientRect();
+
+  const x1=r1.left-br.left+r1.width/2;
+  const y1=r1.top-br.top+r1.height/2;
+  const x2=r2.left-br.left+r2.width/2;
+  const y2=r2.top-br.top+r2.height/2;
+
+  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1);
+  line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2);
+  line.setAttribute("y2",y2);
+
+  const color=getColor(idA,idB);
+  line.setAttribute("stroke",color);
+  line.setAttribute("stroke-width",color==="white"?2:5);
+
+  wireLayer.appendChild(line);
+  connections.push({a:idA,b:idB,color});
+
+  checkWiring();
 }
 
-/* =========================
-   TERMINAL HANDLING
-========================= */
-function attachTerminalListeners(root){
-  root.querySelectorAll('.terminal, .jb-term').forEach(t=>{
-    t.onclick = ()=>{
-      if(state !== 'play') return;
-
-      if(!selectedTerminal){
-        selectedTerminal = t;
-        t.classList.add('selected');
-        return;
-      }
-
-      if(selectedTerminal === t){
-        t.classList.remove('selected');
-        selectedTerminal = null;
-        return;
-      }
-
-      // simple line draw
-      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-      const br = board.getBoundingClientRect();
-      const r1 = selectedTerminal.getBoundingClientRect();
-      const r2 = t.getBoundingClientRect();
-
-      line.setAttribute('x1', r1.left - br.left + r1.width/2);
-      line.setAttribute('y1', r1.top - br.top + r1.height/2);
-      line.setAttribute('x2', r2.left - br.left + r2.width/2);
-      line.setAttribute('y2', r2.top - br.top + r2.height/2);
-
-      const color = selectedTerminal.dataset.id.includes('-N') ? '#ffffff' : '#000000';
-      line.setAttribute('stroke', color);
-      line.setAttribute('stroke-width','4');
-      wireLayer.appendChild(line);
-
-      selectedTerminal.classList.remove('selected');
-      selectedTerminal = null;
-    };
-  });
+function getColor(a,b){
+  if(a.includes("-N")||b.includes("-N")) return "white";
+  if(a.includes("T")&&b.includes("T")) return "red";
+  return "black";
 }
 
-/* =========================
-   INIT
-========================= */
-updateHP();
-updateBossHP();
-updateRound();
-setState('title');
-resizeSVG();
+function exists(a,b,color){
+  return connections.some(c=>
+    ((c.a===a&&c.b===b)||(c.a===b&&c.b===a)) &&
+    (!color||c.color===color)
+  );
+}
+
+function checkWiring(){
+
+  const cond1=exists("power-L","sw1-COM","black");
+  const cond2=exists("sw1-T1","sw2-T1","red");
+  const cond3=exists("sw1-T2","sw2-T2","red");
+  const cond4=connections.some(c=>c.a==="sw2-COM"&&c.b.includes("junction"));
+  const cond5=connections.some(c=>c.a==="junction-1"&&c.b==="lamp1-L");
+  const cond6=connections.some(c=>c.a==="junction-1"&&c.b==="lamp2-L");
+  const cond7=connections.some(c=>c.a==="power-N"&&c.b.includes("junction"));
+
+  wiringCorrect=cond1&&cond2&&cond3&&cond4&&cond5&&cond6&&cond7;
+
+  updateLamps();
+}
+
+document.getElementById("sw1Btn").onclick=()=>{
+  switch1State^=1;
+  updateLamps();
+};
+
+document.getElementById("sw2Btn").onclick=()=>{
+  switch2State^=1;
+  updateLamps();
+};
+
+function updateLamps(){
+  const on=wiringCorrect&&(switch1State!==switch2State);
+  document.getElementById("lamp1").classList.toggle("lit",on);
+  document.getElementById("lamp2").classList.toggle("lit",on);
+}
+
+document.getElementById("setBtn").onclick=()=>{
+  if(!wiringCorrect) return;
+
+  bossHP-=40;
+  bossHPbar.style.width=bossHP+"%";
+
+  if(bossHP<=0){
+    alert("図面通りなら…いけると思ったのに…");
+  }
+};
