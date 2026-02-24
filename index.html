@@ -1,73 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>俺らの電工 - WORLD2</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="header">
-  <h1>WORLD2</h1>
+<header class="header">
+  <div class="titleWrap">
+    <div class="titleMain">WORLD2</div>
+  </div>
   <div class="hpwrap">
-    <div class="hpbar"><div id="bossHPbar"></div></div>
+    <div class="hpbar">
+      <div id="bossHPbar" class="bossHPbar"></div>
+    </div>
   </div>
+</header>
+
+<main id="board" class="board">
+  <!-- devices (fixed-layout) -->
+  <div class="device power" id="power">
+    <div class="termRow">
+      <div class="terminal" data-id="power-L">L</div>
+      <div class="terminal" data-id="power-N">N</div>
+    </div>
+  </div>
+
+  <div class="device sw" id="sw1">
+    <button class="swBtn" id="sw1Btn">SW1</button>
+    <div class="termCol">
+      <div class="terminal" data-id="sw1-COM">COM</div>
+      <div class="terminal" data-id="sw1-T1">T1</div>
+      <div class="terminal" data-id="sw1-T2">T2</div>
+    </div>
+  </div>
+
+  <div class="device sw" id="sw2">
+    <button class="swBtn" id="sw2Btn">SW2</button>
+    <div class="termCol">
+      <div class="terminal" data-id="sw2-COM">COM</div>
+      <div class="terminal" data-id="sw2-T1">T1</div>
+      <div class="terminal" data-id="sw2-T2">T2</div>
+    </div>
+  </div>
+
+  <div class="device junction" id="junction" aria-label="Joint Box">
+    <div class="jbTitle">JB</div>
+    <div class="jbRow">
+      <div class="terminal" data-id="junction-1"></div>
+      <div class="terminal" data-id="junction-2"></div>
+      <div class="terminal" data-id="junction-3"></div>
+      <div class="terminal" data-id="junction-4"></div>
+      <div class="terminal" data-id="junction-5"></div>
+      <div class="terminal" data-id="junction-6"></div>
+    </div>
+  </div>
+
+  <div class="device lamp" id="lamp1" aria-label="Lamp1">
+    <div class="lampBulb"></div>
+    <div class="termRow">
+      <div class="terminal" data-id="lamp1-L">L</div>
+      <div class="terminal" data-id="lamp1-N">N</div>
+    </div>
+  </div>
+
+  <div class="device lamp" id="lamp2" aria-label="Lamp2">
+    <div class="lampBulb"></div>
+    <div class="termRow">
+      <div class="terminal" data-id="lamp2-L">L</div>
+      <div class="terminal" data-id="lamp2-N">N</div>
+    </div>
+  </div>
+
+  <!-- svg for wires -->
+  <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+</main>
+
+<div class="controls">
+  <button id="setBtn" class="primary">SET</button>
+  <button id="resetBtn" class="ghost">Reset Wires</button>
 </div>
 
-<div id="board">
-
-  <!-- ブレーカー -->
-  <div class="device" id="power">
-    <div class="terminal" data-id="power-L">L</div>
-    <div class="terminal" data-id="power-N">N</div>
-  </div>
-
-  <!-- 三路1 -->
-  <div class="device" id="sw1">
-    <button id="sw1Btn">SW1</button>
-    <div class="terminal" data-id="sw1-COM">COM</div>
-    <div class="terminal" data-id="sw1-T1">T1</div>
-    <div class="terminal" data-id="sw1-T2">T2</div>
-  </div>
-
-  <!-- 三路2 -->
-  <div class="device" id="sw2">
-    <button id="sw2Btn">SW2</button>
-    <div class="terminal" data-id="sw2-COM">COM</div>
-    <div class="terminal" data-id="sw2-T1">T1</div>
-    <div class="terminal" data-id="sw2-T2">T2</div>
-  </div>
-
-  <!-- JB -->
-  <div class="device" id="junction">
-    <div class="terminal" data-id="junction-1"></div>
-    <div class="terminal" data-id="junction-2"></div>
-    <div class="terminal" data-id="junction-3"></div>
-    <div class="terminal" data-id="junction-4"></div>
-  </div>
-
-  <!-- ランプ -->
-  <div class="device lamp" id="lamp1">
-    <div class="terminal" data-id="lamp1-L">L</div>
-    <div class="terminal" data-id="lamp1-N">N</div>
-  </div>
-
-  <div class="device lamp" id="lamp2">
-    <div class="terminal" data-id="lamp2-L">L</div>
-    <div class="terminal" data-id="lamp2-N">N</div>
-  </div>
-
-  <svg id="wireLayer"></svg>
-
-</div>
-
-<button id="setBtn">SET</button>
-
-<!-- WORLD2 ボス -->
+<!-- boss area -->
 <div class="bossWrap">
-  <img id="bossImg" src="assets/boss/boss_World2.PNG">
+  <img id="bossImg" alt="boss" src="assets/boss/boss_World2.PNG">
 </div>
+
+<!-- overlay shown on clear -->
+<div id="overlay" class="overlay" style="display:none">WORLD2 CLEAR</div>
+
+<!-- boss effects elements -->
+<canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
+<div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
+
+<!-- sounds (place matching files in assets/sound/) -->
+<audio id="sfxHit" src="assets/sound/hit.mp3" preload="auto"></audio>
+<audio id="sfxExplode" src="assets/sound/explode.mp3" preload="auto"></audio>
+<audio id="sfxSlow" src="assets/sound/slow.mp3" preload="auto"></audio>
 
 <script src="game.js"></script>
 </body>
