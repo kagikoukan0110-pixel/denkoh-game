@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (fixed)</title>
+<title>俺らの電工 - WORLD1 (Enhance & Fixed)</title>
 <style>
 :root{
   --bg:#000;
@@ -17,29 +17,36 @@
   --boss-hp-back:#2b1818;
   --lamp-glow: rgba(255,220,80,0.95);
 }
-html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; overflow: hidden;}
 #wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3000}
 
 /* header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px; height: 60px; box-sizing: border-box;}
 .title{font-size:20px;margin:0;font-weight:700}
 .hp-area{width:46%;min-width:180px}
 .bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
-.player{height:100%;width:100%;background:#34d058;border-radius:12px}
+.player{height:100%;width:100%;background:#34d058;border-radius:12px; transition: width 0.3s ease;}
 
 /* board */
 #board-wrap{position:relative;width:100%;height:calc(100vh - 240px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
 #board{position:relative;width:100%;height:100%}
 
 /* devices */
-.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:60;overflow:visible}
+.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:60; transition: background 0.3s ease, box-shadow 0.3s ease;}
 .device h3{margin:6px 0 8px 0;font-size:12px}
 .terminal{display:inline-flex;justify-content:center;align-items:center;width:28px;height:28px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
-.selected{outline:3px solid #ffd800}
+.selected{outline:3px solid #ffd800; box-shadow: 0 0 10px #ffd800;}
 
 /* icons */
-.device .icon{width:56px;height:56px;display:block;margin:6px auto}
+.device .icon{width:56px;height:56px;display:block;margin:6px auto; position: relative;}
 .icon svg{width:100%;height:100%}
+
+/* Lamp Glow Logic */
+.device.lit {
+  background: #fff9c4 !important;
+  box-shadow: 0 0 40px var(--lamp-glow), inset 0 0 15px #fff;
+}
+.device.lit .bulb-shape { fill: #ffd200 !important; filter: drop-shadow(0 0 10px #ff0); }
 
 /* junction */
 #junction{left:40%;top:42%;width:124px;padding:12px;background:#d6d6d6;border-radius:14px;z-index:70;transform:translate(-50%,-50%)}
@@ -48,456 +55,341 @@ html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:syste
 
 /* controls */
 .controls{height:180px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:700}
-button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff}
+button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:700; cursor: pointer;}
+button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff; cursor: pointer;}
 .note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
 
 /* modal and screens */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500;pointer-events:auto}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;padding:36px;z-index:9500;}
 .modal-backdrop.show{display:flex}
-.titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:12px}
-.quizBox{background:#111;padding:18px;border-radius:12px;max-width:760px;color:#fff}
+.titleBig{font-size:48px;color:#ffd200;font-weight:800;margin-bottom:12px; text-shadow: 0 0 20px rgba(255,210,0,0.5);}
+.quizBox{background:#111;padding:24px;border-radius:16px;max-width:500px;width:90%;color:#fff; border: 1px solid #333;}
 
-/* boss panel & damage */
-#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9200;color:#fff}
-#bossPanel{width:86%;max-width:820px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center;transform-origin:center center}
-#bossImg{width:220px;height:220px;object-fit:cover;border-radius:8px;background:linear-gradient(180deg,#222,#111);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px}
-#bossName{font-size:20px;color:#ffd200;margin-right:12px;font-weight:800;white-space:nowrap}
-.bossHPwrap{flex:1}
-.bossHPback{width:100%;height:18px;background:var(--boss-hp-back);border-radius:12px;overflow:hidden}
+/* boss panel */
+#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9200;color:#fff; background: rgba(0,0,0,0.8);}
+#bossPanel{width:86%;max-width:600px;background:#0d0d0d;border-radius:14px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.9);display:flex;gap:18px;align-items:center;}
+#bossImgPlaceholder{width:120px;height:120px;background:#333;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;}
 .bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 700ms ease;border-radius:12px}
 
-/* hit text */
-#hitText{position:absolute;top:8%;left:50%;transform:translateX(-50%);font-size:56px;color:#fff;z-index:9300;display:none;text-shadow:0 6px 18px rgba(0,0,0,0.6);font-weight:900}
+/* effects */
+@keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-10px,5px)} 40%{transform:translate(10px,-5px)} 60%{transform:translate(-10px,-5px)} 80%{transform:translate(10px,5px)} }
+.damage-shake { animation: shake 0.4s ease-in-out; }
 
-/* damage animations */
-@keyframes flashRed { 0%{filter:none;opacity:1}25%{filter:drop-shadow(0 0 30px rgba(231,76,60,0.98));opacity:1}50%{filter:none;opacity:0.95}75%{filter:drop-shadow(0 0 30px rgba(231,76,60,0.98));opacity:1}100%{filter:none;opacity:1} }
-@keyframes shakeStrong { 0%{transform:translateX(0)}10%{transform:translateX(-18px)}20%{transform:translateX(18px)}30%{transform:translateX(-14px)}40%{transform:translateX(14px)}50%{transform:translateX(-8px)}60%{transform:translateX(8px)}70%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)} }
-.boss-damage{animation: flashRed 360ms ease-in-out 0s 6 both, shakeStrong 420ms ease-in-out 0s 4 both}
-
-/* more intense body shake */
-@keyframes bodyShake { 0%{transform:none}10%{transform:translate(6px,4px) rotate(-0.8deg)}20%{transform:translate(-6px,-3px) rotate(0.6deg)}30%{transform:translate(8px,-6px) rotate(-1deg)}40%{transform:translate(-8px,6px) rotate(0.8deg)}50%{transform:none}100%{transform:none} }
-.body-shake{animation: bodyShake 700ms ease-in-out}
-
-/* explosion */
-#explosion{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.01);width:360px;height:360px;border-radius:50%;pointer-events:none;z-index:9400;display:none;background:radial-gradient(circle at 50% 50%, rgba(255,250,200,0.95) 0%, rgba(255,180,60,0.92) 30%, rgba(220,60,10,0.9) 60%, rgba(0,0,0,0) 72%);box-shadow:0 0 80px rgba(255,180,60,0.6)}
-#explosion::after{content:"";position:absolute;inset:0;border-radius:50%;filter:blur(40px);opacity:0.9}
-@keyframes explodeScale { 0%{transform:translate(-50%,-50%) scale(0.01);opacity:1} 30%{transform:translate(-50%,-50%) scale(1.15);opacity:1} 70%{transform:translate(-50%,-50%) scale(1.4);opacity:0.65} 100%{transform:translate(-50%,-50%) scale(1.8);opacity:0} }
-
-/* particles */
-.particle{position:fixed;width:8px;height:8px;border-radius:50%;background:rgba(255,230,120,0.95);z-index:9450;pointer-events:none}
-
-/* defeat dialog */
-#defeatDialog{position:fixed;left:50%;top:62%;transform:translate(-50%,-50%);z-index:9450;display:none;padding:18px 22px;border-radius:12px;background:rgba(0,0,0,0.85);color:#ffd200;font-weight:800;font-size:20px}
-
-/* full-screen flash (撃破時) */
-#flashOverlay{position:fixed;inset:0;display:none;z-index:2147483646;background:white;opacity:0;pointer-events:none}
-
-/* lamp lit */
-.lamp .bulb-shape{transition:filter 360ms ease, transform 360ms ease}
-.lamp.lit .bulb-shape{filter:drop-shadow(0 0 30px var(--lamp-glow)) saturate(1.2);transform:scale(1.05)}
-.lamp .light-halo{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:140px;height:140px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity 360ms ease}
-.lamp.lit .light-halo{opacity:1;background:radial-gradient(circle at 50% 40%, rgba(255,230,120,0.95) 0%, rgba(255,200,80,0.75) 35%, rgba(255,160,20,0.25) 60%, rgba(0,0,0,0) 80%)}
-
-/* final video overlay */
-#finalVideoWrap{position:fixed;inset:0;display:none;z-index:2147483646;background:rgba(0,0,0,0.95);align-items:center;justify-content:center}
-#finalVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2147483647;display:block}
-
-/* version */
-#versionBadge{position:fixed;top:8px;right:8px;color:#ccc;font-size:12px;z-index:5000}
-
-/* responsive */
-@media (max-width:480px){:root{--device-w:78px;} .title{font-size:18px}}
+#explosion{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.1);width:300px;height:300px;background:radial-gradient(circle, #fff, #ff0, #f00, transparent);border-radius:50%;display:none;z-index:9999;opacity:0.8;}
+#defeatDialog{position:fixed;left:50%;top:60%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#ffd200;padding:20px;border-radius:10px;display:none;z-index:10000;font-weight:bold;font-size:24px; border: 2px solid #ffd200;}
 </style>
 </head>
 <body>
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
-  <div id="versionBadge">version: 2026-02-20T1900</div>
+  <div id="versionBadge">version: 2026-02-24T2200</div>
 
   <div class="header">
     <div style="display:flex;align-items:center;gap:12px">
       <div class="title">俺らの電工 β</div>
-      <div style="font-size:13px;color:#ccc;margin-left:8px">Round: <span id="roundLabel">1</span> / 3</div>
+      <div style="font-size:13px;color:#ccc;">Round: <span id="roundLabel">1</span>/3</div>
     </div>
     <div class="hp-area">
-      <div style="font-size:12px;color:#ccc;margin-bottom:6px;">PLAYER HP</div>
-      <div class="bar"><div id="playerHP" class="player" style="width:100%"></div></div>
+      <div class="bar"><div id="playerHP" class="player"></div></div>
     </div>
-    <div style="text-align:right;font-size:12px;color:#aaa;">
-      STATE<br><strong id="stateLabel">title</strong>
-    </div>
+    <div style="text-align:right;font-size:12px;color:#aaa;">STATE: <strong id="stateLabel">TITLE</strong></div>
   </div>
 
   <div id="board-wrap">
     <div id="board">
       <div id="junction" class="device">
-        <h3 style="font-size:12px">Joint Box</h3>
-        <div class="jb-dots" style="margin-top:6px;">
+        <h3>Joint Box</h3>
+        <div class="jb-dots">
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
-        </div>
-        <div style="font-size:11px;color:#666;margin-top:6px;">端子は導通のみ。どの端子でもOK。</div>
-      </div>
-
-      <!-- Power: breaker icon -->
-      <div class="device" id="power" style="left:12%; top:26%;">
-        <h3 style="font-size:12px">電源（ブレーカー）</h3>
-        <div class="icon">
-          <!-- simple breaker SVG -->
-          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="4" y="10" width="56" height="44" rx="6" fill="#222" stroke="#444"/>
-            <rect x="12" y="18" width="14" height="28" rx="3" fill="#ffd000"/>
-            <rect x="34" y="18" width="14" height="28" rx="3" fill="#ccc"/>
-            <text x="18" y="44" font-size="6" fill="#000" font-family="sans-serif">ON</text>
-          </svg>
-        </div>
-        <div style="text-align:center;">
-          <div class="terminal" data-id="power-L">L</div>
-          <div class="terminal" data-id="power-N">N</div>
         </div>
       </div>
 
-      <!-- Switch: single-pole icon -->
-      <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
-        <h3 style="font-size:12px">片切スイッチ</h3>
+      <div class="device" id="power" style="left:15%; top:25%;">
+        <h3>電源</h3>
         <div class="icon">
-          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="8" y="14" width="48" height="36" rx="6" fill="#fff" stroke="#ccc"/>
-            <circle cx="32" cy="32" r="8" fill="#333"/>
-            <rect x="30" y="18" width="4" height="8" rx="2" fill="#ffd000" transform="rotate(25 32 32)"/>
-          </svg>
+          <svg viewBox="0 0 64 64"><rect x="10" y="10" width="44" height="44" fill="#333" rx="4"/><rect x="20" y="15" width="24" height="20" fill="#ffd000" rx="2"/><text x="24" y="30" font-size="8" fill="#000">ON</text></svg>
         </div>
-        <div style="text-align:center;">
-          <div class="terminal" data-id="switch-IN">IN</div>
-          <div class="terminal" data-id="switch-OUT">OUT</div>
+        <div class="terminal" data-id="power-L">L</div>
+        <div class="terminal" data-id="power-N">N</div>
+      </div>
+
+      <div class="device" id="switch" style="left:80%; top:25%;">
+        <h3>片切SW</h3>
+        <div class="icon">
+          <svg viewBox="0 0 64 64"><rect x="15" y="10" width="34" height="44" fill="#fff" stroke="#ccc" rx="4"/><circle cx="32" cy="32" r="10" fill="#eee" stroke="#999"/><path d="M32 25 L32 39" stroke="#333" stroke-width="4"/></svg>
         </div>
-        <div id="switchState" style="color:#333;margin-top:6px;font-size:11px;">Switch: OFF</div>
+        <div class="terminal" data-id="switch-IN">IN</div>
+        <div class="terminal" data-id="switch-OUT">OUT</div>
+        <div id="switchState" style="font-size:10px; margin-top:4px;">OFF</div>
       </div>
 
       <div id="lampsContainer"></div>
     </div>
   </div>
 
-  <div class="controls" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
-    <div style="display:flex;gap:18px;align-items:center">
+  <div class="controls">
+    <div style="display:flex;gap:12px;">
       <button id="switchBtn" class="small">SWITCH</button>
-      <button id="setBtn">SET</button>
-      <button id="resetWires" class="small">Reset Wires</button>
+      <button id="setBtn">SET (通電)</button>
+      <button id="resetWires" class="small">Reset</button>
       <button id="restart" class="small">Restart</button>
     </div>
-    <div class="note">端子クリック → もう一つの端子クリックで配線。配線選択してクリックで削除。</div>
+    <p class="note">端子を2つ選んで配線。SWITCHをONにしてからSETを押せ！</p>
   </div>
-
-  <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
   <div id="titleScreen" class="modal-backdrop show">
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="font-size:14px;color:#fff;margin-bottom:8px">produce by 貴電</div>
-      <div class="titleBig">WORLD1</div>
-      <div style="color:#fff;margin-bottom:12px">俺らの電工 - チュートリアル</div>
-      <div style="display:flex;gap:12px">
-        <button id="toQuiz" class="small">開始 (学科問題へ)</button>
+    <div class="titleBig">俺らの電工</div>
+    <p>WORLD1: チュートリアル</p>
+    <button id="toQuiz" style="padding:15px 40px; font-size:20px; background:#ffd000; border:none; border-radius:30px; cursor:pointer; font-weight:bold;">開始 (学科問題へ)</button>
+  </div>
+
+  <div id="quizScreen" class="modal-backdrop">
+    <div class="quizBox">
+      <h2 id="quizQuestion"></h2>
+      <div id="quizOptions" style="display:grid; gap:10px; margin:20px 0;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="quizIndex"></span>
+        <button id="answerBtn" class="small" style="background:#ffd000; color:#000;">回答する</button>
       </div>
     </div>
   </div>
 
-  <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
-    <div class="titleBig">学科問題</div>
-    <div class="quizBox" id="quizBox">
-      <div id="quizQuestion" style="margin-bottom:12px">質問...</div>
-      <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
-      <div style="display:flex;gap:12px">
-        <button id="answerBtn" class="small">回答</button>
-        <button id="skipQuiz" class="small">スキップ (デバッグ)</button>
-        <div style="margin-left:auto;color:#ccc;align-self:center">Q <span id="quizIndex">1</span> / 5</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="bossScreen" aria-hidden="true">
-    <div id="hitText"></div>
+  <div id="bossScreen">
     <div id="bossPanel">
-      <div id="bossImg" aria-hidden="false" style="width:220px;height:220px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:linear-gradient(180deg,#222,#111);color:#fff;font-weight:800;font-size:18px">
-        読み込み中...
-      </div>
+      <div id="bossImgPlaceholder">👹</div>
       <div style="flex:1">
-        <div id="bossName">汚ねえ大工</div>
-        <div style="font-size:12px;color:#ccc;margin:8px 0;">BOSS HP</div>
-        <div class="bossHPback"><div id="bossHPbar" class="bossHPbar" style="width:100%"></div></div>
+        <h2 id="bossName">汚ねえ大工</h2>
+        <div class="bar" style="background:#2b1818;"><div id="bossHPbar" class="bossHPbar"></div></div>
       </div>
     </div>
   </div>
 
   <div id="explosion"></div>
   <div id="defeatDialog"></div>
-  <div id="flashOverlay"></div>
-
-  <div id="finalVideoWrap" style="display:none;align-items:center;justify-content:center;">
-    <video id="finalVideo" src="black.mp4" preload="auto" playsinline ></video>
-  </div>
-
-  <audio id="freezeSound" src="freeze.mp3" preload="auto"></audio>
-  <audio id="explodeSound" src="explode.mp3" preload="auto"></audio>
 
 <script>
-/* ---------- state ---------- */
-let bossHP = 100;
-let playerHP = 100;
-let roundNum = 1;
-let switchOn = false;
-let selected = null;
-let connections = [];
-let state = 'title';
+let bossHP = 100, playerHP = 100, roundNum = 1, switchOn = false;
+let selected = null, connections = [], state = 'title', quizIdx = 0;
 
-/* elements */
-const board = document.getElementById("board");
-const wireLayer = document.getElementById("wireLayer");
-const playerBar = document.getElementById("playerHP");
-const bossHPbar = document.getElementById("bossHPbar");
-const overlay = document.getElementById("overlay");
-const bossScreen = document.getElementById("bossScreen");
-const setBtn = document.getElementById("setBtn");
-const switchState = document.getElementById("switchState");
-const stateLabel = document.getElementById("stateLabel");
-const titleScreen = document.getElementById("titleScreen");
-const quizScreen = document.getElementById("quizScreen");
-const toQuiz = document.getElementById("toQuiz");
-const answerBtn = document.getElementById("answerBtn");
-const skipQuiz = document.getElementById("skipQuiz");
-const freezeSound = document.getElementById("freezeSound");
-const explodeSound = document.getElementById("explodeSound");
-const finalVideoWrap = document.getElementById("finalVideoWrap");
-const finalVideo = document.getElementById("finalVideo");
-const switchBtn = document.getElementById("switchBtn");
-const roundLabel = document.getElementById("roundLabel");
-const quizQuestion = document.getElementById("quizQuestion");
-const quizOptions = document.getElementById("quizOptions");
-const quizIndex = document.getElementById("quizIndex");
-const lampsContainer = document.getElementById("lampsContainer");
-const hitText = document.getElementById("hitText");
-const bossPanel = document.getElementById("bossPanel");
-const explosionEl = document.getElementById("explosion");
-const defeatDialog = document.getElementById("defeatDialog");
-const flashOverlay = document.getElementById("flashOverlay");
-
-/* ---------- helpers ---------- */
-function resizeSVG(){
-  const r = board.getBoundingClientRect();
-  wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
-  wireLayer.style.left = r.left + 'px';
-  wireLayer.style.top = r.top + 'px';
-  wireLayer.style.width = r.width + 'px';
-  wireLayer.style.height = r.height + 'px';
-}
-window.addEventListener("resize", resizeSVG);
-window.addEventListener("load", ()=>{ resizeSVG(); setTimeout(resizeSVG,120); });
-
-function updateHP(){ playerBar.style.width = playerHP + "%"; }
-function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + "%"; }
-function updateRound(){ roundLabel.textContent = roundNum; }
-function setState(s){
-  state = s;
-  stateLabel.textContent = s;
-  if(s==='title'){ titleScreen.classList.add('show'); quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true'); }
-  else if(s==='quiz'){ titleScreen.classList.remove('show'); quizScreen.classList.add('show'); quizScreen.setAttribute('aria-hidden','false'); }
-  else { titleScreen.classList.remove('show'); quizScreen.classList.remove('show'); quizScreen.setAttribute('aria-hidden','true'); }
-}
-
-/* ---------- quiz (unchanged) ---------- */
 const questions = [
-  {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
-  {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
-  {q:'接地(アース)の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチの代わり'], correct:2},
-  {q:'片切スイッチとは？', opts:['2か所で操作するスイッチ','1つの回路を入切するスイッチ','常時接続の端子','漏電遮断器'], correct:1},
-  {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護する','電圧を上げる','照明を点ける'], correct:1}
+  {q:'コンセントの左側の長い穴（N）は何側？', opts:['接地側','非接地側','電圧側','爆破側'], correct:0},
+  {q:'電気の「L」は何の略？', opts:['Low','Line(Live)','Light','Loop'], correct:1},
+  {q:'ジョイントボックス内で電線を接続する部品は？', opts:['ネジ','差込形コネクタ','ボンド','テープのみ'], correct:1}
 ];
-let quizIdx = 0;
-function renderQuiz(){
+
+/* --- System --- */
+function setState(s) {
+  state = s;
+  document.getElementById('stateLabel').textContent = s.toUpperCase();
+  document.getElementById('titleScreen').style.display = (s === 'title') ? 'flex' : 'none';
+  document.getElementById('quizScreen').style.display = (s === 'quiz') ? 'flex' : 'none';
+  document.getElementById('bossScreen').style.display = (s === 'boss') ? 'flex' : 'none';
+}
+
+function updateHP() {
+  document.getElementById('playerHP').style.width = playerHP + "%";
+  document.getElementById('bossHPbar').style.width = bossHP + "%";
+  document.getElementById('roundLabel').textContent = roundNum;
+}
+
+/* --- Quiz --- */
+function renderQuiz() {
   const q = questions[quizIdx];
-  quizQuestion.textContent = q.q;
-  quizOptions.innerHTML = '';
-  q.opts.forEach((opt,i)=>{
-    const b = document.createElement('button');
-    b.className = 'quizOpt small';
-    b.textContent = opt;
-    b.dataset.index = i;
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
-      b.classList.add('chosen');
-    });
-    quizOptions.appendChild(b);
+  document.getElementById('quizQuestion').textContent = q.q;
+  const optCont = document.getElementById('quizOptions');
+  optCont.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'small';
+    btn.textContent = opt;
+    btn.onclick = () => {
+      Array.from(optCont.children).forEach(b => b.style.border = "none");
+      btn.style.border = "2px solid #ffd000";
+      btn.dataset.chosen = i;
+    };
+    optCont.appendChild(btn);
   });
-  quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
+  document.getElementById('quizIndex').textContent = `Q ${quizIdx + 1}/${questions.length}`;
 }
 
-/* ---------- terminals attach ---------- */
-function normalizeId(id, el){
-  if(!id && el) id = el.dataset.id;
-  if(!id) return id;
-  if(id==='jb') return 'jb';
-  if(el && el.closest && el.closest('#junction')) return 'jb';
-  return id;
-}
-function attachTerminalListeners(root){
-  root.querySelectorAll(".terminal, .jb-term").forEach(t=>{
-    const clone = t.cloneNode(true);
-    t.parentNode.replaceChild(clone, t);
-    clone.addEventListener("click", (e)=>{
-      if(state !== 'play') return;
-      if(clone.classList.contains('jb-term')) clone.dataset.id = 'jb';
-      if(selected === clone){ clone.classList.remove("selected"); selected = null; return; }
-      if(!selected){ selected = clone; clone.classList.add("selected"); return; }
-      if(selected !== clone){
-        connect(selected, clone);
-      }
-      if(selected) selected.classList.remove("selected");
-      selected = null;
-    });
-  });
-}
-attachTerminalListeners(document);
+document.getElementById('toQuiz').onclick = () => { quizIdx = 0; renderQuiz(); setState('quiz'); };
 
-/* ---------- dynamic lamps (with bulb SVG + halo) ---------- */
-function createLamps(count){
-  Array.from(document.querySelectorAll("[id^='lamp-']")).forEach(el=>el.remove());
-  for(let i=1;i<=count;i++){
+document.getElementById('answerBtn').onclick = () => {
+  const selectedBtn = Array.from(document.getElementById('quizOptions').children).find(b => b.dataset.chosen !== undefined);
+  if (!selectedBtn) return alert('選択してください');
+  
+  if (parseInt(selectedBtn.dataset.chosen) !== questions[quizIdx].correct) {
+    playerHP -= 20; updateHP(); alert('不正解！HPダメージ');
+  }
+  
+  quizIdx++;
+  if (quizIdx < questions.length) renderQuiz(); else startPlay();
+};
+
+/* --- Board Logic --- */
+function startPlay() {
+  setState('play');
+  createLamps(roundNum);
+  resizeSVG();
+}
+
+function createLamps(count) {
+  const container = document.getElementById('lampsContainer');
+  container.innerHTML = '';
+  for(let i=1; i<=count; i++) {
     const id = `lamp-${i}`;
     const div = document.createElement('div');
-    div.className = 'device lamp';
+    div.className = 'device';
     div.id = id;
-    div.style.left = (20 + i*10) + '%';
-    div.style.top = (40 + (i%2)*18) + '%';
-    div.innerHTML = `<h3 style="font-size:12px">ランプ</h3>
-      <div class="icon" style="position:relative;">
-        <div class="light-halo" aria-hidden></div>
-        <svg class="bulb-shape" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-          <path d="M32 6c-7.2 0-13 5.8-13 13 0 5 3 9.4 6 11.8 2 1.6 3.1 3.8 3.1 6.2v3.5c0 .6.4 1 1 1h5.8c.6 0 1-.4 1-1V37c0-2.4 1.1-4.6 3.1-6.2 3-2.4 6-6.8 6-11.8 0-7.2-5.8-13-13-13z" fill="#f4f4f2" stroke="#ddd"/>
-          <rect x="26" y="44" width="12" height="10" rx="2" fill="#bbb"/>
-        </svg>
-      </div>
-      <div style="text-align:center;">
-        <div class="terminal" data-id="${id}-L">L</div>
-        <div class="terminal" data-id="${id}-N">N</div>
-      </div>`;
-    lampsContainer.appendChild(div);
-    attachTerminalListeners(div);
+    div.style.left = (35 + i*15) + "%";
+    div.style.top = "65%";
+    div.innerHTML = `<h3>照明-${i}</h3><div class="icon"><svg viewBox="0 0 64 64"><path class="bulb-shape" d="M32 10 A15 15 0 1 0 32 40 L32 50" fill="#eee" stroke="#333" stroke-width="2"/></svg></div>
+    <div class="terminal" data-id="${id}-L">L</div><div class="terminal" data-id="${id}-N">N</div>`;
+    container.appendChild(div);
   }
-  setTimeout(()=>{ randomizeDevicePositions(); resizeSVG(); }, 60);
-}
-function getLampIds(){ return Array.from(document.querySelectorAll("[id^='lamp-']")).map(el=>el.id); }
-
-/* ---------- wiring ---------- */
-function connect(a,b){
-  const idA = normalizeId(a.dataset.id,a);
-  const idB = normalizeId(b.dataset.id,b);
-  if(!idA || !idB) return;
-  if(idA === idB) return;
-  for(let i=0;i<connections.length;i++){
-    const c = connections[i];
-    if((c[0]===idA && c[1]===idB) || (c[0]===idB && c[1]===idA)){
-      const existing = wireLayer.querySelector(`line[data-from="${idA}"][data-to="${idB}"], line[data-from="${idB}"][data-to="${idA}"]`);
-      if(existing) existing.remove();
-      connections.splice(i,1);
-      return;
-    }
-  }
-  connections.push([idA,idB]);
-  const rectA = a.getBoundingClientRect();
-  const rectB = b.getBoundingClientRect();
-  const boardRect = board.getBoundingClientRect();
-  const x1 = rectA.left - boardRect.left + rectA.width/2;
-  const y1 = rectA.top - boardRect.top + rectA.height/2;
-  const x2 = rectB.left - boardRect.left + rectB.width/2;
-  const y2 = rectB.top - boardRect.top + rectB.height/2;
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1",x1); line.setAttribute("y1",y1); line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-  line.setAttribute("stroke", getComputedStyle(document.documentElement).getPropertyValue('--wire') || '#ffd800');
-  line.setAttribute("stroke-width", getComputedStyle(document.documentElement).getPropertyValue('--wirew') || 4);
-  line.setAttribute("stroke-linecap","round");
-  line.setAttribute("data-from", idA); line.setAttribute("data-to", idB);
-  const len = line.getTotalLength ? line.getTotalLength() : Math.hypot(x2-x1,y2-y1);
-  line.style.strokeDasharray = len;
-  line.style.strokeDashoffset = len;
-  wireLayer.appendChild(line);
-}
-function connHas(a,b){ return connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a)); }
-
-/* validation */
-function checkSolution(){
-  if(!connections.some(c=>c[0]==='jb' || c[1]==='jb')) return false;
-  const baseOk = connHas("power-L","jb") && connHas("jb","switch-IN") && connHas("switch-OUT","jb") && connHas("power-N","jb");
-  if(!baseOk) return false;
-  const lamps = getLampIds();
-  for(const lid of lamps){
-    if(connHas("jb", `${lid}-L`) && connHas("jb", `${lid}-N`)) return true;
-  }
-  return false;
+  attachTerminalListeners();
+  randomizePositions();
 }
 
-/* animate wires */
-function animateLinesForward(ms){
-  return new Promise(res=>{
-    const lines = Array.from(wireLayer.querySelectorAll("line"));
-    if(lines.length===0){ setTimeout(res,ms); return; }
-    lines.forEach(l=>{
-      const len = l.getTotalLength ? l.getTotalLength() : 200;
-      l.style.transition='none';
-      l.style.strokeDasharray = len;
-      l.style.strokeDashoffset = len;
-      void l.getBoundingClientRect();
-      l.style.transition = `stroke-dashoffset ${ms}ms linear`;
-      l.style.strokeDashoffset = 0;
-    });
-    setTimeout(res, ms + 60);
+function attachTerminalListeners() {
+  document.querySelectorAll('.terminal, .jb-term').forEach(t => {
+    t.onclick = (e) => {
+      if (state !== 'play') return;
+      if (selected === t) { t.classList.remove('selected'); selected = null; return; }
+      if (!selected) { selected = t; t.classList.add('selected'); return; }
+      
+      const idA = selected.dataset.id || 'jb';
+      const idB = t.dataset.id || 'jb';
+      if (idA !== idB) {
+        connections.push([idA, idB, selected, t]);
+        drawWire(selected, t, idA, idB);
+      }
+      selected.classList.remove('selected');
+      selected = null;
+    };
   });
 }
 
-/* ---------- improved layout avoiding overlap ---------- */
-function randomizeDevicePositions(){
-  const boardRect = board.getBoundingClientRect();
-  // safe-guard: if header/controls not rendered yet, do a simple randomize fallback
-  const headerEl = document.querySelector('.header');
-  const controlsEl = document.querySelector('.controls');
-  let headerRect = {bottom: 0};
-  let controlsRect = {top: boardRect.bottom};
-  try{ headerRect = headerEl.getBoundingClientRect(); } catch(e){}
-  try{ controlsRect = controlsEl.getBoundingClientRect(); } catch(e){}
+function drawWire(elA, elB, idA, idB) {
+  const svg = document.getElementById('wireLayer');
+  const rA = elA.getBoundingClientRect();
+  const rB = elB.getBoundingClientRect();
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", rA.left + rA.width/2);
+  line.setAttribute("y1", rA.top + rA.height/2);
+  line.setAttribute("x2", rB.left + rB.width/2);
+  line.setAttribute("y2", rB.top + rB.height/2);
+  line.setAttribute("stroke", "#ffd800");
+  line.setAttribute("stroke-width", "6");
+  line.setAttribute("stroke-linecap", "round");
+  line.dataset.pair = `${idA}-${idB}`;
+  svg.appendChild(line);
+}
 
-  const topMargin = Math.max( (headerRect.bottom - boardRect.top) + 12, 20 ); // ヘッダ下 + 12px
-  const bottomMargin = Math.max( boardRect.height - (controlsRect.top - boardRect.top) + 12, 20 ); // コントロール上から下へ + 12
+/* --- Validation --- */
+function checkCircuit() {
+  const has = (a, b) => connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a));
+  
+  // 基本経路: PowerL -> JB -> SW_IN | SW_OUT -> JB -> LampL | LampN -> JB -> PowerN
+  const pLtoJB = has('power-L', 'jb');
+  const jBtoSWin = has('jb', 'switch-IN');
+  const swOutToJB = has('jb', 'switch-OUT');
+  const pNtoJB = has('power-N', 'jb');
+  
+  if (!(pLtoJB && jBtoSWin && swOutToJB && pNtoJB)) return false;
 
-  const devices = Array.from(document.querySelectorAll('.device')).filter(d=>d.id !== 'junction');
-  const placed = [];
-  const jRect = document.getElementById('junction').getBoundingClientRect();
-  const jLocal = {left:jRect.left - boardRect.left, top:jRect.top - boardRect.top, right:jRect.right - boardRect.left, bottom:jRect.bottom - boardRect.top};
+  let allLampsOk = true;
+  for(let i=1; i<=roundNum; i++){
+    if (!(has('jb', `lamp-${i}-L`) && has('jb', `lamp-${i}-N`))) allLampsOk = false;
+  }
+  return allLampsOk;
+}
 
-  const MARGIN = 12; // デバイス間の余白(px)
-  devices.forEach((dev, idx)=>{
-    // get actual size after styles applied
-    const devRect = dev.getBoundingClientRect();
-    const w = devRect.width || (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--device-w')) || 86);
-    const h = devRect.height || 86;
+function updateVisuals() {
+  const isOk = checkCircuit() && switchOn;
+  document.querySelectorAll('[id^="lamp-"]').forEach(el => {
+    if (isOk) el.classList.add('lit'); else el.classList.remove('lit');
+  });
+}
 
-    let attempts = 0;
-    let placedRect = null;
+/* --- Buttons --- */
+document.getElementById('switchBtn').onclick = () => {
+  switchOn = !switchOn;
+  document.getElementById('switchState').textContent = switchOn ? "ON" : "OFF";
+  document.getElementById('switch').style.background = switchOn ? "#e7ffec" : "#e6e6e6";
+  updateVisuals();
+};
 
-    // allowed bounds
-    const minX = 20 + w/2;
-    const maxX = Math.max( minX, boardRect.width - 20 - w/2 );
-    const minY = Math.max(20 + h/2, topMargin + h/2);
-    const maxY = Math.min(boardRect.height - 20 - h/2, boardRect.height - bottomMargin - h/2);
+document.getElementById('setBtn').onclick = async () => {
+  if (!switchOn) return alert("スイッチがOFFです");
+  if (!checkCircuit()) {
+    playerHP -= 20; updateHP();
+    document.body.classList.add('damage-shake');
+    setTimeout(() => document.body.classList.remove('damage-shake'), 400);
+    return alert("不完全な回路です！ショートまたは未接続です。");
+  }
+  
+  updateVisuals();
+  await new Promise(r => setTimeout(r, 800));
+  doBossBattle();
+};
 
-    while(attempts++ < 1200){
-      const leftPx = Math.random() * (maxX - minX) + minX;
-      const topPx = Math.random() * (maxY - minY) + minY;
-      const rect = {left:leftPx - w/2, top:topPx - h/2, right:leftPx + w/2, bottom:topPx + h/2};
+async function doBossBattle() {
+  setState('boss');
+  await new Promise(r => setTimeout(r, 500));
+  bossHP -= 40;
+  updateHP();
+  document.getElementById('bossPanel').classList.add('damage-shake');
+  
+  if (bossHP <= 0) {
+    const exp = document.getElementById('explosion');
+    exp.style.display = 'block';
+    exp.style.transition = 'transform 0.5s ease-out, opacity 0.5s';
+    setTimeout(() => { exp.style.transform = 'translate(-50%,-50%) scale(2)'; exp.style.opacity = '0'; }, 10);
+    
+    const diag = document.getElementById('defeatDialog');
+    diag.style.display = 'block';
+    diag.textContent = "汚ねえ回路を...浄化完了だ！";
+    setTimeout(() => { location.reload(); }, 3000);
+  } else {
+    setTimeout(() => {
+      roundNum++;
+      bossHP = 100;
+      connections = [];
+      document.getElementById('wireLayer').innerHTML = '';
+      updateHP();
+      startPlay();
+    }, 2000);
+  }
+}
 
-      // avoid junction area with margin
-      const overlapJ = !(rect.right < jLocal.left - MARGIN || rect.left > jLocal.right + MARGIN || rect.bottom < jLocal.top - MARGIN || rect.top > jLocal.bottom + MARGIN);
-      if(overlapJ) continue;
+document.getElementById('resetWires').onclick = () => {
+  connections = [];
+  document.getElementById('wireLayer').innerHTML = '';
+  updateVisuals();
+};
 
-      // avoid placed devices with margin
-      let ok=true;
-      for(const p of placed){
+document.getElementById('restart').onclick = () => location.reload();
+
+/* --- Utility --- */
+function resizeSVG() {
+  const svg = document.getElementById('wireLayer');
+  svg.setAttribute("width", window.innerWidth);
+  svg.setAttribute("height", window.innerHeight);
+}
+
+function randomizePositions() {
+  const devices = document.querySelectorAll('.device:not(#junction)');
+  devices.forEach(d => {
+    d.style.left = (15 + Math.random() * 70) + "%";
+    d.style.top = (20 + Math.random() * 50) + "%";
+  });
+}
+
+window.onresize = resizeSVG;
+updateHP();
+</script>
+</body>
+</html>
