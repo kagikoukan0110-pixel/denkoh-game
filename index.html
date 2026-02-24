@@ -34,17 +34,17 @@
     </div>
   </div>
 
-  <!-- 片切スイッチ (sw1) - World1 では COM↔T1 を使う -->
+  <!-- 片切スイッチ (World1 uses COM ↔ IN) -->
   <div id="sw1" class="device sw" aria-label="片切スイッチ">
     <button class="swBtn" id="sw1Btn">SW1</button>
     <div class="termCol">
       <div class="terminal" data-id="sw1-COM">COM</div>
-      <div class="terminal" data-id="sw1-T1">IN</div>
-      <div class="terminal" data-id="sw1-T2">OUT</div>
+      <div class="terminal" data-id="sw1-IN">IN</div>
+      <div class="terminal" data-id="sw1-OUT">OUT</div>
     </div>
   </div>
 
-  <!-- World2 用の補助スイッチ (sw2) -->
+  <!-- World2 用スイッチ -->
   <div id="sw2" class="device sw" aria-label="スイッチ2">
     <button class="swBtn" id="sw2Btn">SW2</button>
     <div class="termCol">
@@ -54,7 +54,7 @@
     </div>
   </div>
 
-  <!-- ジョイントボックス（端子数増やした） -->
+  <!-- ジョイントボックス（端子6個） -->
   <div id="junction" class="device junction" aria-label="Joint Box">
     <div class="jbTitle">JB</div>
     <div class="jbRow">
@@ -67,7 +67,7 @@
     </div>
   </div>
 
-  <!-- ランプ端子は「左右」にし、本体は下に表示 -->
+  <!-- ランプ：端子は上に左右、電球は下 -->
   <div id="lamp1" class="device lamp" aria-label="ランプ1">
     <div class="termRow">
       <div class="terminal" data-id="lamp1-L">L</div>
@@ -83,8 +83,6 @@
     </div>
     <div class="lampBulb"></div>
   </div>
-
-  <div id="devicesContainer"></div>
 </main>
 
 <div class="controls">
@@ -94,7 +92,7 @@
   <button id="restart" class="small">Restart</button>
 </div>
 
-<!-- title / quiz / boss -->
+<!-- modal / quiz / boss -->
 <div id="titleScreen" class="modal-backdrop show">
   <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
     <div class="titleBig">WORLD1</div>
@@ -133,11 +131,11 @@
 <canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
 <div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
 
+<!-- SFX -->
 <audio id="freezeSound" src="assets/sound/freeze.mp3" preload="auto"></audio>
 <audio id="explodeSound" src="assets/sound/explode.mp3" preload="auto"></audio>
 <audio id="sfxHit" src="assets/sound/hit.mp3" preload="auto"></audio>
 <audio id="sfxExplode" src="assets/sound/explode.mp3" preload="auto"></audio>
-<audio id="sfxSlow" src="assets/sound/slow.mp3" preload="auto"></audio>
 
 <script src="game.js"></script>
 </body>
