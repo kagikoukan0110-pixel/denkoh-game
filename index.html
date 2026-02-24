@@ -7,68 +7,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="app">
-
-  <div id="header">
-    <div id="title">俺らの電工 β</div>
-    <div id="worldLabel">World 1</div>
-    <div id="hpBar">
-      <div id="playerHP"></div>
-    </div>
-  </div>
-
-  <canvas id="wireCanvas"></canvas>
-
-  <div id="board">
-
-    <div class="device power" id="power">
-      <div class="breaker"></div>
-      <div class="terminal" data-id="power-L">L</div>
-      <div class="terminal" data-id="power-N">N</div>
-    </div>
-
-    <div class="device switch" id="switch1">
-      <div class="terminal" data-id="sw-IN">IN</div>
-      <div class="terminal" data-id="sw-OUT">OUT</div>
-    </div>
-
-    <div class="device jb" id="jb">
-      <div class="jb-row">
-        <div class="terminal" data-id="jb-1"></div>
-        <div class="terminal" data-id="jb-2"></div>
-        <div class="terminal" data-id="jb-3"></div>
-        <div class="terminal" data-id="jb-4"></div>
-      </div>
-    </div>
-
-    <div class="device lamp" id="lamp1">
-      <div class="lamp-icon"></div>
-      <div class="lamp-terminals">
-        <div class="terminal" data-id="lamp-L">L</div>
-        <div class="terminal" data-id="lamp-N">N</div>
-      </div>
-    </div>
-
-  </div>
-
-  <div id="controls">
-    <button id="setBtn">SET</button>
-    <button id="resetBtn">Reset</button>
-  </div>
-
-  <div id="bossOverlay" class="hidden">
-    <div id="bossBox">
-      <img src="assets/boss/boss.png" id="bossImg">
-      <div id="bossHPBar">
-        <div id="bossHP"></div>
-      </div>
-      <button id="attackBtn">撃破</button>
-    </div>
-  </div>
-
-</div>
-
+<div id="app"></div>
 <script src="game.js"></script>
 </body>
 </html>
