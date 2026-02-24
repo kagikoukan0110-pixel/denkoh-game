@@ -25,7 +25,7 @@
 <main id="board" class="board">
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
-  <!-- 固定器具：これで World1 でも World2 でも器具が存在する（見切れ防止のため scale / 比率で配置） -->
+  <!-- 常設器具（位置はJSで%指定） -->
   <div id="power" class="device power" aria-label="電源（L/N）">
     <div class="powerToggle"><div class="toggle-on"></div><div class="toggle-off"></div></div>
     <div class="termRow">
@@ -80,7 +80,7 @@
     </div>
   </div>
 
-  <!-- 動的 World1 用の追加ランプ群（最初は空） -->
+  <!-- 動的 World1 用ランプ群（必要なら game.js が追加生成） -->
   <div id="devicesContainer"></div>
 </main>
 
@@ -91,7 +91,7 @@
   <button id="restart" class="small">Restart</button>
 </div>
 
-<!-- title / quiz / boss UI（前回と同じ） -->
+<!-- title / quiz / boss UI -->
 <div id="titleScreen" class="modal-backdrop show">
   <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
     <div class="titleBig">WORLD1</div>
@@ -127,7 +127,6 @@
   </div>
 </div>
 
-<!-- effects -->
 <canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
 <div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
 
