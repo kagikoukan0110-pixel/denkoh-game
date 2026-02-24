@@ -25,7 +25,7 @@
 <main id="board" class="board">
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
-  <!-- 常設器具 -->
+  <!-- 電源 -->
   <div id="power" class="device power" aria-label="電源">
     <div class="powerToggle"><div class="toggle-on"></div><div class="toggle-off"></div></div>
     <div class="termRow">
@@ -34,15 +34,17 @@
     </div>
   </div>
 
-  <div id="sw1" class="device sw" aria-label="スイッチ1">
+  <!-- 片切スイッチ (sw1) - World1 では COM↔T1 を使う -->
+  <div id="sw1" class="device sw" aria-label="片切スイッチ">
     <button class="swBtn" id="sw1Btn">SW1</button>
     <div class="termCol">
       <div class="terminal" data-id="sw1-COM">COM</div>
-      <div class="terminal" data-id="sw1-T1">T1</div>
-      <div class="terminal" data-id="sw1-T2">T2</div>
+      <div class="terminal" data-id="sw1-T1">IN</div>
+      <div class="terminal" data-id="sw1-T2">OUT</div>
     </div>
   </div>
 
+  <!-- World2 用の補助スイッチ (sw2) -->
   <div id="sw2" class="device sw" aria-label="スイッチ2">
     <button class="swBtn" id="sw2Btn">SW2</button>
     <div class="termCol">
@@ -52,6 +54,7 @@
     </div>
   </div>
 
+  <!-- ジョイントボックス（端子数増やした） -->
   <div id="junction" class="device junction" aria-label="Joint Box">
     <div class="jbTitle">JB</div>
     <div class="jbRow">
@@ -64,20 +67,21 @@
     </div>
   </div>
 
+  <!-- ランプ端子は「左右」にし、本体は下に表示 -->
   <div id="lamp1" class="device lamp" aria-label="ランプ1">
-    <div class="lampBulb"></div>
     <div class="termRow">
       <div class="terminal" data-id="lamp1-L">L</div>
       <div class="terminal" data-id="lamp1-N">N</div>
     </div>
+    <div class="lampBulb"></div>
   </div>
 
   <div id="lamp2" class="device lamp" aria-label="ランプ2">
-    <div class="lampBulb"></div>
     <div class="termRow">
       <div class="terminal" data-id="lamp2-L">L</div>
       <div class="terminal" data-id="lamp2-N">N</div>
     </div>
+    <div class="lampBulb"></div>
   </div>
 
   <div id="devicesContainer"></div>
