@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- header -->
 <header class="header">
   <div style="display:flex;align-items:center;gap:12px">
     <div class="title">俺らの電工 β</div>
@@ -23,74 +22,68 @@
   </div>
 </header>
 
-<!-- board -->
 <main id="board" class="board">
-  <!-- wire svg -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 
-  <!-- world1 dynamic area (lamp creation handled by JS) -->
-  <div id="devicesContainer"></div>
-
-  <!-- fixed world2 devices (hidden until world2 active) -->
-  <div id="world2Devices" style="display:none">
-    <div class="device power" id="power" aria-label="電源（ブレーカー）">
-      <div class="powerToggle"><div class="toggle-on"></div><div class="toggle-off"></div></div>
-      <div class="termRow">
-        <div class="terminal" data-id="power-L">L</div>
-        <div class="terminal" data-id="power-N">N</div>
-      </div>
-    </div>
-
-    <div class="device sw" id="sw1">
-      <button class="swBtn" id="sw1Btn">SW1</button>
-      <div class="termCol">
-        <div class="terminal" data-id="sw1-COM">COM</div>
-        <div class="terminal" data-id="sw1-T1">T1</div>
-        <div class="terminal" data-id="sw1-T2">T2</div>
-      </div>
-    </div>
-
-    <div class="device sw" id="sw2">
-      <button class="swBtn" id="sw2Btn">SW2</button>
-      <div class="termCol">
-        <div class="terminal" data-id="sw2-COM">COM</div>
-        <div class="terminal" data-id="sw2-T1">T1</div>
-        <div class="terminal" data-id="sw2-T2">T2</div>
-      </div>
-    </div>
-
-    <div class="device junction" id="junction">
-      <div class="jbTitle">JB</div>
-      <div class="jbRow">
-        <div class="terminal" data-id="junction-1"></div>
-        <div class="terminal" data-id="junction-2"></div>
-        <div class="terminal" data-id="junction-3"></div>
-        <div class="terminal" data-id="junction-4"></div>
-        <div class="terminal" data-id="junction-5"></div>
-        <div class="terminal" data-id="junction-6"></div>
-      </div>
-    </div>
-
-    <div class="device lamp" id="lamp1">
-      <div class="lampBulb"></div>
-      <div class="termRow">
-        <div class="terminal" data-id="lamp1-L">L</div>
-        <div class="terminal" data-id="lamp1-N">N</div>
-      </div>
-    </div>
-
-    <div class="device lamp" id="lamp2">
-      <div class="lampBulb"></div>
-      <div class="termRow">
-        <div class="terminal" data-id="lamp2-L">L</div>
-        <div class="terminal" data-id="lamp2-N">N</div>
-      </div>
+  <!-- 固定器具：これで World1 でも World2 でも器具が存在する（見切れ防止のため scale / 比率で配置） -->
+  <div id="power" class="device power" aria-label="電源（L/N）">
+    <div class="powerToggle"><div class="toggle-on"></div><div class="toggle-off"></div></div>
+    <div class="termRow">
+      <div class="terminal" data-id="power-L">L</div>
+      <div class="terminal" data-id="power-N">N</div>
     </div>
   </div>
 
+  <div id="sw1" class="device sw" aria-label="スイッチ1">
+    <button class="swBtn" id="sw1Btn">SW1</button>
+    <div class="termCol">
+      <div class="terminal" data-id="sw1-COM">COM</div>
+      <div class="terminal" data-id="sw1-T1">T1</div>
+      <div class="terminal" data-id="sw1-T2">T2</div>
+    </div>
+  </div>
+
+  <div id="sw2" class="device sw" aria-label="スイッチ2">
+    <button class="swBtn" id="sw2Btn">SW2</button>
+    <div class="termCol">
+      <div class="terminal" data-id="sw2-COM">COM</div>
+      <div class="terminal" data-id="sw2-T1">T1</div>
+      <div class="terminal" data-id="sw2-T2">T2</div>
+    </div>
+  </div>
+
+  <div id="junction" class="device junction" aria-label="Joint Box">
+    <div class="jbTitle">JB</div>
+    <div class="jbRow">
+      <div class="terminal" data-id="junction-1"></div>
+      <div class="terminal" data-id="junction-2"></div>
+      <div class="terminal" data-id="junction-3"></div>
+      <div class="terminal" data-id="junction-4"></div>
+      <div class="terminal" data-id="junction-5"></div>
+      <div class="terminal" data-id="junction-6"></div>
+    </div>
+  </div>
+
+  <div id="lamp1" class="device lamp" aria-label="ランプ1">
+    <div class="lampBulb"></div>
+    <div class="termRow">
+      <div class="terminal" data-id="lamp1-L">L</div>
+      <div class="terminal" data-id="lamp1-N">N</div>
+    </div>
+  </div>
+
+  <div id="lamp2" class="device lamp" aria-label="ランプ2">
+    <div class="lampBulb"></div>
+    <div class="termRow">
+      <div class="terminal" data-id="lamp2-L">L</div>
+      <div class="terminal" data-id="lamp2-N">N</div>
+    </div>
+  </div>
+
+  <!-- 動的 World1 用の追加ランプ群（最初は空） -->
+  <div id="devicesContainer"></div>
 </main>
 
-<!-- controls -->
 <div class="controls">
   <button id="switchBtn" class="small">SWITCH</button>
   <button id="setBtn" class="primary">SET</button>
@@ -98,7 +91,7 @@
   <button id="restart" class="small">Restart</button>
 </div>
 
-<!-- title modal -->
+<!-- title / quiz / boss UI（前回と同じ） -->
 <div id="titleScreen" class="modal-backdrop show">
   <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
     <div class="titleBig">WORLD1</div>
@@ -109,7 +102,6 @@
   </div>
 </div>
 
-<!-- quiz modal -->
 <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
   <div class="titleBig">学科問題</div>
   <div class="quizBox" id="quizBox">
@@ -123,7 +115,6 @@
   </div>
 </div>
 
-<!-- boss screen for world1/world2 -->
 <div id="bossScreen" aria-hidden="true">
   <div id="hitText"></div>
   <div id="bossPanel">
@@ -136,12 +127,7 @@
   </div>
 </div>
 
-<!-- explosion + final video area -->
-<div id="explosion"></div>
-<div id="defeatDialog"></div>
-<div id="finalVideoWrap"><video id="finalVideo" src="assets/black.mp4" preload="auto" playsinline></video></div>
-
-<!-- boss effects canvas/flash/sfx -->
+<!-- effects -->
 <canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
 <div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
 
