@@ -20,15 +20,20 @@
 </header>
 
 <main id="board" class="board">
-  <!-- devices (fixed-layout) -->
-  <div class="device power" id="power">
+  <!-- power (breaker visual) -->
+  <div class="device power" id="power" aria-label="電源（ブレーカー）">
+    <div class="powerToggle" title="breaker">
+      <div class="toggle-on"></div>
+      <div class="toggle-off"></div>
+    </div>
     <div class="termRow">
       <div class="terminal" data-id="power-L">L</div>
       <div class="terminal" data-id="power-N">N</div>
     </div>
   </div>
 
-  <div class="device sw" id="sw1">
+  <!-- three-way left -->
+  <div class="device sw" id="sw1" aria-label="三路スイッチ1">
     <button class="swBtn" id="sw1Btn">SW1</button>
     <div class="termCol">
       <div class="terminal" data-id="sw1-COM">COM</div>
@@ -37,7 +42,8 @@
     </div>
   </div>
 
-  <div class="device sw" id="sw2">
+  <!-- three-way right -->
+  <div class="device sw" id="sw2" aria-label="三路スイッチ2">
     <button class="swBtn" id="sw2Btn">SW2</button>
     <div class="termCol">
       <div class="terminal" data-id="sw2-COM">COM</div>
@@ -46,6 +52,7 @@
     </div>
   </div>
 
+  <!-- joint box (6 terminals) -->
   <div class="device junction" id="junction" aria-label="Joint Box">
     <div class="jbTitle">JB</div>
     <div class="jbRow">
@@ -58,23 +65,24 @@
     </div>
   </div>
 
-  <div class="device lamp" id="lamp1" aria-label="Lamp1">
-    <div class="lampBulb"></div>
+  <!-- lamps -->
+  <div class="device lamp" id="lamp1" aria-label="Lamp 1">
+    <div class="lampBulb" aria-hidden="true"></div>
     <div class="termRow">
       <div class="terminal" data-id="lamp1-L">L</div>
       <div class="terminal" data-id="lamp1-N">N</div>
     </div>
   </div>
 
-  <div class="device lamp" id="lamp2" aria-label="Lamp2">
-    <div class="lampBulb"></div>
+  <div class="device lamp" id="lamp2" aria-label="Lamp 2">
+    <div class="lampBulb" aria-hidden="true"></div>
     <div class="termRow">
       <div class="terminal" data-id="lamp2-L">L</div>
       <div class="terminal" data-id="lamp2-N">N</div>
     </div>
   </div>
 
-  <!-- svg for wires -->
+  <!-- svg wires -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
 </main>
 
@@ -83,19 +91,17 @@
   <button id="resetBtn" class="ghost">Reset Wires</button>
 </div>
 
-<!-- boss area -->
+<!-- boss -->
 <div class="bossWrap">
   <img id="bossImg" alt="boss" src="assets/boss/boss_World2.PNG">
 </div>
 
-<!-- overlay shown on clear -->
 <div id="overlay" class="overlay" style="display:none">WORLD2 CLEAR</div>
 
-<!-- boss effects elements -->
+<!-- boss effect - canvas/flash/sfx -->
 <canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
 <div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
 
-<!-- sounds (place matching files in assets/sound/) -->
 <audio id="sfxHit" src="assets/sound/hit.mp3" preload="auto"></audio>
 <audio id="sfxExplode" src="assets/sound/explode.mp3" preload="auto"></audio>
 <audio id="sfxSlow" src="assets/sound/slow.mp3" preload="auto"></audio>
