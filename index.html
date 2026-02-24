@@ -3,105 +3,150 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD2</title>
+<title>俺らの電工 - WORLD1→WORLD2</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- header -->
 <header class="header">
-  <div class="titleWrap">
-    <div class="titleMain">WORLD2</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="title">俺らの電工 β</div>
+    <div style="font-size:13px;color:#ccc;margin-left:6px">World: <span id="worldLabel">1</span></div>
   </div>
-  <div class="hpwrap">
-    <div class="hpbar">
-      <div id="bossHPbar" class="bossHPbar"></div>
-    </div>
+  <div class="hp-area">
+    <div style="font-size:12px;color:#ccc;margin-bottom:6px;">PLAYER / BOSS HP</div>
+    <div class="bar"><div id="playerHP" class="player" style="width:100%"></div></div>
+  </div>
+  <div style="text-align:right;font-size:12px;color:#aaa;">
+    STATE<br><strong id="stateLabel">title</strong>
   </div>
 </header>
 
+<!-- board -->
 <main id="board" class="board">
-  <!-- power (breaker visual) -->
-  <div class="device power" id="power" aria-label="電源（ブレーカー）">
-    <div class="powerToggle" title="breaker">
-      <div class="toggle-on"></div>
-      <div class="toggle-off"></div>
-    </div>
-    <div class="termRow">
-      <div class="terminal" data-id="power-L">L</div>
-      <div class="terminal" data-id="power-N">N</div>
-    </div>
-  </div>
-
-  <!-- three-way left -->
-  <div class="device sw" id="sw1" aria-label="三路スイッチ1">
-    <button class="swBtn" id="sw1Btn">SW1</button>
-    <div class="termCol">
-      <div class="terminal" data-id="sw1-COM">COM</div>
-      <div class="terminal" data-id="sw1-T1">T1</div>
-      <div class="terminal" data-id="sw1-T2">T2</div>
-    </div>
-  </div>
-
-  <!-- three-way right -->
-  <div class="device sw" id="sw2" aria-label="三路スイッチ2">
-    <button class="swBtn" id="sw2Btn">SW2</button>
-    <div class="termCol">
-      <div class="terminal" data-id="sw2-COM">COM</div>
-      <div class="terminal" data-id="sw2-T1">T1</div>
-      <div class="terminal" data-id="sw2-T2">T2</div>
-    </div>
-  </div>
-
-  <!-- joint box (6 terminals) -->
-  <div class="device junction" id="junction" aria-label="Joint Box">
-    <div class="jbTitle">JB</div>
-    <div class="jbRow">
-      <div class="terminal" data-id="junction-1"></div>
-      <div class="terminal" data-id="junction-2"></div>
-      <div class="terminal" data-id="junction-3"></div>
-      <div class="terminal" data-id="junction-4"></div>
-      <div class="terminal" data-id="junction-5"></div>
-      <div class="terminal" data-id="junction-6"></div>
-    </div>
-  </div>
-
-  <!-- lamps -->
-  <div class="device lamp" id="lamp1" aria-label="Lamp 1">
-    <div class="lampBulb" aria-hidden="true"></div>
-    <div class="termRow">
-      <div class="terminal" data-id="lamp1-L">L</div>
-      <div class="terminal" data-id="lamp1-N">N</div>
-    </div>
-  </div>
-
-  <div class="device lamp" id="lamp2" aria-label="Lamp 2">
-    <div class="lampBulb" aria-hidden="true"></div>
-    <div class="termRow">
-      <div class="terminal" data-id="lamp2-L">L</div>
-      <div class="terminal" data-id="lamp2-N">N</div>
-    </div>
-  </div>
-
-  <!-- svg wires -->
+  <!-- wire svg -->
   <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+
+  <!-- world1 dynamic area (lamp creation handled by JS) -->
+  <div id="devicesContainer"></div>
+
+  <!-- fixed world2 devices (hidden until world2 active) -->
+  <div id="world2Devices" style="display:none">
+    <div class="device power" id="power" aria-label="電源（ブレーカー）">
+      <div class="powerToggle"><div class="toggle-on"></div><div class="toggle-off"></div></div>
+      <div class="termRow">
+        <div class="terminal" data-id="power-L">L</div>
+        <div class="terminal" data-id="power-N">N</div>
+      </div>
+    </div>
+
+    <div class="device sw" id="sw1">
+      <button class="swBtn" id="sw1Btn">SW1</button>
+      <div class="termCol">
+        <div class="terminal" data-id="sw1-COM">COM</div>
+        <div class="terminal" data-id="sw1-T1">T1</div>
+        <div class="terminal" data-id="sw1-T2">T2</div>
+      </div>
+    </div>
+
+    <div class="device sw" id="sw2">
+      <button class="swBtn" id="sw2Btn">SW2</button>
+      <div class="termCol">
+        <div class="terminal" data-id="sw2-COM">COM</div>
+        <div class="terminal" data-id="sw2-T1">T1</div>
+        <div class="terminal" data-id="sw2-T2">T2</div>
+      </div>
+    </div>
+
+    <div class="device junction" id="junction">
+      <div class="jbTitle">JB</div>
+      <div class="jbRow">
+        <div class="terminal" data-id="junction-1"></div>
+        <div class="terminal" data-id="junction-2"></div>
+        <div class="terminal" data-id="junction-3"></div>
+        <div class="terminal" data-id="junction-4"></div>
+        <div class="terminal" data-id="junction-5"></div>
+        <div class="terminal" data-id="junction-6"></div>
+      </div>
+    </div>
+
+    <div class="device lamp" id="lamp1">
+      <div class="lampBulb"></div>
+      <div class="termRow">
+        <div class="terminal" data-id="lamp1-L">L</div>
+        <div class="terminal" data-id="lamp1-N">N</div>
+      </div>
+    </div>
+
+    <div class="device lamp" id="lamp2">
+      <div class="lampBulb"></div>
+      <div class="termRow">
+        <div class="terminal" data-id="lamp2-L">L</div>
+        <div class="terminal" data-id="lamp2-N">N</div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
+<!-- controls -->
 <div class="controls">
+  <button id="switchBtn" class="small">SWITCH</button>
   <button id="setBtn" class="primary">SET</button>
-  <button id="resetBtn" class="ghost">Reset Wires</button>
+  <button id="resetWires" class="small">Reset Wires</button>
+  <button id="restart" class="small">Restart</button>
 </div>
 
-<!-- boss -->
-<div class="bossWrap">
-  <img id="bossImg" alt="boss" src="assets/boss/boss_World2.PNG">
+<!-- title modal -->
+<div id="titleScreen" class="modal-backdrop show">
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+    <div class="titleBig">WORLD1</div>
+    <div style="color:#fff">俺らの電工 - チュートリアル</div>
+    <div style="display:flex;gap:12px">
+      <button id="toQuiz" class="small">開始 (学科問題へ)</button>
+    </div>
+  </div>
 </div>
 
-<div id="overlay" class="overlay" style="display:none">WORLD2 CLEAR</div>
+<!-- quiz modal -->
+<div id="quizScreen" class="modal-backdrop" aria-hidden="true">
+  <div class="titleBig">学科問題</div>
+  <div class="quizBox" id="quizBox">
+    <div id="quizQuestion" style="margin-bottom:12px">質問...</div>
+    <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:12px">
+      <button id="answerBtn" class="small">回答</button>
+      <button id="skipQuiz" class="small">スキップ</button>
+      <div style="margin-left:auto;color:#ccc;align-self:center">Q <span id="quizIndex">1</span> / 5</div>
+    </div>
+  </div>
+</div>
 
-<!-- boss effect - canvas/flash/sfx -->
+<!-- boss screen for world1/world2 -->
+<div id="bossScreen" aria-hidden="true">
+  <div id="hitText"></div>
+  <div id="bossPanel">
+    <img id="bossImg" src="assets/boss/boss.png.jpg" alt="boss" />
+    <div style="flex:1">
+      <div id="bossName">BOSS</div>
+      <div style="font-size:12px;color:#ccc;margin:8px 0;">BOSS HP</div>
+      <div class="bossHPback"><div id="bossHPbar" class="bossHPbar" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- explosion + final video area -->
+<div id="explosion"></div>
+<div id="defeatDialog"></div>
+<div id="finalVideoWrap"><video id="finalVideo" src="assets/black.mp4" preload="auto" playsinline></video></div>
+
+<!-- boss effects canvas/flash/sfx -->
 <canvas id="bossCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:99990;display:none"></canvas>
 <div id="bossFlash" style="position:fixed;inset:0;z-index:99980;pointer-events:none;display:none"></div>
 
+<audio id="freezeSound" src="assets/sound/freeze.mp3" preload="auto"></audio>
+<audio id="explodeSound" src="assets/sound/explode.mp3" preload="auto"></audio>
 <audio id="sfxHit" src="assets/sound/hit.mp3" preload="auto"></audio>
 <audio id="sfxExplode" src="assets/sound/explode.mp3" preload="auto"></audio>
 <audio id="sfxSlow" src="assets/sound/slow.mp3" preload="auto"></audio>
