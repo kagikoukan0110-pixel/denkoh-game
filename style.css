@@ -1,7 +1,10 @@
 :root{
-  --device-scale: 0.66; /* 全体をさらに縮小（約20%ダウン相当）*/
+  --device-scale:0.66;
   --panel:#e6e6e6;
   --term-bg:#222;
+  --wire-black:#111; /* visible dark */
+  --wire-white:#ffffff;
+  --wire-red:#ff3b30;
 }
 
 /* base */
@@ -22,6 +25,7 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 /* device */
 .device{position:absolute;width:120px;padding:10px;background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%) scale(var(--device-scale));text-align:center;z-index:60}
 .terminal{display:inline-flex;justify-content:center;align-items:center;width:34px;height:34px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
+.terminal.selected{outline:3px solid #ffd800}
 
 /* power */
 .power{width:110px;height:64px}
@@ -48,18 +52,24 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 .primary{background:#ffd000;border:none;padding:14px 36px;border-radius:26px;font-weight:800;cursor:pointer}
 .small{background:#333;border:none;padding:8px 16px;border-radius:18px;color:#fff}
 
-/* modal/boss/effects same as previous... */
+/* modal */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-start;justify-content:center;flex-direction:column;padding:36px;z-index:9500}
 .modal-backdrop.show{display:flex}
 .titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:12px}
+
+/* quiz option highlight */
+.quizOpt{background:#222;color:#fff;border-radius:8px;padding:8px 10px;border:none;cursor:pointer;text-align:left}
+.quizOpt.chosen{background:#ffd000;color:#000;font-weight:800}
+
+/* boss */
 #bossPanel{width:86%;max-width:720px;background:#0d0d0d;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.7);display:flex;gap:18px;align-items:center}
 #bossImg{width:180px;height:180px;border-radius:8px}
 .bossHPback{width:100%;height:18px;background:#2b1818;border-radius:12px;overflow:hidden}
 .bossHPbar{height:100%;width:100%;background:#e74c3c;transition:width 700ms ease;border-radius:12px}
 
-/* small responsive tweaks */
+/* small screens */
 @media (max-width:480px){
-  :root{ --device-scale:0.64; }
+  :root{ --device-scale:0.62; }
   .titleBig{font-size:28px}
   .board{height:calc(100vh - 200px)}
 }
