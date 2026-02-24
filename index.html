@@ -182,4 +182,280 @@ function relocateDevices() {
   const margin = 25; // デバイス間の余白を広めに設定
 
   // 1. 配置済みの矩形リストを初期化
-  const
+  const placedRects = [];
+
+  // 2. ジョイントボックスを中央に固定し、その矩形を計算
+  const jb = document.getElementById('junction');
+  const jbW = jb.offsetWidth || 130; // スタイルから幅を取得、未描画時はフォールバック値
+  const jbH = jb.offsetHeight || 100;
+  const jbCenterX = boardRect.width / 2;
+  const jbCenterY = boardRect.height / 2;
+  
+  // 論理的な矩形を作成 (transform: translate(-50%, -50%) を考慮)
+  const jbRect = {
+    left: jbCenterX - jbW / 2,
+    right: jbCenterX + jbW / 2,
+    top: jbCenterY - jbH / 2,
+    bottom: jbCenterY + jbH / 2,
+    centerX: jbCenterX,
+    centerY: jbCenterY,
+    element: jb
+  };
+  placedRects.push(jbRect);
+
+  // 3. 他のデバイスを順次配置
+  devices.forEach(dev => {
+    if (dev.id === 'junction') return;
+
+    const devW = dev.offsetWidth || 100;
+    const devH = dev.offsetHeight || 130;
+    let bestX, bestY, found = false;
+
+    // 配置可能な場所を探す (試行回数を大幅に増加)
+    for (let attempts = 0; attempts < 500; attempts++) {
+      // ボードの端からマージンを空けた範囲でランダムな中心座標を生成
+      const centerX = margin + devW/2 + Math.random() * (boardRect.width - devW - margin*2);
+      const centerY = margin + devH/2 + Math.random() * (boardRect.height - devH - margin*2);
+      
+      const candidateRect = {
+        left: centerX - devW / 2,
+        right: centerX + devW / 2,
+        top: centerY - devH / 2,
+        bottom: centerY + devH / 2
+      };
+
+      // 既存のすべてのデバイスと衝突判定
+      let overlap = false;
+      for (const placed of placedRects) {
+        if (isOverlapping(candidateRect, placed, margin)) {
+          overlap = true;
+          break;
+        }
+      }
+
+      if (!overlap) {
+        bestX = centerX;
+        bestY = centerY;
+        found = true;
+        break;
+      }
+    }
+
+    // 配置場所が見つからなかった場合のフォールバック (安全策)
+    if (!found) {
+      console.warn("配置場所が見つかりませんでした。安全な場所に配置します。", dev.id);
+      bestX = margin + devW/2 + (placedRects.length * 20); // 単純にずらして配置
+      bestY = margin + devH/2;
+    }
+
+    // 決定した位置を矩形リストに追加
+    placedRects.push({
+      left: bestX - devW / 2,
+      right: bestX + devW / 2,
+      top: bestY - devH / 2,
+      bottom: bestY + devH / 2,
+      centerX: bestX,
+      centerY: bestY,
+      element: dev
+    });
+  });
+
+  // 4. 計算結果をまとめてDOMに反映 (アニメーションさせない)
+  devices.forEach(dev => dev.style.transition = 'none');
+  placedRects.forEach(rect => {
+    rect.element.style.left = rect.centerX + "px";
+    rect.element.style.top = rect.centerY + "px";
+  });
+  // 少し待ってからtransitionを戻す (今回はシンプルにするためtransitionはCSSから削除しました)
+
+  // 配線を描き直し
+  setTimeout(redrawWires, 50);
+}
+
+/* --- 配線ロジック (色分け対応) --- */
+function getWireColor(idA, idB) {
+  // Lを含む端子なら黒、Nを含む端子なら白
+  if (idA.includes('-L') || idB.includes('-L') || idA.includes('IN') || idA.includes('OUT')) {
+    return 'black';
+  }
+  return 'white';
+}
+
+function drawWire(elA, elB, idA, idB) {
+  const svg = document.getElementById('wireLayer');
+  const rA = elA.getBoundingClientRect();
+  const rB = elB.getBoundingClientRect();
+  const colorType = getWireColor(idA, idB);
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", rA.left + rA.width/2);
+  line.setAttribute("y1", rA.top + rA.height/2);
+  line.setAttribute("x2", rB.left + rB.width/2);
+  line.setAttribute("y2", rB.top + rB.height/2);
+  line.setAttribute("stroke-width", "6");
+  line.classList.add('wire-line');
+  line.classList.add(colorType === 'black' ? 'wire-black' : 'wire-white');
+  
+  svg.appendChild(line);
+}
+
+function redrawWires() {
+  const svg = document.getElementById('wireLayer');
+  svg.innerHTML = '';
+  // 接続情報から線を再描画
+  connections.forEach(c => {
+    const idA = c[0], idB = c[1];
+    // IDから端子要素を探す。見つからなければJBの適当な端子で代用
+    const elA = document.querySelector(`.terminal[data-id="${idA}"], .jb-term[data-id="${idA}"]`) || document.querySelector('.jb-term');
+    const elB = document.querySelector(`.terminal[data-id="${idB}"], .jb-term[data-id="${idB}"]`) || document.querySelectorAll('.jb-term')[1];
+    
+    if(elA && elB) drawWire(elA, elB, idA, idB);
+  });
+}
+
+/* --- ゲーム進行 --- */
+function startGame() {
+  document.getElementById('titleScreen').classList.remove('show');
+  state = 'play';
+  setupRound();
+}
+
+function setupRound() {
+  const container = document.getElementById('lampsContainer');
+  container.innerHTML = '';
+  for(let i=1; i<=roundNum; i++){
+    const div = document.createElement('div');
+    div.className = 'device';
+    div.id = `lamp-${i}`;
+    div.innerHTML = `<h3>照明-${i}</h3><div style="font-size:30px">💡</div>
+      <div class="terminal" data-id="lamp-${i}-L">L</div>
+      <div class="terminal" data-id="lamp-${i}-N">N</div>`;
+    container.appendChild(div);
+  }
+  // DOM追加後、少し待ってから配置計算を実行
+  setTimeout(() => {
+    relocateDevices();
+    attachEvents();
+  }, 100);
+}
+
+function attachEvents() {
+  document.querySelectorAll('.terminal, .jb-term').forEach(t => {
+    t.onclick = (e) => {
+      e.stopPropagation(); // イベント伝播を止める
+      if(state !== 'play') return;
+      
+      // jb-termの場合、data-idが空なら'jb'をセット
+      const id = t.dataset.id || (t.classList.contains('jb-term') ? 'jb' : null);
+      if(!id) return;
+
+      if(selected === t) { 
+        t.classList.remove('selected'); selected = null; return; 
+      }
+      if(!selected) { 
+        selected = t; t.classList.add('selected'); return; 
+      }
+      
+      const idA = selected.dataset.id || 'jb';
+      const idB = id;
+      
+      // 同じ端子同士や、同じデバイス内の端子同士（簡易判定）は接続しない
+      if(idA !== idB && selected.closest('.device') !== t.closest('.device')) {
+        connections.push([idA, idB]);
+        drawWire(selected, t, idA, idB);
+      }
+      
+      selected.classList.remove('selected');
+      selected = null;
+    };
+  });
+}
+
+/* --- 判定とボス戦 --- */
+document.getElementById('setBtn').onclick = async () => {
+  if(!switchOn) return alert("スイッチをONにしてください");
+  
+  const has = (a, b) => connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a));
+  // 基本回路のチェック
+  const baseOk = has('power-L', 'jb') && has('jb', 'switch-IN') && has('switch-OUT', 'jb') && has('power-N', 'jb');
+  
+  // 全てのランプが接続されているかチェック
+  let lampsOk = true;
+  for(let i=1; i<=roundNum; i++) {
+    if(!has('jb', `lamp-${i}-L`) || !has('jb', `lamp-${i}-N`)) {
+      lampsOk = false; break;
+    }
+  }
+
+  if(baseOk && lampsOk) {
+    // 成功演出
+    document.querySelectorAll('[id^="lamp-"]').forEach(el => el.classList.add('lit'));
+    state = 'boss';
+    
+    // ボス画面表示
+    const bossScreen = document.getElementById('bossScreen');
+    bossScreen.style.display = 'flex';
+    
+    // ダメージ計算と表示更新
+    const damage = 50;
+    bossHP = Math.max(0, bossHP - damage);
+    document.getElementById('bossHP').style.width = bossHP + "%";
+    document.getElementById('bossMsg').textContent = bossHP === 0 ? "撃破！汚ねえ大工を浄化した！" : `通電成功！${damage}ダメージを与えた！`;
+
+    // 次のラウンドまたはクリア処理
+    setTimeout(() => {
+      bossScreen.style.display = 'none';
+      document.querySelectorAll('[id^="lamp-"]').forEach(el => el.classList.remove('lit'));
+      
+      if(bossHP === 0) {
+        alert("全ラウンドクリア！おめでとう！");
+        location.reload();
+      } else {
+        roundNum++;
+        connections = [];
+        document.getElementById('wireLayer').innerHTML = '';
+        document.getElementById('roundLabel').textContent = roundNum;
+        state = 'play';
+        setupRound();
+      }
+    }, 2500);
+
+  } else {
+    // 失敗演出
+    playerHP = Math.max(0, playerHP - 20);
+    document.getElementById('playerHP').style.width = playerHP + "%";
+    alert("回路が不完全です！\n・電源、スイッチ、全てのランプがJBに接続されていますか？");
+    if(playerHP === 0) {
+      alert("ゲームオーバー...");
+      location.reload();
+    }
+  }
+};
+
+document.getElementById('switchBtn').onclick = () => {
+  switchOn = !switchOn;
+  document.getElementById('switchState').textContent = switchOn ? "ON" : "OFF";
+  document.getElementById('switch').style.background = switchOn ? "#e7ffec" : "#e6e6e6";
+};
+
+document.getElementById('resetWires').onclick = () => {
+  connections = [];
+  document.getElementById('wireLayer').innerHTML = '';
+  if(selected) selected.classList.remove('selected');
+  selected = null;
+};
+
+// 画面サイズ変更時に再配置
+let resizeTimer;
+window.onresize = () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    relocateDevices();
+  }, 200);
+};
+
+// 初期設定
+// viewportの設定でスケーリングを禁止し、レイアウト崩れを防ぐ
+</script>
+</body>
+</html>
