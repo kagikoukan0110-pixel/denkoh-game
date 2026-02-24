@@ -1,462 +1,55 @@
-"use strict";
-
-/* ---------- state ---------- */
-let world = 1; // 1 or 2
-let state = 'title';
-let playerHP = 100;
-let bossHP = 100;
+const svg = document.getElementById("wireLayer");
 let selected = null;
-let connections = []; // {a,b,color,shadowEl,mainEl}
-let sw1 = 0, sw2 = 0;
+let wires = [];
 
-/* ---------- refs ---------- */
-const board = document.getElementById("board");
-const wireLayer = document.getElementById("wireLayer");
-const playerBar = document.getElementById("playerHP");
-const bossHPbar = document.getElementById("bossHPbar");
-
-const titleScreen = document.getElementById("titleScreen");
-const quizScreen = document.getElementById("quizScreen");
-const toQuiz = document.getElementById("toQuiz");
-const answerBtn = document.getElementById("answerBtn");
-const skipQuiz = document.getElementById("skipQuiz");
-const quizQuestion = document.getElementById("quizQuestion");
-const quizOptions = document.getElementById("quizOptions");
-const quizIndex = document.getElementById("quizIndex");
-
-const setBtn = document.getElementById("setBtn");
-const resetWires = document.getElementById("resetWires");
-const restartBtn = document.getElementById("restart");
-const switchBtn = document.getElementById("switchBtn");
-const sw1Btn = document.getElementById("sw1Btn");
-const sw2Btn = document.getElementById("sw2Btn");
-
-const bossScreen = document.getElementById("bossScreen");
-const bossPanel = document.getElementById("bossPanel");
-const hitText = document.getElementById("hitText");
-
-const freezeSound = document.getElementById('freezeSound');
-const explodeSound = document.getElementById('explodeSound');
-const sfxHit = document.getElementById('sfxHit');
-const sfxExplode = document.getElementById('sfxExplode');
-
-/* ---------- helpers ---------- */
-function setState(s){ state = s; document.getElementById('stateLabel').textContent = s; }
-function updatePlayerHP(){ playerBar.style.width = Math.max(0,playerHP) + '%'; }
-function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + '%'; }
-
-function resizeSVG(){
-  const r = board.getBoundingClientRect();
-  // ensure integer viewBox (avoid subpixel issues on Safari)
-  const w = Math.max(1, Math.round(r.width));
-  const h = Math.max(1, Math.round(r.height));
-  wireLayer.setAttribute("viewBox", `0 0 ${w} ${h}`);
-  wireLayer.style.left = r.left + 'px';
-  wireLayer.style.top = r.top + 'px';
-  wireLayer.style.width = w + 'px';
-  wireLayer.style.height = h + 'px';
-}
-
-/* layout positions (percent) */
-const layoutMap = {
-  power: [0.50, 0.12],
-  sw1:   [0.18, 0.28],
-  sw2:   [0.82, 0.28],
-  junction: [0.50, 0.42],
-  lamp1: [0.33, 0.70],
-  lamp2: [0.67, 0.70]
-};
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-function placePercent(id, fx, fy){
-  const el = document.getElementById(id); if(!el) return;
-  const safeX = clamp(fx, 0.06, 0.94);
-  const safeY = clamp(fy, 0.12, 0.78);
-  el.style.left = (safeX*100) + '%';
-  el.style.top  = (safeY*100) + '%';
-}
-
-/* layout & re-draw existing wires */
-function layoutAll(){
-  Object.keys(layoutMap).forEach(k => placePercent(k, layoutMap[k][0], layoutMap[k][1]));
-  resizeSVG();
-  // rebuild drawn wires from saved connections (recalc path), avoid duplicating nodes
-  const saved = connections.map(c => ({a:c.a,b:c.b,color:c.color}));
-  connections.forEach(c => { if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
-  connections = [];
-  saved.forEach(c=>{
-    const a = document.querySelector(`.terminal[data-id="${c.a}"]`);
-    const b = document.querySelector(`.terminal[data-id="${c.b}"]`);
-    if(a && b) drawConnection(a,b,c.color);
-  });
-}
-
-/* init/resizing */
-window.addEventListener('resize', ()=>{ layoutAll(); });
-window.addEventListener('load', ()=>{ setTimeout(()=>{ layoutAll(); attachAllTerminals(); }, 120); });
-
-/* ---------- terminals attach ---------- */
-function attachAllTerminals(){
-  document.querySelectorAll('.terminal').forEach(t=>{
-    t.removeEventListener('click', onTerminalClick);
-    t.addEventListener('click', onTerminalClick);
-  });
-}
-
-/* choose color by world rules */
-function chooseConnectionColor(aId,bId){
-  if(world===1){
-    if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
-    return '#111';
-  } else {
-    if(aId.includes('T2') || bId.includes('T2')) return '#ff3b30';
-    if(aId.includes('T1') || bId.includes('T1')) return '#ffffff';
-    if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
-    if(aId.includes('COM') || bId.includes('COM')) return '#111';
-    return '#111';
-  }
-}
-
-/* persistent preview line (until connect/cancel) */
-let preview = null;
-function showPreviewFrom(el){
-  removePreview();
+function getCenter(el) {
   const r = el.getBoundingClientRect();
-  const br = board.getBoundingClientRect();
-  const x1 = Math.round(r.left - br.left + r.width/2);
-  const y1 = Math.round(r.top - br.top + r.height/2);
-  const color = chooseConnectionColor(el.dataset.id, el.dataset.id);
-
-  const shadow = document.createElementNS("http://www.w3.org/2000/svg","path");
-  shadow.setAttribute("stroke","#000");
-  shadow.setAttribute("stroke-width",6);
-  shadow.setAttribute("stroke-linecap","round");
-  shadow.setAttribute("fill","none");
-  const main = document.createElementNS("http://www.w3.org/2000/svg","path");
-  main.setAttribute("stroke", color);
-  main.setAttribute("stroke-width", color === '#ffffff' ? 3 : 4);
-  main.setAttribute("stroke-linecap","round");
-  main.setAttribute("fill","none");
-  wireLayer.appendChild(shadow);
-  wireLayer.appendChild(main);
-
-  function move(e){
-    const mx = (e.touches && e.touches[0])? e.touches[0].clientX : e.clientX;
-    const my = (e.touches && e.touches[0])? e.touches[0].clientY : e.clientY;
-    const x2 = Math.round(mx - br.left), y2 = Math.round(my - br.top);
-    const cx = Math.round((x1 + x2)/2), cy = Math.round((y1 + y2)/2 - 40);
-    const d = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
-    shadow.setAttribute('d', d);
-    main.setAttribute('d', d);
-  }
-  preview = {startEl:el, shadow, main, moveHandler:move};
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, {passive:true});
-}
-function removePreview(){
-  if(!preview) return;
-  try{ window.removeEventListener('mousemove', preview.moveHandler); window.removeEventListener('touchmove', preview.moveHandler); }catch(e){}
-  if(preview.shadow) preview.shadow.remove();
-  if(preview.main) preview.main.remove();
-  preview = null;
+  return {
+    x: r.left + r.width / 2,
+    y: r.top + r.height / 2
+  };
 }
 
-/* draw path between two terminals */
-function drawPathBetween(aEl,bEl,color){
-  const r1 = aEl.getBoundingClientRect(), r2 = bEl.getBoundingClientRect(), br = board.getBoundingClientRect();
-  const x1 = Math.round(r1.left - br.left + r1.width/2), y1 = Math.round(r1.top - br.top + r1.height/2);
-  const x2 = Math.round(r2.left - br.left + r2.width/2), y2 = Math.round(r2.top - br.top + r2.height/2);
-  const mx = Math.round((x1+x2)/2), my = Math.round((y1+y2)/2 - Math.min(80, Math.abs(y2-y1) * 0.4));
-  const d = `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
+function drawWire(a, b, color) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  const p1 = getCenter(a);
+  const p2 = getCenter(b);
 
-  const shadow = document.createElementNS("http://www.w3.org/2000/svg","path");
-  shadow.setAttribute("d", d);
-  shadow.setAttribute("stroke", "#000");
-  shadow.setAttribute("stroke-width", color === '#ffffff' ? 6 : 8);
-  shadow.setAttribute("stroke-linecap","round");
-  shadow.setAttribute("fill","none");
+  line.setAttribute("x1", p1.x);
+  line.setAttribute("y1", p1.y);
+  line.setAttribute("x2", p2.x);
+  line.setAttribute("y2", p2.y);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", 4);
+  line.setAttribute("stroke-linecap", "round");
 
-  const main = document.createElementNS("http://www.w3.org/2000/svg","path");
-  main.setAttribute("d", d);
-  main.setAttribute("stroke", color);
-  main.setAttribute("stroke-width", color === '#ffffff' ? 3 : 5);
-  main.setAttribute("stroke-linecap","round");
-  main.setAttribute("fill","none");
-
-  wireLayer.appendChild(shadow);
-  wireLayer.appendChild(main);
-  return {shadow, main};
-}
-function drawConnection(aEl,bEl,color){
-  const parts = drawPathBetween(aEl,bEl,color);
-  // store canonical ids
-  connections.push({a:aEl.dataset.id, b:bEl.dataset.id, color, shadowEl:parts.shadow, mainEl:parts.main});
+  svg.appendChild(line);
+  wires.push(line);
 }
 
-/* find connection index */
-function findConnectionIndex(a,b){ return connections.findIndex(c => (c.a===a && c.b===b) || (c.a===b && c.b===a)); }
+document.querySelectorAll(".terminal").forEach(t => {
+  t.addEventListener("click", () => {
+    if (!selected) {
+      selected = t;
+      t.style.outline = "2px solid yellow";
+    } else {
+      const color = selected.classList.contains("white") ? "white" :
+                    selected.classList.contains("red") ? "red" : "black";
 
-/* remove connection */
-function removeConnection(i){
-  const c = connections[i];
-  if(!c) return;
-  if(c.shadowEl) c.shadowEl.remove();
-  if(c.mainEl) c.mainEl.remove();
-  connections.splice(i,1);
-}
-
-/* ---------- terminal click logic ---------- */
-function onTerminalClick(e){
-  const t = e.currentTarget;
-  if(state !== 'play') return;
-
-  // If clicking existing selected -> cancel selection
-  if(selected && selected === t){
-    selected.classList.remove('selected');
-    selected = null;
-    removePreview();
-    return;
-  }
-
-  // If no selected -> set and show preview
-  if(!selected){
-    selected = t;
-    t.classList.add('selected');
-    showPreviewFrom(t);
-    return;
-  }
-
-  // If selected exists and clicked a different terminal
-  const aId = selected.dataset.id, bId = t.dataset.id;
-  const idx = findConnectionIndex(aId,bId);
-  // clear selection + preview
-  selected.classList.remove('selected');
-  selected = null;
-  removePreview();
-
-  if(idx >= 0){
-    // remove existing connection
-    removeConnection(idx);
-    updateLamps();
-    return;
-  }
-  // create new connection
-  const color = chooseConnectionColor(aId,bId);
-  const aEl = document.querySelector(`.terminal[data-id="${aId}"]`);
-  const bEl = document.querySelector(`.terminal[data-id="${bId}"]`);
-  if(aEl && bEl) drawConnection(aEl,bEl,color);
-  updateLamps();
-}
-
-/* ---------- color rule wrapper ---------- */
-function chooseConnectionColor(aId,bId){
-  if(world===1){
-    if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
-    return '#111';
-  } else {
-    if(aId.includes('T2') || bId.includes('T2')) return '#ff3b30';
-    if(aId.includes('T1') || bId.includes('T1')) return '#ffffff';
-    if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
-    if(aId.includes('COM') || bId.includes('COM')) return '#111';
-    return '#111';
-  }
-}
-
-/* animate line draw */
-function animateLines(ms){
-  return new Promise(res=>{
-    const shapes = Array.from(wireLayer.querySelectorAll('path'));
-    if(shapes.length===0){ setTimeout(res,ms); return; }
-    shapes.forEach(s=>{
-      const len = s.getTotalLength ? s.getTotalLength() : 200;
-      s.style.transition='none';
-      s.style.strokeDasharray = len;
-      s.style.strokeDashoffset = len;
-      void s.getBoundingClientRect();
-      s.style.transition = `stroke-dashoffset ${ms}ms linear`;
-      s.style.strokeDashoffset = 0;
-    });
-    setTimeout(res, ms + 60);
-  });
-}
-
-/* ---------- lamp & wiring logic ---------- */
-function connected(a,b){ return findConnectionIndex(a,b) >= 0; }
-function getJunctionIds(){ return ['junction-1','junction-2','junction-3','junction-4','junction-5','junction-6']; }
-
-/* World1: single-pole check
-   requirement:
-   - power-L connected to sw1-COM
-   - there exists a single JB terminal j such that:
-       power-N connected to j
-       sw1-OUT (or sw1-IN) connected to j
-       j connected to both lampX-L and lampX-N (at least one lamp)
-*/
-function checkSolutionWorld1(){
-  const jb = getJunctionIds();
-  if(!connected('power-L','sw1-COM')) return false;
-
-  // determine which sw1 terminal is used for output: IN or OUT
-  // we accept either IN or OUT as wiring expectation (user can wire either)
-  const swOuts = ['sw1-IN','sw1-OUT'];
-  for(const term of jb){
-    if(!connected('power-N', term)) continue;
-    // must be connected from one of sw1 outputs to this JB
-    const swConnected = swOuts.some(s => connected(s, term) || connected('sw1-COM', s) || connected('sw1-COM', term));
-    if(!swConnected) continue;
-    // check lamp L & N for either lamp1 or lamp2
-    for(const lamp of ['lamp1','lamp2']){
-      const Lok = connected(term, `${lamp}-L`);
-      const Nok = connected(term, `${lamp}-N`);
-      if(Lok && Nok) return true;
+      drawWire(selected, t, color);
+      selected.style.outline = "none";
+      selected = null;
     }
-  }
-  return false;
-}
-
-function updateLamps(){
-  if(world===1){
-    ['lamp1','lamp2'].forEach(id=>{
-      const el = document.getElementById(id);
-      const jb = getJunctionIds();
-      const lit = jb.some(j => connected(j, `${id}-L`) && connected(j, `${id}-N`));
-      el.classList.toggle('lit', lit);
-    });
-  } else {
-    // world2 strict check
-    const ok = checkWiringWorld2();
-    const active = ok && isThreeWayActive() && hasLoadPath() && hasNeutralPath();
-    document.getElementById('lamp1').classList.toggle('lit', active);
-    document.getElementById('lamp2').classList.toggle('lit', active);
-  }
-}
-
-/* world2 helper functions */
-function hasNeutralPath(){ return getJunctionIds().some(j => connected('power-N', j)); }
-function hasLoadPath(){ return getJunctionIds().some(j => connected('sw2-COM', j)); }
-function junctionFeedsLampL(){ return getJunctionIds().some(j => connected(j,'lamp1-L')) && getJunctionIds().some(j => connected(j,'lamp2-L')); }
-function junctionFeedsLampN(){ return getJunctionIds().some(j => connected(j,'lamp1-N')) && getJunctionIds().some(j => connected(j,'lamp2-N')); }
-function isThreeWayActive(){ const leftOut = sw1 ? 'sw1-OUT' : 'sw1-IN'; const rightIn = sw2 ? 'sw2-T2' : 'sw2-T1'; return connected(leftOut, rightIn); }
-function checkWiringWorld2(){
-  const cond1 = connected('power-L','sw1-COM');
-  const cond2 = connected('sw1-T1','sw2-T1');
-  const cond3 = connected('sw1-T2','sw2-T2');
-  const cond4 = hasLoadPath();
-  const cond5 = junctionFeedsLampL();
-  const cond6 = hasNeutralPath();
-  const cond7 = junctionFeedsLampN();
-  return cond1 && cond2 && cond3 && cond4 && cond5 && cond6 && cond7;
-}
-
-/* ---------- boss sequence World1 ---------- */
-async function doBossSequenceWorld1(){
-  setState('boss');
-  bossScreen.style.display = 'flex';
-  try{ freezeSound.currentTime=0; freezeSound.play().catch(()=>{}); }catch(e){}
-  hitText.style.display='block'; hitText.textContent='HIT - 40';
-  bossPanel.classList.add('boss-damage');
-  await new Promise(r=>setTimeout(r,2200)); // increased by 2s as requested
-  bossPanel.classList.remove('boss-damage'); hitText.style.display='none';
-  bossHP -= 40; updateBossHP();
-  if(bossHP <= 0){
-    try{ explodeSound.currentTime=0; explodeSound.play().catch(()=>{}); }catch(e){}
-    bossScreen.style.display='none';
-    await new Promise(r=>setTimeout(r,700));
-    startWorld2();
-    return;
-  }
-  bossScreen.style.display='none';
-  // reset wires for next
-  connections.forEach(c=>{ if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
-  connections = []; selected = null; removePreview(); updateLamps();
-}
-
-/* ---------- set button ---------- */
-setBtn.addEventListener('click', async ()=>{
-  if(world===1){
-    if(!checkSolutionWorld1()){ playerHP = Math.max(0, playerHP - 20); updatePlayerHP(); if(playerHP<=0) alert('PLAYER HP 0'); return; }
-    await animateLines(1400);
-    await doBossSequenceWorld1();
-  } else {
-    const lampLit = document.getElementById('lamp1').classList.contains('lit');
-    if(!lampLit) return;
-    const strong = bossHP <= 80;
-    bossHP -= (strong?60:40); updateBossHP();
-    try{ sfxHit.currentTime=0; sfxHit.play().catch(()=>{}); }catch(e){}
-    if(bossHP <= 0){
-      try{ sfxExplode.currentTime=0; sfxExplode.play().catch(()=>{}); }catch(e){}
-      const ov = document.createElement('div'); ov.id='overlay'; ov.textContent='WORLD2 CLEAR'; ov.style.position='fixed'; ov.style.left='50%'; ov.style.top='50%'; ov.style.transform='translate(-50%,-50%)'; ov.style.zIndex='2147483647'; ov.style.padding='20px'; ov.style.background='rgba(0,0,0,0.9)'; ov.style.color='#ffd200'; ov.style.borderRadius='14px'; document.body.appendChild(ov);
-    }
-  }
-});
-
-/* reset/restart */
-resetWires.addEventListener('click', ()=>{
-  connections.forEach(c=>{ if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
-  connections = []; selected=null; removePreview(); updateLamps();
-});
-restartBtn.addEventListener('click', ()=>{
-  world = 1; setState('title'); document.getElementById('worldLabel').textContent='1';
-  playerHP = 100; bossHP = 100; updatePlayerHP(); updateBossHP();
-  connections.forEach(c=>{ if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
-  connections = []; selected=null; removePreview(); document.getElementById('lamp1').classList.remove('lit'); document.getElementById('lamp2').classList.remove('lit');
-  titleScreen.classList.add('show'); quizScreen.classList.remove('show');
-});
-
-/* switches */
-sw1Btn.addEventListener('click', ()=>{ sw1 ^= 1; updateLamps(); });
-sw2Btn.addEventListener('click', ()=>{ sw2 ^= 1; updateLamps(); });
-
-/* ---------- quiz ---------- */
-const questions = [
-  {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
-  {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
-  {q:'接地(アース)の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチの代わり'], correct:2},
-  {q:'片切スイッチとは？', opts:['2か所で操作するスイッチ','1つの回路を入切するスイッチ','常時接続の端子','漏電遮断器'], correct:1},
-  {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護する','電圧を上げる','照明を点ける'], correct:1}
-];
-let quizIdx = 0;
-function renderQuiz(){
-  const q = questions[quizIdx];
-  quizQuestion.textContent = q.q;
-  quizOptions.innerHTML = '';
-  q.opts.forEach((opt,i)=>{
-    const b = document.createElement('button');
-    b.className = 'quizOpt small';
-    b.textContent = opt;
-    b.dataset.index = i;
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
-      b.classList.add('chosen');
-    });
-    quizOptions.appendChild(b);
   });
-  quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
-}
-toQuiz.addEventListener('click', ()=>{ quizIdx=0; renderQuiz(); titleScreen.classList.remove('show'); quizScreen.classList.add('show'); setState('quiz'); });
-skipQuiz.addEventListener('click', ()=>{ startWorld1(); });
-answerBtn.addEventListener('click', ()=>{
-  const chosen = Array.from(document.querySelectorAll('.quizOpt')).find(x=>x.classList.contains('chosen'));
-  if(!chosen){ alert('選択肢を選んでください。'); return; }
-  const selectedIndex = Number(chosen.dataset.index);
-  const correctIndex = questions[quizIdx].correct;
-  if(selectedIndex !== correctIndex){ playerHP = Math.max(0, playerHP - 10); updatePlayerHP(); }
-  quizIdx++;
-  if(quizIdx < questions.length) renderQuiz();
-  else startWorld1();
 });
 
-/* ---------- start worlds ---------- */
-function startWorld1(){
-  world = 1; setState('play'); document.getElementById('worldLabel').textContent='1';
-  titleScreen.classList.remove('show'); quizScreen.classList.remove('show');
-  bossHP = 100; updateBossHP();
-  layoutAll(); attachAllTerminals(); updateLamps();
-}
-function startWorld2(){
-  world = 2; setState('play'); document.getElementById('worldLabel').textContent='2';
-  bossHP = 160; updateBossHP();
-  layoutAll(); attachAllTerminals(); updateLamps();
-}
+document.getElementById("setBtn").addEventListener("click", () => {
+  document.getElementById("lampBulb").classList.add("on");
+  setTimeout(() => {
+    document.getElementById("bossOverlay").classList.remove("hidden");
+  }, 2000);
+});
 
-/* initial */
-updatePlayerHP(); updateBossHP(); setState('title'); layoutAll(); attachAllTerminals();
+document.getElementById("closeBoss").addEventListener("click", () => {
+  document.getElementById("bossOverlay").classList.add("hidden");
+});
