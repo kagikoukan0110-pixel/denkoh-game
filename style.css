@@ -1,236 +1,51 @@
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+:root{
+  --bg:#000;
+  --panel:#e6e6e6;
+  --term-bg:#222;
+  --wire-black:#000000;
+  --wire-white:#ffffff;
+  --highlight:#ffd800;
 }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+#header{padding:5vw 6vw 2vw 6vw}
+#title{font-size:7.6vw;font-weight:900;margin-bottom:1vh}
+#metaRow{display:flex;align-items:center;gap:4vw}
+#worldLabel{font-size:3.4vw;color:#cfcfcf}
+#hpWrap{flex:1;height:3.6vw;background:#222;border-radius:999px;overflow:hidden}
+#playerHP{width:100%;height:100%;background:#34d058}
 
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #000;
-  overflow: hidden;
-  height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  color: white;
-}
+#wireCanvas{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:1;pointer-events:none}
 
-#app {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
+#board{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2;pointer-events:auto}
 
-/* ---------- HEADER ---------- */
+.device{position:absolute;border-radius:10px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.6vh;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.device .terminal{display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--term-bg);color:#fff;user-select:none}
+.device .terminal.small{width:8vw;height:8vw;font-size:4vw}
+.device .terminal.mid{width:7.4vw;height:7.4vw;font-size:3.6vw}
+.device .breaker{width:12vw;height:3.2vh;background:#444;border-radius:6px;margin-bottom:1vh}
 
-#header {
-  position: absolute;
-  top: 2vh;
-  left: 4vw;
-  right: 4vw;
-}
+/* safe default sizes/positions (will be set inline by JS but fallback here) */
+#power{left:36vw;top:8vh;width:28vw;height:14vh}
+#switch1{left:6vw;top:24vh;width:22vw;height:22vh}
+#jb{left:28vw;top:34vh;width:44vw;height:18vh}
+#lamp1{left:34vw;top:56vh;width:32vw;height:22vh}
 
-#title {
-  font-size: 5vw;
-  font-weight: bold;
-}
+/* controls */
+#controls{position:fixed;left:0;right:0;bottom:4vh;display:flex;justify-content:center;gap:6vw;z-index:4}
+button.big{padding:2.6vh 8vw;border-radius:28px;border:none;font-weight:800;font-size:4.4vw}
+button.dark{background:#333;color:#fff}
+#quizModal.modal,#bossOverlay.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:900;background:rgba(0,0,0,0.75)}
+#bossBox{width:86vw;padding:4vw;background:#0d0d0d;border-radius:10px;text-align:center}
+#bossImg{width:100%;border-radius:8px}
+#bossHPWrap{margin-top:3vh;background:#2b1818;height:3vh;border-radius:999px;overflow:hidden}
+#bossHP{height:100%;width:100%;background:#e74c3c}
 
-#worldLabel {
-  margin-top: 1vh;
-  font-size: 4vw;
-}
+/* selected terminal visual */
+.terminal-selected{box-shadow:0 0 0 6px var(--highlight) !important}
 
-#hpBar {
-  margin-top: 1vh;
-  width: 100%;
-  height: 2vh;
-  background: #333;
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-#playerHP {
-  height: 100%;
-  width: 100%;
-  background: #3bd45a;
-  transition: width 0.3s;
-}
-
-/* ---------- CANVAS ---------- */
-
-#wireCanvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-}
-
-/* ---------- BOARD ---------- */
-
-#board {
-  position: absolute;
-  top: 18vh;
-  left: 0;
-  width: 100%;
-  height: 62vh;
-}
-
-/* ---------- DEVICES ---------- */
-
-.device {
-  position: absolute;
-  width: 26vw;
-  height: 16vh;
-  background: #dcdcdc;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1vh;
-  z-index: 2;
-}
-
-.terminal {
-  width: 7vw;
-  height: 7vw;
-  background: #222;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3vw;
-  color: white;
-}
-
-/* ---------- POWER ---------- */
-
-.power {
-  top: 0;
-  left: 37vw;
-}
-
-.breaker {
-  width: 12vw;
-  height: 4vh;
-  background: #444;
-  border-radius: 6px;
-  position: relative;
-}
-
-.breaker::before {
-  content: "";
-  position: absolute;
-  left: 10%;
-  top: 10%;
-  width: 40%;
-  height: 80%;
-  background: gold;
-  border-radius: 4px;
-}
-
-/* ---------- SWITCH ---------- */
-
-.switch {
-  top: 18vh;
-  left: 8vw;
-}
-
-/* ---------- JB ---------- */
-
-.jb {
-  top: 30vh;
-  left: 37vw;
-  width: 40vw;
-  height: 14vh;
-}
-
-.jb-row {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
-
-/* ---------- LAMP ---------- */
-
-.lamp {
-  bottom: 0;
-  left: 37vw;
-  height: 20vh;
-}
-
-.lamp-icon {
-  width: 12vw;
-  height: 12vw;
-  background: radial-gradient(circle, #fff 40%, #bbb 100%);
-  border-radius: 50%;
-  margin-top: 1vh;
-}
-
-.lamp-terminals {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-}
-
-/* ---------- CONTROLS ---------- */
-
-#controls {
-  position: absolute;
-  bottom: 3vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 5vw;
-}
-
-button {
-  padding: 2vh 6vw;
-  font-size: 4vw;
-  border-radius: 30px;
-  border: none;
-  background: gold;
-  color: black;
-  font-weight: bold;
-}
-
-/* ---------- BOSS ---------- */
-
-#bossOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.hidden {
-  display: none;
-}
-
-#bossBox {
-  width: 80vw;
-  text-align: center;
-}
-
-#bossImg {
-  width: 100%;
-  border-radius: 12px;
-}
-
-#bossHPBar {
-  width: 100%;
-  height: 2vh;
-  background: #333;
-  margin-top: 2vh;
-}
-
-#bossHP {
-  width: 100%;
-  height: 100%;
-  background: #e74c3c;
-  transition: width 0.4s;
+/* responsive small fix */
+@media (max-width:420px){
+  #title{font-size:7vw}
+  button.big{font-size:4vw}
 }
