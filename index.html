@@ -8,39 +8,106 @@
 </head>
 <body>
   <div id="app">
-    <header id="header">
-      <div id="title">俺らの電工 β</div>
-      <div id="metaRow">
+    <header id="hdr">
+      <div id="brand">俺らの電工 β</div>
+      <div id="meta">
         <div id="worldLabel">World 1</div>
         <div id="hpWrap"><div id="playerHP"></div></div>
+        <div id="stateLabel">state: title</div>
       </div>
     </header>
 
-    <!-- canvas for wires (under UI but we capture pointer on document) -->
+    <!-- canvas for wires on top of board -->
     <canvas id="wireCanvas" aria-hidden="true"></canvas>
 
-    <!-- devices layer -->
-    <main id="board" role="application" aria-label="game board"></main>
+    <main id="board">
+      <!-- Power -->
+      <div class="device device-power" id="power" data-device="power" data-scale="0.8">
+        <div class="breaker" aria-hidden="true"></div>
+        <div class="termRow">
+          <div class="terminal" data-id="power-L" data-type="L">L</div>
+          <div class="terminal" data-id="power-N" data-type="N">N</div>
+        </div>
+      </div>
 
-    <!-- controls -->
+      <!-- Switch (片切) -->
+      <div class="device device-switch" id="switch1" data-device="switch" data-scale="0.8">
+        <div class="switchBox">SW</div>
+        <div class="termRow">
+          <div class="terminal" data-id="switch-IN" data-type="L">IN</div>
+          <div class="terminal" data-id="switch-OUT" data-type="L">OUT</div>
+        </div>
+        <div class="switchState" id="switchState">Switch: OFF</div>
+      </div>
+
+      <!-- Joint Box (多端子) -->
+      <div class="device device-jb" id="jb" data-device="jb" data-scale="0.8">
+        <div class="jbLabel">JB</div>
+        <div class="jb-row">
+          <!-- 6端子に拡張 -->
+          <div class="terminal" data-id="jb-1" data-type="jb"></div>
+          <div class="terminal" data-id="jb-2" data-type="jb"></div>
+          <div class="terminal" data-id="jb-3" data-type="jb"></div>
+          <div class="terminal" data-id="jb-4" data-type="jb"></div>
+          <div class="terminal" data-id="jb-5" data-type="jb"></div>
+          <div class="terminal" data-id="jb-6" data-type="jb"></div>
+        </div>
+      </div>
+
+      <!-- Lamp (電球アイコン・左右端子) -->
+      <div class="device device-lamp" id="lamp1" data-device="lamp" data-scale="0.9">
+        <div class="lampIcon" aria-hidden="true"></div>
+        <div class="lamp-term-row">
+          <div class="terminal" data-id="lamp1-L" data-type="L">L</div>
+          <div class="terminal" data-id="lamp1-N" data-type="N">N</div>
+        </div>
+      </div>
+
+    </main>
+
     <footer id="controls">
-      <button id="setBtn" class="big">SET</button>
-      <button id="resetBtn" class="big dark">Reset</button>
+      <button id="switchBtn" class="ctrl small">SWITCH</button>
+      <button id="setBtn" class="ctrl big">SET</button>
+      <button id="resetBtn" class="ctrl small">Reset</button>
     </footer>
 
     <!-- quiz modal -->
-    <div id="quizModal" class="modal" aria-hidden="true"></div>
-
-    <!-- boss overlay -->
-    <div id="bossOverlay" class="modal" aria-hidden="true">
-      <div id="bossBox">
-        <img id="bossImg" src="assets/boss/boss_World2.PNG" alt="boss" />
-        <div id="bossHPWrap"><div id="bossHP"></div></div>
-        <button id="attackBtn">撃破</button>
+    <div id="quizModal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modalBox">
+        <h2>学科問題</h2>
+        <div id="quizQuestion">質問</div>
+        <div id="quizOptions" class="options"></div>
+        <div class="modalBtns">
+          <button id="answerBtn" class="ctrl small">回答</button>
+          <button id="skipBtn" class="ctrl small">スキップ</button>
+        </div>
       </div>
     </div>
+
+    <!-- boss overlay -->
+    <div id="bossOverlay" class="modal hidden" aria-hidden="true">
+      <div id="bossBox">
+        <div id="bossImgWrap">
+          <img id="bossImg" src="assets/boss/boss_World2.PNG" alt="boss" />
+        </div>
+        <div id="bossInfo">
+          <div id="bossName">現場を知らない代理人</div>
+          <div id="bossHPWrap"><div id="bossHP"></div></div>
+          <div id="hitText" class="hidden">HIT</div>
+          <button id="finishBtn" class="ctrl small">撃破</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- explosion / flash -->
+    <div id="explosion" class="hidden"></div>
+    <div id="defeatDialog" class="hidden"></div>
+
+    <!-- audio (placeholders) -->
+    <audio id="sndFreeze" src="assets/sound/freeze.mp3" preload="auto"></audio>
+    <audio id="sndExplode" src="assets/sound/explode.mp3" preload="auto"></audio>
   </div>
 
-<script src="game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
