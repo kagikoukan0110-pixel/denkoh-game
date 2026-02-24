@@ -1,13 +1,12 @@
 :root{
-  --device-scale:0.66;
+  --device-scale:0.60; /* 20%程度小さめ */
   --panel:#e6e6e6;
   --term-bg:#222;
-  --wire-black:#111; /* visible dark */
+  --wire-black:#111;
   --wire-white:#ffffff;
   --wire-red:#ff3b30;
 }
 
-/* base */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
 
@@ -19,12 +18,12 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 .player{height:100%;width:100%;background:#34d058;border-radius:12px}
 
 /* board */
-.board{position:relative;width:100%;height:calc(100vh - 240px);padding:8px 16px;overflow:hidden}
+.board{position:relative;width:100%;height:calc(100vh - 240px);padding:8px 10px;overflow:hidden}
 #wireLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10}
 
-/* device */
+/* device base */
 .device{position:absolute;width:120px;padding:10px;background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%) scale(var(--device-scale));text-align:center;z-index:60}
-.terminal{display:inline-flex;justify-content:center;align-items:center;width:34px;height:34px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
+.terminal{display:inline-flex;justify-content:center;align-items:center;width:34px;height:34px;margin:6px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
 .terminal.selected{outline:3px solid #ffd800}
 
 /* power */
@@ -34,18 +33,19 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 .powerToggle .toggle-off{width:16px;height:22px;background:#999;border-radius:4px}
 
 /* switches */
-.sw{width:110px;height:110px}
+.sw{width:120px;height:120px}
 .swBtn{background:#fff;border-radius:8px;padding:6px 8px;border:none;cursor:pointer;margin-bottom:6px}
 
 /* junction */
-.junction{width:240px;height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.jbRow{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.junction{width:260px;height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.jbRow{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
 
-/* lamp */
-.lamp{width:96px;height:120px;border-radius:12px;padding-top:12px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
-.lampBulb{width:44px;height:60px;background:#f2f2f2;border-radius:50% 50% 40% 40%;box-shadow:inset 0 6px 10px rgba(0,0,0,.06);transition:transform .18s,filter .18s}
+/* lamp: 端子上、電球下 */
+.lamp{width:110px;height:140px;border-radius:12px;padding-top:10px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.lamp .termRow{margin-bottom:6px}
+.lampBulb{width:54px;height:72px;background:#f2f2f2;border-radius:50% 50% 40% 40%;box-shadow:inset 0 6px 10px rgba(0,0,0,.06);transition:transform .18s,filter .18s}
 .lamp.lit{background:#ffd54a}
-.lamp.lit .lampBulb{background:#fff;filter:drop-shadow(0 12px 40px rgba(255,200,80,.6));transform:scale(1.02)}
+.lamp.lit .lampBulb{background:#fff;filter:drop-shadow(0 12px 40px rgba(255,200,80,.6));transform:scale(1.05)}
 
 /* controls */
 .controls{height:140px;padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:12px}
@@ -57,7 +57,7 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 .modal-backdrop.show{display:flex}
 .titleBig{font-size:40px;color:#ffd200;font-weight:800;margin-bottom:12px}
 
-/* quiz option highlight */
+/* quiz opt */
 .quizOpt{background:#222;color:#fff;border-radius:8px;padding:8px 10px;border:none;cursor:pointer;text-align:left}
 .quizOpt.chosen{background:#ffd000;color:#000;font-weight:800}
 
@@ -69,7 +69,7 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,
 
 /* small screens */
 @media (max-width:480px){
-  :root{ --device-scale:0.62; }
+  :root{ --device-scale:0.58; }
   .titleBig{font-size:28px}
   .board{height:calc(100vh - 200px)}
 }
