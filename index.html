@@ -2,125 +2,71 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>俺らの電工β</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>俺らの電工</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="app">
 
-<header>
-  <div class="title">俺らの電工β</div>
-  <div class="worldInfo">
-    <span id="worldLabel">World 1</span>
-    <div class="hpBar"><div id="bossHp"></div></div>
+  <div id="header">
+    <div id="title">俺らの電工 β</div>
+    <div id="worldLabel">World 1</div>
+    <div id="hpBar">
+      <div id="playerHP"></div>
+    </div>
   </div>
-</header>
 
-<main id="gameArea">
+  <canvas id="wireCanvas"></canvas>
 
-  <!-- SVG配線 -->
-  <svg id="wireLayer"></svg>
+  <div id="board">
 
-  <!-- WORLD1 -->
-  <div id="world1" class="world">
-
-    <div class="device power" data-device="power">
+    <div class="device power" id="power">
       <div class="breaker"></div>
-      <div class="termRow">
-        <div class="terminal L" data-term="L"></div>
-        <div class="terminal N" data-term="N"></div>
+      <div class="terminal" data-id="power-L">L</div>
+      <div class="terminal" data-id="power-N">N</div>
+    </div>
+
+    <div class="device switch" id="switch1">
+      <div class="terminal" data-id="sw-IN">IN</div>
+      <div class="terminal" data-id="sw-OUT">OUT</div>
+    </div>
+
+    <div class="device jb" id="jb">
+      <div class="jb-row">
+        <div class="terminal" data-id="jb-1"></div>
+        <div class="terminal" data-id="jb-2"></div>
+        <div class="terminal" data-id="jb-3"></div>
+        <div class="terminal" data-id="jb-4"></div>
       </div>
     </div>
 
-    <div class="device jb" data-device="jb">
-      <div class="termGrid">
-        <div class="terminal" data-term="1"></div>
-        <div class="terminal" data-term="2"></div>
-        <div class="terminal" data-term="3"></div>
-        <div class="terminal" data-term="4"></div>
+    <div class="device lamp" id="lamp1">
+      <div class="lamp-icon"></div>
+      <div class="lamp-terminals">
+        <div class="terminal" data-id="lamp-L">L</div>
+        <div class="terminal" data-id="lamp-N">N</div>
       </div>
-    </div>
-
-    <div class="device switch1" data-device="switch1">
-      <div class="termRow">
-        <div class="terminal IN" data-term="IN"></div>
-        <div class="terminal OUT" data-term="OUT"></div>
-      </div>
-    </div>
-
-    <div class="device lamp" data-device="lamp">
-      <div class="termRow">
-        <div class="terminal L" data-term="L"></div>
-        <div class="terminal N" data-term="N"></div>
-      </div>
-      <div class="bulb" id="lampBulb"></div>
     </div>
 
   </div>
 
-  <!-- WORLD2 -->
-  <div id="world2" class="world hidden">
-
-    <div class="device power" data-device="power">
-      <div class="breaker"></div>
-      <div class="termRow">
-        <div class="terminal L" data-term="L"></div>
-        <div class="terminal N" data-term="N"></div>
-      </div>
-    </div>
-
-    <!-- 左三路 -->
-    <div class="device sw3 left" data-device="sw3L">
-      <div class="termCol">
-        <div class="terminal com" data-term="COM"></div>
-        <div class="terminal t1 white" data-term="T1"></div>
-        <div class="terminal t2 red" data-term="T2"></div>
-      </div>
-    </div>
-
-    <!-- 右三路 -->
-    <div class="device sw3 right" data-device="sw3R">
-      <div class="termCol">
-        <div class="terminal t1 white" data-term="T1"></div>
-        <div class="terminal t2 red" data-term="T2"></div>
-        <div class="terminal com" data-term="COM"></div>
-      </div>
-    </div>
-
-    <div class="device jb" data-device="jb">
-      <div class="termGrid">
-        <div class="terminal"></div>
-        <div class="terminal"></div>
-        <div class="terminal"></div>
-        <div class="terminal"></div>
-        <div class="terminal"></div>
-        <div class="terminal"></div>
-      </div>
-    </div>
-
-    <div class="device lamp" data-device="lamp">
-      <div class="termRow">
-        <div class="terminal L"></div>
-        <div class="terminal N"></div>
-      </div>
-      <div class="bulb" id="lampBulb2"></div>
-    </div>
-
+  <div id="controls">
+    <button id="setBtn">SET</button>
+    <button id="resetBtn">Reset</button>
   </div>
 
-</main>
+  <div id="bossOverlay" class="hidden">
+    <div id="bossBox">
+      <img src="assets/boss/boss.png" id="bossImg">
+      <div id="bossHPBar">
+        <div id="bossHP"></div>
+      </div>
+      <button id="attackBtn">撃破</button>
+    </div>
+  </div>
 
-<footer>
-  <button id="setBtn">SET</button>
-</footer>
-
-<!-- ボス画面 -->
-<div id="bossOverlay" class="hidden">
-  <img src="assets/boss/boss_World2.PNG" id="bossImg">
-  <div class="bossHpBar"><div id="bossHpFill"></div></div>
-  <button id="closeBoss">撃破</button>
 </div>
 
 <script src="game.js"></script>
