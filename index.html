@@ -1,144 +1,73 @@
-<!-- index.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (boss explosion + dialog)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俺らの電工 - WORLD2</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
-  <div id="versionBadge">version: 2026-02-20T1900</div>
 
-  <div class="header">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="title">俺らの電工 β</div>
-      <div style="font-size:13px;color:#ccc;margin-left:8px">Round: <span id="roundLabel">1</span> / 3</div>
-    </div>
-    <div class="hp-area">
-      <div style="font-size:12px;color:#ccc;margin-bottom:6px;">PLAYER HP</div>
-      <div class="bar"><div id="playerHP" class="player" style="width:100%"></div></div>
-    </div>
-    <div style="text-align:right;font-size:12px;color:#aaa;">
-      STATE<br><strong id="stateLabel">title</strong>
-    </div>
+<div class="header">
+  <h1>WORLD2</h1>
+  <div class="hpwrap">
+    <div class="hpbar"><div id="bossHPbar"></div></div>
+  </div>
+</div>
+
+<div id="board">
+
+  <!-- ブレーカー -->
+  <div class="device" id="power">
+    <div class="terminal" data-id="power-L">L</div>
+    <div class="terminal" data-id="power-N">N</div>
   </div>
 
-  <div id="board-wrap">
-    <div id="board">
-      <!-- Junction (joint box) -->
-      <div id="junction" class="device junction" style="left:40%; top:42%;">
-        <div class="icon-wrap" aria-hidden>
-          <!-- simple JB icon -->
-          <svg viewBox="0 0 64 64" class="device-icon"><rect x="6" y="12" width="52" height="40" rx="6" fill="#d6d6d6" stroke="#bbb"/></svg>
-        </div>
-        <div class="jb-dots" aria-hidden>
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-        </div>
-      </div>
-
-      <!-- Power (breaker) -->
-      <div class="device" id="power" style="left:12%; top:26%;">
-        <div class="icon-wrap">
-          <!-- breaker SVG -->
-          <svg viewBox="0 0 64 64" class="device-icon">
-            <rect x="6" y="10" width="52" height="44" rx="6" fill="#111"/>
-            <rect x="10" y="14" width="44" height="12" rx="3" fill="#222"/>
-            <rect x="14" y="30" width="18" height="18" rx="3" fill="#333"/>
-            <rect x="34" y="30" width="18" height="18" rx="3" fill="#222"/>
-          </svg>
-        </div>
-        <div class="term-row">
-          <div class="terminal" data-id="power-L">L</div>
-          <div class="terminal" data-id="power-N">N</div>
-        </div>
-      </div>
-
-      <!-- Switch (single pole) -->
-      <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
-        <div class="icon-wrap">
-          <!-- single-pole switch SVG -->
-          <svg viewBox="0 0 64 64" class="device-icon">
-            <rect x="8" y="10" width="48" height="44" rx="6" fill="#e7ffec" stroke="#bfeabc"/>
-            <rect x="26" y="22" width="12" height="20" rx="4" fill="#c6ffd8"/>
-            <circle cx="32" cy="28" r="2" fill="#333"/>
-          </svg>
-        </div>
-        <div class="term-row">
-          <div class="terminal" data-id="switch-IN">IN</div>
-          <div class="terminal" data-id="switch-OUT">OUT</div>
-        </div>
-        <div id="switchState" class="switchState">Switch: OFF</div>
-      </div>
-
-      <div id="lampsContainer"></div>
-    </div>
+  <!-- 三路1 -->
+  <div class="device" id="sw1">
+    <button id="sw1Btn">SW1</button>
+    <div class="terminal" data-id="sw1-COM">COM</div>
+    <div class="terminal" data-id="sw1-T1">T1</div>
+    <div class="terminal" data-id="sw1-T2">T2</div>
   </div>
 
-  <div class="controls">
-    <div style="display:flex;gap:18px;align-items:center">
-      <button id="switchBtn" class="small">SWITCH</button>
-      <button id="setBtn" class="big">SET</button>
-      <button id="resetWires" class="small">Reset Wires</button>
-      <button id="restart" class="small">Restart</button>
-    </div>
-    <div class="note">端子クリック → もう一つの端子クリックで配線。配線選択してクリックで削除。</div>
+  <!-- 三路2 -->
+  <div class="device" id="sw2">
+    <button id="sw2Btn">SW2</button>
+    <div class="terminal" data-id="sw2-COM">COM</div>
+    <div class="terminal" data-id="sw2-T1">T1</div>
+    <div class="terminal" data-id="sw2-T2">T2</div>
   </div>
 
-  <div id="overlay" class="overlay" style="display:none;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
-
-  <div id="titleScreen" class="modal-backdrop show">
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="font-size:14px;color:#fff;margin-bottom:8px">produce by 貴電</div>
-      <div class="titleBig">WORLD1</div>
-      <div style="color:#fff;margin-bottom:12px">俺らの電工 - チュートリアル</div>
-      <div style="display:flex;gap:12px">
-        <button id="toQuiz" class="small">開始 (学科問題へ)</button>
-      </div>
-    </div>
+  <!-- JB -->
+  <div class="device" id="junction">
+    <div class="terminal" data-id="junction-1"></div>
+    <div class="terminal" data-id="junction-2"></div>
+    <div class="terminal" data-id="junction-3"></div>
+    <div class="terminal" data-id="junction-4"></div>
   </div>
 
-  <div id="quizScreen" class="modal-backdrop" aria-hidden="true">
-    <div class="titleBig">学科問題</div>
-    <div class="quizBox" id="quizBox">
-      <div id="quizQuestion" style="margin-bottom:12px">質問...</div>
-      <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
-      <div style="display:flex;gap:12px">
-        <button id="answerBtn" class="small">回答</button>
-        <button id="skipQuiz" class="small">スキップ (デバッグ)</button>
-        <div style="margin-left:auto;color:#ccc;align-self:center">Q <span id="quizIndex">1</span> / 5</div>
-      </div>
-    </div>
+  <!-- ランプ -->
+  <div class="device lamp" id="lamp1">
+    <div class="terminal" data-id="lamp1-L">L</div>
+    <div class="terminal" data-id="lamp1-N">N</div>
   </div>
 
-  <div id="bossScreen" aria-hidden="true">
-    <div id="hitText"></div>
-    <div id="bossPanel">
-      <div id="bossImg" class="bossImg">
-        <!-- boss image loaded by JS or fallback -->
-      </div>
-      <div style="flex:1">
-        <div id="bossName">汚ねえ大工</div>
-        <div style="font-size:12px;color:#ccc;margin:8px 0;">BOSS HP</div>
-        <div class="bossHPback"><div id="bossHPbar" class="bossHPbar" style="width:100%"></div></div>
-      </div>
-    </div>
+  <div class="device lamp" id="lamp2">
+    <div class="terminal" data-id="lamp2-L">L</div>
+    <div class="terminal" data-id="lamp2-N">N</div>
   </div>
 
-  <div id="explosion" class="explosion"></div>
-  <div id="defeatDialog" class="defeatDialog"></div>
-  <div id="flashOverlay" class="flashOverlay"></div>
+  <svg id="wireLayer"></svg>
 
-  <div id="finalVideoWrap" style="display:none;align-items:center;justify-content:center;">
-    <video id="finalVideo" src="black.mp4" preload="auto" playsinline></video>
-  </div>
+</div>
 
-  <audio id="freezeSound" src="freeze.mp3" preload="auto"></audio>
-  <audio id="explodeSound" src="explode.mp3" preload="auto"></audio>
+<button id="setBtn">SET</button>
+
+<!-- WORLD2 ボス -->
+<div class="bossWrap">
+  <img id="bossImg" src="assets/boss/boss_World2.PNG">
+</div>
 
 <script src="game.js"></script>
 </body>
