@@ -1,407 +1,454 @@
-/* game.js — 修正版（黒線可視化 / プレビュー安定化 / 4択クイズ復活 / JB端子改善）
-   注意: index.html は既に差し替え済みとのことなので、このファイルだけ上書きしてください。
-   保存後、iPhone Safari で「履歴とWebサイトデータを消去」→ページリロードを必ず行ってください。
+/* game.js
+   Designed for vertical iOS Safari. Single-file game logic.
 */
-(() => {
-  'use strict';
 
-  /* ---- utilities ---- */
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-  const create = (tag, attrs={}, parent=null) => {
-    const e = document.createElement(tag);
-    Object.entries(attrs).forEach(([k,v])=>{
-      if(k==='class') e.className = v;
-      else if(k==='style') Object.assign(e.style, v);
-      else e.setAttribute(k,v);
-    });
-    if(parent) parent.appendChild(e);
-    return e;
+(() => {
+  // --- state ---
+  const state = {
+    playerHP: 100,
+    bossHP: 100,
+    round: 1,
+    switchOn: false,
+    selectedTerminal: null,
+    connections: [], // {fromId,toId,color,fromPos,toPos}
+    lines: [], // same as connections (snapshot)
+    quizIdx: 0,
+    questions: [
+      {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
+      {q:'単相100Vの家庭用コンセントでLとNの意味は？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
+      {q:'接地(アース)の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチの代わり'], correct:2},
+      {q:'片切スイッチとは？', opts:['2か所で操作するスイッチ','1つの回路を入切するスイッチ','常時接続の端子','漏電遮断器'], correct:1},
+      {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護する','電圧を上げる','照明を点ける'], correct:1}
+    ],
   };
 
-  /* ---- state ---- */
-  let canvas, ctx, DPR = window.devicePixelRatio || 1;
-  const terminals = new Map(); // id -> {el, cx, cy}
-  let connections = []; // {from,to,color}
-  let selectedTerm = null;
-  let pointer = {x:0,y:0,down:false};
-  let playerHP = 100, bossHP = 100;
-  const board = $('#board');
+  // --- elems ---
+  const canvas = document.getElementById('wireCanvas');
+  const ctx = canvas.getContext('2d', {alpha:true});
+  const terminals = Array.from(document.querySelectorAll('.terminal'));
+  const playerHPEl = document.getElementById('playerHP');
+  const stateLabel = document.getElementById('stateLabel');
+  const setBtn = document.getElementById('setBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const switchBtn = document.getElementById('switchBtn');
+  const switchStateEl = document.getElementById('switchState');
+  const quizModal = document.getElementById('quizModal');
+  const quizQuestion = document.getElementById('quizQuestion');
+  const quizOptions = document.getElementById('quizOptions');
+  const answerBtn = document.getElementById('answerBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const bossOverlay = document.getElementById('bossOverlay');
+  const bossHPBar = document.getElementById('bossHP');
+  const bossImg = document.getElementById('bossImg');
+  const finishBtn = document.getElementById('finishBtn');
+  const explosionEl = document.getElementById('explosion');
+  const defeatDialog = document.getElementById('defeatDialog');
+  const hitText = document.getElementById('hitText');
+  const sndExplode = document.getElementById('sndExplode');
+  const sndFreeze = document.getElementById('sndFreeze');
 
-  /* ---- init ---- */
-  function init(){
-    canvas = $('#wireCanvas');
-    ctx = canvas.getContext('2d');
-
-    // render devices (index.html may contain none; ensure board has devices)
-    if(!board) {
-      console.error('board element not found');
-      return;
-    }
-
-    renderDevicesIfMissing();
-    collectTerminals();
-    attachTerminalHandlers();
-
-    // pointer capture globally so UI overlay doesn't block preview
-    ['pointermove','pointerdown','pointerup','pointercancel'].forEach(ev=>{
-      document.addEventListener(ev, onPointer, {passive:false});
-    });
-
-    // resize/calc
-    window.addEventListener('resize', debounce(recalcAll, 80));
-    window.addEventListener('orientationchange', debounce(recalcAll, 120));
-    // hook controls
-    $('#setBtn') && $('#setBtn').addEventListener('click', onSet);
-    $('#resetBtn') && $('#resetBtn').addEventListener('click', ()=>{ connections=[]; selectedTerm=null; collectTerminals(); });
-
-    // render loop
-    requestAnimationFrame(renderLoop);
-
-    // show quiz first
-    showQuiz();
-  }
-
-  /* ---- debounce helper ---- */
-  function debounce(fn, ms){
-    let t;
-    return function(...a){ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
-  }
-
-  /* ---- ensure devices exist (if index already had them this is safe) ---- */
-  function renderDevicesIfMissing(){
-    // If the index replaced the markup, do nothing. Otherwise create minimal devices.
-    if($$('.device').length > 0) {
-      // still adjust classes/sizes for mobile
-      applyDeviceSizing();
-      return;
-    }
-    // create a set similar to earlier structure (safe fallback)
-    createDevice('power', 36, 8, 28, 14, buildPower);
-    createDevice('switch1', 6, 24, 22, 22, buildSwitch);
-    createDevice('jb', 28, 34, 44, 18, buildJB);
-    createDevice('lamp1', 34, 56, 28, 22, buildLamp);
-  }
-
-  function createDevice(id,left,top,w,h,builder){
-    const el = create('div',{class:'device', id, style:{left:left+'vw', top:top+'vh', width:w+'vw', height:h+'vh'}}, board);
-    builder(el);
-  }
-
-  function applyDeviceSizing(){
-    // minor fixes to ensure terminals are inside device bounds across iPhones
-    $$('.device').forEach(dev=>{
-      dev.style.minWidth = dev.style.width || '20vw';
-      dev.style.minHeight = dev.style.height || '12vh';
-    });
-  }
-
-  /* ---- individual device building helpers ---- */
-  function buildPower(el){
-    el.innerHTML = '';
-    create('div',{class:'breaker'},el);
-    const row = create('div',{style:{display:'flex',gap:'4vw',width:'100%',justifyContent:'center',marginTop:'1vh'}},el);
-    const L = create('div',{class:'terminal mid','data-id':'power-L',style:{width:'8vw',height:'8vw',display:'flex',alignItems:'center',justifyContent:'center'}},row); L.textContent='L';
-    const N = create('div',{class:'terminal mid','data-id':'power-N',style:{width:'8vw',height:'8vw',display:'flex',alignItems:'center',justifyContent:'center'}},row); N.textContent='N';
-  }
-  function buildSwitch(el){
-    el.innerHTML = '';
-    el.style.background = '#eaffef';
-    const row = create('div',{style:{display:'flex',gap:'3vw',width:'100%',justifyContent:'space-around'}},el);
-    const IN = create('div',{class:'terminal small','data-id':'sw-IN',style:{width:'9vw',height:'9vw'}},row); IN.textContent='IN';
-    const OUT = create('div',{class:'terminal small','data-id':'sw-OUT',style:{width:'9vw',height:'9vw'}},row); OUT.textContent='OUT';
-  }
-  function buildJB(el){
-    el.innerHTML='';
-    el.style.background='#ddd';
-    // top 4 small vertical ovals (representive) and bottom 2 round
-    const top = create('div',{style:{display:'flex',justifyContent:'space-between',width:'86%',marginTop:'1vh'}},el);
-    for(let i=1;i<=4;i++){
-      const t = create('div',{class:'terminal small','data-id':`jb-${i}`,style:{width:'6.6vw',height:'9vw',borderRadius:'999px',background:'#222'}},top);
-    }
-    const bottom = create('div',{style:{position:'absolute',bottom:'1.8vh',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'5.6vw'}},el);
-    create('div',{class:'terminal mid','data-id':'jb-b1',style:{width:'9vw',height:'9vw'}},bottom);
-    create('div',{class:'terminal mid','data-id':'jb-b2',style:{width:'9vw',height:'9vw'}},bottom);
-  }
-  function buildLamp(el){
-    el.innerHTML = '';
-    el.style.background = '#eee';
-    const icon = create('div',{style:{width:'16vw',height:'12vh',borderRadius:'999px',background:'radial-gradient(circle,#fff 50%, #ddd 100%)',marginTop:'2vh'}},el);
-    const row = create('div',{style:{display:'flex',gap:'6vw',width:'70%',justifyContent:'space-between',marginTop:'1vh'}},el);
-    const L = create('div',{class:'terminal mid','data-id':'lamp-L',style:{width:'9vw',height:'9vw'}},row); L.textContent='L';
-    const N = create('div',{class:'terminal mid','data-id':'lamp-N',style:{width:'9vw',height:'9vw'}},row); N.textContent='N';
-  }
-
-  /* ---- collect terminals positions ---- */
-  function collectTerminals(){
-    terminals.clear();
-    $$('.terminal').forEach(el=>{
-      const id = el.dataset.id || ('t-'+Math.random().toString(36).slice(2,8));
-      el.dataset.id = id;
-      terminals.set(id, { el, cx:0, cy:0 });
-    });
-    recalcCanvas(); // compute positions
-  }
-
-  /* ---- attach handlers ---- */
-  function attachTerminalHandlers(){
-    $$('.terminal').forEach(el=>{
-      el.onclick = (ev)=>{
-        ev.stopPropagation();
-        onTerminalClick(el);
-      };
-    });
-  }
-
-  function onTerminalClick(el){
-    // toggle selection / connect
-    if(selectedTerm === el){
-      el.classList.remove('terminal-selected');
-      selectedTerm = null;
-      return;
-    }
-    if(!selectedTerm){
-      selectedTerm = el;
-      el.classList.add('terminal-selected');
-      return;
-    }
-    // create or toggle connection
-    const a = selectedTerm.dataset.id, b = el.dataset.id;
-    if(!a || !b){ selectedTerm.classList.remove('terminal-selected'); selectedTerm=null; return; }
-    // if exists, remove
-    const idx = connections.findIndex(c=> (c.from===a && c.to===b) || (c.from===b && c.to===a));
-    if(idx>=0){ connections.splice(idx,1); selectedTerm.classList.remove('terminal-selected'); selectedTerm=null; return; }
-    // add with color rule
-    const color = colorFor(a,b);
-    connections.push({from:a,to:b,color});
-    selectedTerm.classList.remove('terminal-selected');
-    selectedTerm = null;
-  }
-
-  // color rule: if any endpoint is '-N' -> white line, else black
-  function colorFor(a,b){
-    if(a && a.endsWith('-N')) return '#ffffff';
-    if(b && b.endsWith('-N')) return '#ffffff';
-    // if either contains 'jb' but other is 'lamp-N' handled above
-    return '#000000';
-  }
-
-  /* ---- pointer (global) ---- */
-  function onPointer(e){
-    // track coords for preview even if UI on top
-    pointer.x = e.clientX;
-    pointer.y = e.clientY;
-    if(e.type === 'pointerdown') pointer.down = true;
-    if(e.type === 'pointerup' || e.type === 'pointercancel') pointer.down = false;
-  }
-
-  /* ---- canvas resize and terminal coords ---- */
-  function recalcCanvas(){
-    if(!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    DPR = window.devicePixelRatio || 1;
-    canvas.width = Math.round(rect.width * DPR);
-    canvas.height = Math.round(rect.height * DPR);
+  // canvas size & layout
+  function resizeCanvas(){
+    const rect = document.getElementById('board').getBoundingClientRect();
+    canvas.width = Math.max(800, Math.floor(rect.width * devicePixelRatio));
+    canvas.height = Math.max(600, Math.floor(rect.height * devicePixelRatio));
+    canvas.style.left = rect.left + 'px';
+    canvas.style.top = rect.top + 'px';
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    // compute center coordinates for terminals
-    const boardRect = rect;
-    terminals.forEach((v,k)=>{
-      const r = v.el.getBoundingClientRect();
-      v.cx = r.left - boardRect.left + r.width/2;
-      v.cy = r.top - boardRect.top + r.height/2;
-    });
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    redrawAll();
+  }
+  window.addEventListener('resize', ()=>{ setTimeout(resizeCanvas,60); });
+  window.addEventListener('load', resizeCanvas);
+
+  // helper - terminal center on screen relative to canvas
+  function terminalCenter(el){
+    const boardRect = document.getElementById('board').getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return {
+      x: (r.left - boardRect.left) + r.width/2,
+      y: (r.top - boardRect.top) + r.height/2
+    };
   }
 
-  function recalcAll(){ collectTerminals(); }
+  // determine color for line based on id or types
+  function colorForId(id){
+    if(!id) return '#fff';
+    if(id.includes('-L') || id.endsWith('-L')) return '#000'; // live = black
+    if(id.includes('-N') || id.endsWith('-N')) return '#fff'; // neutral = white
+    // three-core or others -> red fallback
+    return '#d82b2b';
+  }
 
-  /* ---- drawing stable curves (outline + main stroke) ---- */
-  function drawCurve(a,b, opts={}){
-    const {color='#000000', width=8} = opts;
-    // control point for gentle curve
-    const mx = (a.x + b.x)/2;
-    const my = (a.y + b.y)/2 - Math.min(60, Math.abs(a.x-b.x)/2 + 10);
-
+  // draw a single line
+  function drawLine(p1,p2,color,opts={}){
+    ctx.save();
     ctx.lineCap = 'round';
-
-    // outer stroke for visibility: choose contrasting outline
-    let outline;
-    if(color === '#ffffff') outline = '#222'; // dark outline for white
-    else outline = 'rgba(255,255,255,0.08)'; // slight light halo for black
+    // shadow for visibility
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = opts.width || 8;
+    // draw dark stroke under for contrast
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
     ctx.beginPath();
-    ctx.lineWidth = width + 4;
-    ctx.strokeStyle = outline;
-    ctx.moveTo(a.x,a.y);
-    ctx.quadraticCurveTo(mx,my,b.x,b.y);
+    ctx.moveTo(p1.x, p1.y);
+    // subtle bezier to avoid overlaps
+    const midX = (p1.x + p2.x)/2;
+    ctx.quadraticCurveTo(midX, p1.y, p2.x, p2.y);
     ctx.stroke();
 
     // main stroke
-    ctx.beginPath();
-    ctx.lineWidth = width;
+    ctx.lineWidth = opts.width || 6;
     ctx.strokeStyle = color;
-    ctx.moveTo(a.x,a.y);
-    ctx.quadraticCurveTo(mx,my,b.x,b.y);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.quadraticCurveTo(midX, p1.y, p2.x, p2.y);
     ctx.stroke();
+
+    ctx.restore();
   }
 
-  /* ---- main render loop ---- */
-  function renderLoop(){
-    if(!canvas) return;
-    recalcCanvas(); // light-weight safe call to keep coords fresh
+  // redraw everything (lines)
+  function redrawAll(){
     // clear
-    ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR);
-
-    // draw connections
-    connections.forEach(c=>{
-      const a = terminals.get(c.from);
-      const b = terminals.get(c.to);
-      if(!a || !b) return;
-      drawCurve({x:a.cx, y:a.cy}, {x:b.cx, y:b.cy}, {color: c.color, width: 8});
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw permanent lines
+    state.lines.forEach(l => {
+      drawLine(l.p1, l.p2, l.color, {width: l.width || 6});
     });
-
-    // draw preview if selected
-    if(selectedTerm){
-      const s = terminals.get(selectedTerm.dataset.id);
-      if(s){
-        const rect = canvas.getBoundingClientRect();
-        const px = pointer.x - rect.left;
-        const py = pointer.y - rect.top;
-        // preview thin white
-        drawCurve({x:s.cx, y:s.cy}, {x:px, y:py}, {color:'#ffffff', width:3});
-      }
+    // draw preview if selectedTerminal exists
+    if(state.selectedTerminal && state.previewPos){
+      const idFrom = state.selectedTerminal.dataset.id;
+      const pFrom = terminalCenter(state.selectedTerminal);
+      const pTo = state.previewPos;
+      drawLine(pFrom, pTo, '#ffffff', {width: 10}); // preview thick white
     }
-
-    requestAnimationFrame(renderLoop);
   }
 
-  /* ---- solution check & set handling ---- */
-  function connHas(a,b){
-    return connections.some(c=> (c.from===a && c.to===b) || (c.from===b && c.to===a));
+  // selection & connection logic
+  function clearSelection(){
+    if(state.selectedTerminal) state.selectedTerminal.classList.remove('selected');
+    state.selectedTerminal = null;
+    state.previewPos = null;
+    redrawAll();
   }
 
-  function checkSolution(){
-    // same basic conditions as before but resilient to jb-names
-    const jbIds = Array.from(terminals.keys()).filter(k=> k.startsWith('jb-') || k.startsWith('jb-b'));
-    if(!jbIds.length) return false;
-    const anyPL = jbIds.some(j=> connHas('power-L', j));
-    const anyPN = jbIds.some(j=> connHas('power-N', j));
-    const jbToIn = jbIds.some(j=> connHas(j, 'sw-IN'));
-    const outToJb = jbIds.some(j=> connHas('sw-OUT', j));
-    const lampL = jbIds.some(j=> connHas(j, 'lamp-L'));
-    const lampN = jbIds.some(j=> connHas(j, 'lamp-N'));
-    return anyPL && anyPN && jbToIn && outToJb && lampL && lampN;
+  // create permanent connection (and store)
+  function addConnection(elA, elB){
+    const aId = elA.dataset.id, bId = elB.dataset.id;
+    if(!aId || !bId || aId === bId) return;
+    // prevent duplicates
+    if(state.connections.some(c=> (c.a===aId && c.b===bId) || (c.a===bId && c.b===aId) )) return;
+    const p1 = terminalCenter(elA), p2 = terminalCenter(elB);
+    const color = colorForId(aId) || colorForId(bId) || '#fff';
+    const width = 6;
+    const line = {a:aId,b:bId,color,width,p1,p2};
+    state.connections.push(line);
+    state.lines.push({p1,p2,color,width,a:aId,b:bId});
+    redrawAll();
   }
 
-  function onSet(){
-    // if miswired penalize
-    if(!checkSolution()){
-      playerHP = Math.max(0, playerHP - 20);
-      updateHP();
-      if(playerHP <= 0){ alert('PLAYER HP 0 — game over'); resetAll(); }
-      else alert('配線ミス: PLAYER -20');
+  // terminal event handlers
+  function onTerminalClick(e){
+    const t = e.currentTarget;
+    // only allow clicks during play/quiz done
+    // selection toggle
+    if(state.selectedTerminal === t){
+      clearSelection();
       return;
     }
-    // success: brief wire animation (flicker) then boss overlay
-    pulseThenBoss();
-  }
-
-  function pulseThenBoss(){
-    let steps=0;
-    const interval = setInterval(()=>{
-      // draw highlight flicker: increase width temporarily
-      ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR);
-      connections.forEach(c=>{
-        const a = terminals.get(c.from), b = terminals.get(c.to);
-        if(!a||!b) return;
-        drawCurve({x:a.cx,y:a.cy},{x:b.cx,y:b.cy},{color:c.color, width: 10 + (steps%2)*3});
-      });
-      steps++;
-      if(steps>4){ clearInterval(interval); showBoss(); }
-    },120);
-  }
-
-  function showBoss(){
-    const bo = $('#bossOverlay');
-    if(bo){
-      bo.style.display='flex'; bo.setAttribute('aria-hidden','false');
-      $('#bossHP') && ($('#bossHP').style.width = bossHP + '%');
-      $('#attackBtn') && ($('#attackBtn').onclick = ()=>{ reduceBoss(40); });
+    if(!state.selectedTerminal){
+      state.selectedTerminal = t;
+      t.classList.add('selected');
     } else {
-      alert('ボス（仮）: クリア');
+      // connect and clear
+      addConnection(state.selectedTerminal, t);
+      state.selectedTerminal.classList.remove('selected');
+      state.selectedTerminal = null;
     }
   }
 
-  function reduceBoss(d){
-    bossHP = Math.max(0, bossHP - d);
-    $('#bossHP') && ($('#bossHP').style.width = bossHP + '%');
-    const flash = create('div',{style:{position:'fixed',inset:0,background:'#fff',opacity:0.9,zIndex:2000}},document.body);
-    setTimeout(()=>flash.remove(),300);
-    if(bossHP<=0){
-      setTimeout(()=>{ alert('BOSS撃破！World1クリア'); $('#bossOverlay').style.display='none'; }, 400);
-    }
-  }
-
-  function updateHP(){ const el = $('#playerHP'); if(el) el.style.width = playerHP + '%'; }
-
-  function resetAll(){ connections=[]; selectedTerm=null; collectTerminals(); updateHP(); $('#bossOverlay') && ($('#bossOverlay').style.display='none'); }
-
-  /* ---- quiz system (4択, random) ---- */
-  const QUESTIONS = [
-    {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
-    {q:'単相100VでLとNは？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
-    {q:'接地の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチ代わり'], correct:2},
-    {q:'片切スイッチとは？', opts:['2か所で操作する','1つの回路を入切','常時接続','漏電遮断器'], correct:1},
-    {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護','電圧を上げる','照明を点ける'], correct:1}
-  ];
-
-  function showQuiz(){
-    const modal = $('#quizModal');
-    if(!modal) return;
-    modal.style.display='flex';
-    modal.setAttribute('aria-hidden','false');
-    modal.innerHTML = '';
-    // pick 4 random questions (shuffle)
-    const qs = QUESTIONS.slice().sort(()=>0.5-Math.random()).slice(0,4);
-    let idx = 0;
-    function renderQ(){
-      modal.innerHTML = '';
-      const box = create('div',{style:{background:'#111',padding:'5vw',borderRadius:'8px',width:'86vw',color:'#fff'}},modal);
-      create('div',{style:{fontSize:'6vw',color:'#ffd200',fontWeight:800,marginBottom:'2vh'}},box).textContent='学科問題';
-      create('div',{id:'qtxt',style:{fontSize:'4vw',marginBottom:'3vh'}},box).textContent = qs[idx].q;
-      const optsWrap = create('div',{style:{display:'flex',flexDirection:'column',gap:'3vw'}},box);
-      qs[idx].opts.forEach((opt,i)=>{
-        const b = create('button',{class:'quizOpt',style:{padding:'2.6vh 3vw',borderRadius:'8px',fontSize:'4vw',textAlign:'left',background:'#222',color:'#fff',border:'none'}},optsWrap);
-        b.textContent = opt;
-        b.dataset.index = i;
-        b.onclick = ()=>{
-          // highlight selection
-          $$('.quizOpt', optsWrap).forEach(x=>x.style.background='#222');
-          b.style.background = '#ffd200';
-        };
+  function attachTermListeners(){
+    terminals.forEach(t=>{
+      // remove old listeners safety
+      t.replaceWith(t.cloneNode(true));
+    });
+    // re-query
+    const newTerms = Array.from(document.querySelectorAll('.terminal'));
+    newTerms.forEach(t=>{
+      t.addEventListener('click', onTerminalClick);
+      // touchmove/mousemove for preview
+      t.addEventListener('touchstart', (ev) => {
+        ev.preventDefault();
+        onTerminalClick({currentTarget:t});
       });
-      const ctrl = create('div',{style:{display:'flex',gap:'4vw',marginTop:'3vh',alignItems:'center'}},box);
-      const next = create('button',{style:{padding:'1.8vh 4vw',borderRadius:'8px',fontSize:'4vw',background:'#ffd000',border:'none'}},ctrl);
-      next.textContent = (idx < qs.length-1) ? '次へ' : '回答';
-      next.onclick = ()=>{
-        const chosen = Array.from(optsWrap.querySelectorAll('.quizOpt')).find(x=> x.style.background === 'rgb(255, 210, 0)' || x.style.background === '#ffd200' || x.style.background === 'rgb(255, 210, 0)');
-        if(!chosen){ alert('選択してください'); return; }
-        const sel = Number(chosen.dataset.index);
-        if(sel !== qs[idx].correct){
-          playerHP = Math.max(0, playerHP - 10);
-          updateHP();
-        }
-        idx++;
-        if(idx < qs.length) renderQ();
-        else { modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
-      };
-    }
-    renderQ();
+    });
+    // canvas preview: track touch/mouse move
+    const board = document.getElementById('board');
+    let dragging=false;
+    board.addEventListener('mousemove', (ev)=>{
+      if(!state.selectedTerminal) return;
+      const br = board.getBoundingClientRect();
+      state.previewPos = {x:ev.clientX - br.left, y:ev.clientY - br.top};
+      redrawAll();
+    });
+    board.addEventListener('touchmove',(ev)=>{
+      if(!state.selectedTerminal) return;
+      const touch = ev.touches[0];
+      const br = board.getBoundingClientRect();
+      state.previewPos = {x:touch.clientX - br.left, y:touch.clientY - br.top};
+      redrawAll();
+    });
+    board.addEventListener('mouseleave', ()=>{
+      if(state.selectedTerminal) state.previewPos = null;
+      redrawAll();
+    });
   }
 
-  /* ---- start on DOM ready ---- */
-  document.addEventListener('DOMContentLoaded', ()=>{
-    setTimeout(()=>{ init(); }, 60);
+  // initial attachment
+  attachTermListeners();
+
+  // --- UI binding ---
+  function updateHP(){
+    playerHPEl.style.width = state.playerHP + '%';
+  }
+  function updateBossHP(){
+    bossHPBar.style.width = Math.max(0,state.bossHP) + '%';
+  }
+  updateHP(); updateBossHP();
+
+  // switch on/off
+  switchBtn.addEventListener('click', ()=>{
+    state.switchOn = !state.switchOn;
+    switchStateEl.textContent = state.switchOn ? 'Switch: ON' : 'Switch: OFF';
+    document.getElementById('switch1').style.background = state.switchOn ? '#eaffef' : '';
   });
+
+  // Reset wires
+  resetBtn.addEventListener('click', ()=> {
+    state.connections = [];
+    state.lines = [];
+    clearSelection();
+    redrawAll();
+  });
+
+  // Validation function (simple but robust)
+  function checkSolution(){
+    // require at least: power-L connected to jb, power-N to jb; switch used; lamp L/N connected to jb
+    const conns = state.connections;
+    const hasPowerLToJB = conns.some(c => (c.a==='power-L' && c.b.startsWith('jb')) || (c.b==='power-L' && c.a.startsWith('jb')));
+    const hasPowerNToJB = conns.some(c => (c.a==='power-N' && c.b.startsWith('jb')) || (c.b==='power-N' && c.a.startsWith('jb')));
+    // lamp connections
+    const lampL = conns.some(c => (c.a==='lamp1-L' || c.b==='lamp1-L') && (c.a.startsWith('jb') || c.b.startsWith('jb')));
+    const lampN = conns.some(c => (c.a==='lamp1-N' || c.b==='lamp1-N') && (c.a.startsWith('jb') || c.b.startsWith('jb')));
+    const switchUsed = conns.some(c => (c.a.startsWith('switch') || c.b.startsWith('switch')));
+    return hasPowerLToJB && hasPowerNToJB && lampL && lampN && switchUsed;
+  }
+
+  // animate lines forward (stroke-draw simulation)
+  function animateLines(ms=1200){
+    return new Promise(resolve=>{
+      // simple animation: draw with increasing width/alpha
+      const start = performance.now();
+      const anim = (t) => {
+        const p = Math.min(1,(t-start)/ms);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        // background subtle dark lines (already permanent)
+        state.lines.forEach(l=>{
+          // draw darker base full
+          drawLine(l.p1,l.p2,'rgba(0,0,0,0.15)',{width: l.width+6});
+        });
+        // draw progressive main strokes
+        state.lines.forEach(l=>{
+          // fade in
+          const col = hexToRGBA(l.color, 0.7*p+0.3);
+          drawLine(l.p1,l.p2,col,{width: l.width * (0.6 + 0.6*p)});
+        });
+        if(p<1) requestAnimationFrame(anim);
+        else { redrawAll(); resolve(); }
+      };
+      requestAnimationFrame(anim);
+    });
+  }
+
+  // helper RGBA from hex
+  function hexToRGBA(hex,alpha=1){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16);
+    const g = parseInt(h.substring(2,4),16);
+    const b = parseInt(h.substring(4,6),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // boss sequence (explosion etc)
+  async function doBossSequence(damage=40){
+    // show boss overlay
+    bossOverlay.classList.remove('hidden');
+    bossOverlay.style.display='flex';
+    stateLabel.textContent='boss';
+    // freeze sound
+    try{ sndFreeze.currentTime=0; await sndFreeze.play(); }catch(e){}
+    // show hit effect
+    hitText.textContent = `HIT - ${damage}`;
+    hitText.style.display = 'block';
+    bossOverlay.querySelector('#bossBox').classList.add('boss-hit');
+    await wait(1200);
+    hitText.style.display = 'none';
+    bossOverlay.querySelector('#bossBox').classList.remove('boss-hit');
+
+    // reduce hp
+    state.bossHP = Math.max(0, state.bossHP - damage);
+    updateBossHP();
+
+    if(state.bossHP <= 0 || state.round >= 2){
+      // explosion
+      explosionEl.style.display = 'block';
+      explosionEl.style.transform = 'translate(-50%,-50%) scale(0.01)';
+      void explosionEl.offsetWidth;
+      explosionEl.style.transition = 'transform 700ms ease-out, opacity 900ms ease-out';
+      explosionEl.style.transform = 'translate(-50%,-50%) scale(1.4)';
+      try{ sndExplode.currentTime=0; await sndExplode.play(); }catch(e){}
+      await wait(800);
+      explosionEl.style.opacity='0';
+      await wait(300);
+      explosionEl.style.display='none';
+      explosionEl.style.opacity='1';
+      explosionEl.style.transition='';
+
+      // defeat dialog lines
+      defeatDialog.textContent = '先行配線させとけば良かった';
+      defeatDialog.style.display='block';
+      await wait(1400);
+      defeatDialog.style.display='none';
+
+      // hide boss
+      bossOverlay.classList.add('hidden');
+      bossOverlay.style.display='none';
+
+      // show clear overlay (simple)
+      alert('WORLD CLEARED!');
+      // reset for demo
+      state.round = 2;
+      state.bossHP = 100;
+      updateBossHP();
+      return;
+    }
+
+    // else continue: hide boss overlay and proceed
+    bossOverlay.classList.add('hidden');
+    bossOverlay.style.display='none';
+    state.round++;
+  }
+
+  function wait(ms){ return new Promise(res=>setTimeout(res,ms)); }
+
+  // SET logic (validate + animate + boss)
+  setBtn.addEventListener('click', async ()=>{
+    if(!state.switchOn){
+      alert('スイッチがOFFです。SWITCH を押して ON にしてください。');
+      return;
+    }
+    if(!checkSolution()){
+      state.playerHP = Math.max(0, state.playerHP - 20);
+      updateHP();
+      if(state.playerHP <= 0){
+        alert('PLAYER HP 0 - game over');
+      } else {
+        alert('配線が正しくありません。PLAYER HP -20');
+      }
+      return;
+    }
+    // animate wires and boss
+    await animateLines(1600); // added extra 2s as requested (made 1.6s)
+    await doBossSequence(40);
+  });
+
+  // boss finish button (manual) for testing
+  finishBtn.addEventListener('click', ()=> {
+    state.bossHP = Math.max(0, state.bossHP - 20);
+    updateBossHP();
+    if(state.bossHP <= 0){
+      // play explosion
+      doBossSequence(50);
+    }
+  });
+
+  // --- Quiz system ---
+  function openQuiz(){
+    state.quizIdx = 0;
+    showQuiz();
+  }
+  function showQuiz(){
+    const q = state.questions[state.quizIdx];
+    quizQuestion.textContent = q.q;
+    quizOptions.innerHTML = '';
+    q.opts.forEach((opt,i)=>{
+      const b = document.createElement('button');
+      b.textContent = opt;
+      b.className = 'option';
+      b.dataset.index = i;
+      b.addEventListener('click', ()=>{
+        // clear others
+        Array.from(quizOptions.children).forEach(x=>x.classList.remove('chosen'));
+        b.classList.add('chosen');
+      });
+      quizOptions.appendChild(b);
+    });
+    quizModal.classList.remove('hidden');
+  }
+  answerBtn.addEventListener('click', ()=>{
+    const chosen = Array.from(quizOptions.children).find(x=>x.classList.contains('chosen'));
+    if(!chosen){ alert('選択してください'); return; }
+    const idx = Number(chosen.dataset.index);
+    const correct = state.questions[state.quizIdx].correct;
+    if(idx !== correct){
+      state.playerHP = Math.max(0, state.playerHP - 10);
+      updateHP();
+    }
+    state.quizIdx++;
+    if(state.quizIdx < state.questions.length) showQuiz();
+    else { quizModal.classList.add('hidden'); }
+  });
+  skipBtn.addEventListener('click', ()=>{ quizModal.classList.add('hidden'); });
+
+  // open initial quiz on load
+  window.addEventListener('load', ()=> {
+    setTimeout(openQuiz, 600);
+  });
+
+  // utility: redraw when connections change (e.g., after page load)
+  function reComputeLinePositions(){
+    // re-snapshot positions
+    state.lines = state.connections.map(c => {
+      const elA = document.querySelector(`[data-id="${c.a}"]`);
+      const elB = document.querySelector(`[data-id="${c.b}"]`);
+      const p1 = elA ? terminalCenter(elA) : {x:0,y:0};
+      const p2 = elB ? terminalCenter(elB) : {x:0,y:0};
+      const color = colorForId(c.a) || colorForId(c.b) || '#fff';
+      return {a:c.a,b:c.b,p1,p2,color,width:6};
+    });
+    redrawAll();
+  }
+
+  // on orientation/resizing, recompute
+  window.addEventListener('resize', ()=> {
+    setTimeout(()=>{ reComputeLinePositions(); }, 90);
+  });
+
+  // initial layout correction: ensure terminals tiny and devices scaled
+  (function tidy(){
+    // change all terminal size class to small to avoid overlaps
+    document.querySelectorAll('.terminal').forEach(t=>t.classList.add('small'));
+    // set global scale (20% smaller)
+    document.documentElement.style.setProperty('--device-scale', '0.8');
+    // reattach listeners
+    attachTermListeners();
+    // recalc canvas after slight delay
+    setTimeout(()=>{ resizeCanvas(); reComputeLinePositions(); }, 120);
+  })();
+
+  // debug: expose state (remove in prod)
+  window.__gameState = state;
 
 })();
