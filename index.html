@@ -26,62 +26,50 @@
 
   <div id="board-wrap">
     <div id="board">
-      <div id="junction" class="device">
-        <h3 style="font-size:12px">Joint Box</h3>
-        <div class="jb-dots" style="margin-top:6px;">
+      <!-- compact junction (dots only) -->
+      <div id="junction" class="device junction">
+        <div class="jb-dots">
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
           <div class="jb-term" data-id="jb"></div>
-        </div>
-        <div style="font-size:11px;color:#666;margin-top:6px;">端子は導通のみ。どの端子でもOK。</div>
-      </div>
-
-      <div class="device" id="power" style="left:12%; top:26%;">
-        <h3 style="font-size:12px">電源（ブレーカー）</h3>
-        <div class="icon">
-          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="4" y="10" width="56" height="44" rx="6" fill="#222" stroke="#444"/>
-            <rect x="12" y="18" width="14" height="28" rx="3" fill="#ffd000"/>
-            <rect x="34" y="18" width="14" height="28" rx="3" fill="#ccc"/>
-          </svg>
-        </div>
-        <div style="text-align:center;">
-          <div class="terminal" data-id="power-L">L</div>
-          <div class="terminal" data-id="power-N">N</div>
         </div>
       </div>
 
-      <div class="device" id="switch" style="left:78%; top:18%; background:#e7ffec;">
-        <h3 style="font-size:12px">片切スイッチ</h3>
-        <div class="icon">
-          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="8" y="14" width="48" height="36" rx="6" fill="#fff" stroke="#ccc"/>
-            <circle cx="32" cy="32" r="8" fill="#333"/>
-          </svg>
-        </div>
-        <div style="text-align:center;">
-          <div class="terminal" data-id="switch-IN">IN</div>
-          <div class="terminal" data-id="switch-OUT">OUT</div>
-        </div>
-        <div id="switchState" style="color:#333;margin-top:6px;font-size:11px;">Switch: OFF</div>
+      <!-- power: icon only -->
+      <div class="device node power" id="power" style="left:10%; top:26%;">
+        <svg viewBox="0 0 64 64" class="icon" aria-hidden>
+          <rect x="4" y="8" width="56" height="48" rx="8" fill="#222"/>
+          <rect x="12" y="18" width="14" height="28" rx="3" fill="#ffd000"/>
+          <rect x="34" y="18" width="14" height="28" rx="3" fill="#ccc"/>
+        </svg>
+        <div class="terminal" data-id="power-L">L</div>
+        <div class="terminal" data-id="power-N">N</div>
+      </div>
+
+      <!-- switch: icon only -->
+      <div class="device node switch" id="switch" style="left:78%; top:18%;">
+        <svg viewBox="0 0 64 64" class="icon" aria-hidden>
+          <rect x="6" y="10" width="52" height="44" rx="8" fill="#fff" stroke="#ddd"/>
+          <circle cx="32" cy="32" r="7" fill="#333"/>
+        </svg>
+        <div class="terminal" data-id="switch-IN">I</div>
+        <div class="terminal" data-id="switch-OUT">O</div>
       </div>
 
       <div id="lampsContainer"></div>
     </div>
   </div>
 
-  <div class="controls" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;">
-    <div style="display:flex;gap:18px;align-items:center">
+  <div class="controls">
+    <div style="display:flex;gap:14px;align-items:center">
       <button id="switchBtn" class="small">SWITCH</button>
-      <button id="setBtn">SET</button>
+      <button id="setBtn" class="setBtn">SET</button>
       <button id="resetWires" class="small">Reset Wires</button>
       <button id="restart" class="small">Restart</button>
     </div>
-    <div class="note">端子クリック → もう一つの端子クリックで配線。配線選択してクリックで削除。</div>
+    <div class="note">端子クリック → もう一つの端子クリックで配線。配線クリックで削除。</div>
   </div>
-
-  <div id="overlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:9400;font-size:48px;color:#ffd200">WORLD1 CLEAR</div>
 
   <div id="titleScreen" class="modal-backdrop show">
     <div style="display:flex;flex-direction:column;gap:8px">
@@ -89,7 +77,7 @@
       <div class="titleBig">WORLD1</div>
       <div style="color:#fff;margin-bottom:12px">俺らの電工 - チュートリアル</div>
       <div style="display:flex;gap:12px">
-        <button id="toQuiz" class="small">開始 (学科問題へ)</button>
+        <button id="toQuiz" class="small">開始</button>
       </div>
     </div>
   </div>
@@ -101,8 +89,8 @@
       <div id="quizOptions" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
       <div style="display:flex;gap:12px">
         <button id="answerBtn" class="small">回答</button>
-        <button id="skipQuiz" class="small">スキップ (デバッグ)</button>
-        <div style="margin-left:auto;color:#ccc;align-self:center">Q <span id="quizIndex">1</span> / 5</div>
+        <button id="skipQuiz" class="small">スキップ</button>
+        <div style="margin-left:auto;color:#ccc;align-self:center">Q <span id="quizIndex">1</span></div>
       </div>
     </div>
   </div>
@@ -110,9 +98,7 @@
   <div id="bossScreen" aria-hidden="true">
     <div id="hitText"></div>
     <div id="bossPanel">
-      <div id="bossImg" aria-hidden="false" style="width:220px;height:220px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:linear-gradient(180deg,#222,#111);color:#fff;font-weight:800;font-size:18px">
-        読み込み中...
-      </div>
+      <div id="bossImg">読み込み中...</div>
       <div style="flex:1">
         <div id="bossName">汚ねえ大工</div>
         <div style="font-size:12px;color:#ccc;margin:8px 0;">BOSS HP</div>
@@ -125,8 +111,8 @@
   <div id="defeatDialog"></div>
   <div id="flashOverlay"></div>
 
-  <div id="finalVideoWrap" style="display:none;align-items:center;justify-content:center;">
-    <video id="finalVideo" src="black.mp4" preload="auto" playsinline ></video>
+  <div id="finalVideoWrap" style="display:none;">
+    <video id="finalVideo" src="black.mp4" preload="auto" playsinline></video>
   </div>
 
   <audio id="freezeSound" src="freeze.mp3" preload="auto"></audio>
