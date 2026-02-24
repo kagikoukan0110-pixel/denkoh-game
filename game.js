@@ -9,7 +9,7 @@ let selected = null;
 let connections = []; // {a,b,color,shadowEl,mainEl}
 let sw1 = 0, sw2 = 0;
 
-/* ---------- DOM refs ---------- */
+/* ---------- refs ---------- */
 const board = document.getElementById("board");
 const wireLayer = document.getElementById("wireLayer");
 const playerBar = document.getElementById("playerHP");
@@ -28,8 +28,9 @@ const setBtn = document.getElementById("setBtn");
 const resetWires = document.getElementById("resetWires");
 const restartBtn = document.getElementById("restart");
 const switchBtn = document.getElementById("switchBtn");
+const sw1Btn = document.getElementById("sw1Btn");
+const sw2Btn = document.getElementById("sw2Btn");
 
-const bossImg = document.getElementById("bossImg");
 const bossScreen = document.getElementById("bossScreen");
 const bossPanel = document.getElementById("bossPanel");
 const hitText = document.getElementById("hitText");
@@ -46,21 +47,24 @@ function updateBossHP(){ bossHPbar.style.width = Math.max(0,bossHP) + '%'; }
 
 function resizeSVG(){
   const r = board.getBoundingClientRect();
-  wireLayer.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
+  // ensure integer viewBox (avoid subpixel issues on Safari)
+  const w = Math.max(1, Math.round(r.width));
+  const h = Math.max(1, Math.round(r.height));
+  wireLayer.setAttribute("viewBox", `0 0 ${w} ${h}`);
   wireLayer.style.left = r.left + 'px';
   wireLayer.style.top = r.top + 'px';
-  wireLayer.style.width = r.width + 'px';
-  wireLayer.style.height = r.height + 'px';
+  wireLayer.style.width = w + 'px';
+  wireLayer.style.height = h + 'px';
 }
 
-/* layout map */
+/* layout positions (percent) */
 const layoutMap = {
   power: [0.50, 0.12],
   sw1:   [0.18, 0.28],
   sw2:   [0.82, 0.28],
   junction: [0.50, 0.42],
-  lamp1: [0.35, 0.70],
-  lamp2: [0.65, 0.70]
+  lamp1: [0.33, 0.70],
+  lamp2: [0.67, 0.70]
 };
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 function placePercent(id, fx, fy){
@@ -71,11 +75,11 @@ function placePercent(id, fx, fy){
   el.style.top  = (safeY*100) + '%';
 }
 
-/* layoutAll & redraw */
+/* layout & re-draw existing wires */
 function layoutAll(){
   Object.keys(layoutMap).forEach(k => placePercent(k, layoutMap[k][0], layoutMap[k][1]));
   resizeSVG();
-  // rebuild drawn wires from connections array (recalc shapes)
+  // rebuild drawn wires from saved connections (recalc path), avoid duplicating nodes
   const saved = connections.map(c => ({a:c.a,b:c.b,color:c.color}));
   connections.forEach(c => { if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
   connections = [];
@@ -86,11 +90,11 @@ function layoutAll(){
   });
 }
 
-/* init layout on load/resize */
+/* init/resizing */
 window.addEventListener('resize', ()=>{ layoutAll(); });
-window.addEventListener('load', ()=>{ setTimeout(()=>{ layoutAll(); attachAllTerminals(); }, 60); });
+window.addEventListener('load', ()=>{ setTimeout(()=>{ layoutAll(); attachAllTerminals(); }, 120); });
 
-/* ---------- terminals attach & preview ---------- */
+/* ---------- terminals attach ---------- */
 function attachAllTerminals(){
   document.querySelectorAll('.terminal').forEach(t=>{
     t.removeEventListener('click', onTerminalClick);
@@ -98,14 +102,12 @@ function attachAllTerminals(){
   });
 }
 
-/* determine color rule */
+/* choose color by world rules */
 function chooseConnectionColor(aId,bId){
   if(world===1){
-    // World1: N -> white, others -> black
     if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
     return '#111';
   } else {
-    // World2 rules (COM=black, T1=white, T2=red, N=white)
     if(aId.includes('T2') || bId.includes('T2')) return '#ff3b30';
     if(aId.includes('T1') || bId.includes('T1')) return '#ffffff';
     if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
@@ -114,15 +116,16 @@ function chooseConnectionColor(aId,bId){
   }
 }
 
-/* preview persistent */
+/* persistent preview line (until connect/cancel) */
 let preview = null;
 function showPreviewFrom(el){
   removePreview();
   const r = el.getBoundingClientRect();
   const br = board.getBoundingClientRect();
-  const x1 = r.left - br.left + r.width/2;
-  const y1 = r.top - br.top + r.height/2;
+  const x1 = Math.round(r.left - br.left + r.width/2);
+  const y1 = Math.round(r.top - br.top + r.height/2);
   const color = chooseConnectionColor(el.dataset.id, el.dataset.id);
+
   const shadow = document.createElementNS("http://www.w3.org/2000/svg","path");
   shadow.setAttribute("stroke","#000");
   shadow.setAttribute("stroke-width",6);
@@ -135,17 +138,17 @@ function showPreviewFrom(el){
   main.setAttribute("fill","none");
   wireLayer.appendChild(shadow);
   wireLayer.appendChild(main);
-  preview = {startEl:el, shadow, main, br, x1, y1, moveHandler:null};
+
   function move(e){
     const mx = (e.touches && e.touches[0])? e.touches[0].clientX : e.clientX;
     const my = (e.touches && e.touches[0])? e.touches[0].clientY : e.clientY;
-    const x2 = mx - br.left, y2 = my - br.top;
-    const cx = (x1 + x2)/2, cy = (y1 + y2)/2 - 40;
+    const x2 = Math.round(mx - br.left), y2 = Math.round(my - br.top);
+    const cx = Math.round((x1 + x2)/2), cy = Math.round((y1 + y2)/2 - 40);
     const d = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
     shadow.setAttribute('d', d);
     main.setAttribute('d', d);
   }
-  preview.moveHandler = move;
+  preview = {startEl:el, shadow, main, moveHandler:move};
   window.addEventListener('mousemove', move);
   window.addEventListener('touchmove', move, {passive:true});
 }
@@ -157,39 +160,42 @@ function removePreview(){
   preview = null;
 }
 
-/* draw connection visible (shadow + main) */
-function drawPath(aEl,bEl,color){
+/* draw path between two terminals */
+function drawPathBetween(aEl,bEl,color){
   const r1 = aEl.getBoundingClientRect(), r2 = bEl.getBoundingClientRect(), br = board.getBoundingClientRect();
-  const x1 = r1.left - br.left + r1.width/2, y1 = r1.top - br.top + r1.height/2;
-  const x2 = r2.left - br.left + r2.width/2, y2 = r2.top - br.top + r2.height/2;
-  const mx = (x1+x2)/2, my = (y1+y2)/2 - Math.min(80, Math.abs(y2-y1) * 0.4);
+  const x1 = Math.round(r1.left - br.left + r1.width/2), y1 = Math.round(r1.top - br.top + r1.height/2);
+  const x2 = Math.round(r2.left - br.left + r2.width/2), y2 = Math.round(r2.top - br.top + r2.height/2);
+  const mx = Math.round((x1+x2)/2), my = Math.round((y1+y2)/2 - Math.min(80, Math.abs(y2-y1) * 0.4));
   const d = `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
+
   const shadow = document.createElementNS("http://www.w3.org/2000/svg","path");
   shadow.setAttribute("d", d);
   shadow.setAttribute("stroke", "#000");
   shadow.setAttribute("stroke-width", color === '#ffffff' ? 6 : 8);
   shadow.setAttribute("stroke-linecap","round");
   shadow.setAttribute("fill","none");
+
   const main = document.createElementNS("http://www.w3.org/2000/svg","path");
   main.setAttribute("d", d);
   main.setAttribute("stroke", color);
   main.setAttribute("stroke-width", color === '#ffffff' ? 3 : 5);
   main.setAttribute("stroke-linecap","round");
   main.setAttribute("fill","none");
+
   wireLayer.appendChild(shadow);
   wireLayer.appendChild(main);
   return {shadow, main};
 }
-
 function drawConnection(aEl,bEl,color){
-  const pair = drawPath(aEl,bEl,color);
-  connections.push({a:aEl.dataset.id, b:bEl.dataset.id, color, shadowEl:pair.shadow, mainEl:pair.main});
+  const parts = drawPathBetween(aEl,bEl,color);
+  // store canonical ids
+  connections.push({a:aEl.dataset.id, b:bEl.dataset.id, color, shadowEl:parts.shadow, mainEl:parts.main});
 }
 
 /* find connection index */
 function findConnectionIndex(a,b){ return connections.findIndex(c => (c.a===a && c.b===b) || (c.a===b && c.b===a)); }
 
-/* remove connection pair */
+/* remove connection */
 function removeConnection(i){
   const c = connections[i];
   if(!c) return;
@@ -198,35 +204,50 @@ function removeConnection(i){
   connections.splice(i,1);
 }
 
-/* ---------- terminal click ---------- */
+/* ---------- terminal click logic ---------- */
 function onTerminalClick(e){
   const t = e.currentTarget;
   if(state !== 'play') return;
-  // if same -> cancel
+
+  // If clicking existing selected -> cancel selection
   if(selected && selected === t){
     selected.classList.remove('selected');
     selected = null;
     removePreview();
     return;
   }
+
+  // If no selected -> set and show preview
   if(!selected){
-    selected = t; t.classList.add('selected'); showPreviewFrom(t); return;
+    selected = t;
+    t.classList.add('selected');
+    showPreviewFrom(t);
+    return;
   }
-  // else: connect or toggle remove
-  const a = selected.dataset.id, b = t.dataset.id;
-  const idx = findConnectionIndex(a,b);
+
+  // If selected exists and clicked a different terminal
+  const aId = selected.dataset.id, bId = t.dataset.id;
+  const idx = findConnectionIndex(aId,bId);
+  // clear selection + preview
   selected.classList.remove('selected');
   selected = null;
   removePreview();
-  if(idx >= 0){ removeConnection(idx); updateLamps(); return; }
-  const color = chooseConnectionColor(a,b);
-  const aEl = document.querySelector(`.terminal[data-id="${a}"]`);
-  const bEl = document.querySelector(`.terminal[data-id="${b}"]`);
+
+  if(idx >= 0){
+    // remove existing connection
+    removeConnection(idx);
+    updateLamps();
+    return;
+  }
+  // create new connection
+  const color = chooseConnectionColor(aId,bId);
+  const aEl = document.querySelector(`.terminal[data-id="${aId}"]`);
+  const bEl = document.querySelector(`.terminal[data-id="${bId}"]`);
   if(aEl && bEl) drawConnection(aEl,bEl,color);
   updateLamps();
 }
 
-/* ---------- color rule ---------- */
+/* ---------- color rule wrapper ---------- */
 function chooseConnectionColor(aId,bId){
   if(world===1){
     if(aId.includes('-N') || bId.includes('-N')) return '#ffffff';
@@ -240,7 +261,7 @@ function chooseConnectionColor(aId,bId){
   }
 }
 
-/* animate lines (draw-in) */
+/* animate line draw */
 function animateLines(ms){
   return new Promise(res=>{
     const shapes = Array.from(wireLayer.querySelectorAll('path'));
@@ -258,27 +279,36 @@ function animateLines(ms){
   });
 }
 
-/* ---------- lamp / wiring logic ---------- */
+/* ---------- lamp & wiring logic ---------- */
 function connected(a,b){ return findConnectionIndex(a,b) >= 0; }
-function getJunctions(){ return ['junction-1','junction-2','junction-3','junction-4','junction-5','junction-6']; }
+function getJunctionIds(){ return ['junction-1','junction-2','junction-3','junction-4','junction-5','junction-6']; }
 
-/* World1 check: single-pole (sw1 COM -> sw1 T1 -> JB -> lamp L/N and power-N -> JB) */
+/* World1: single-pole check
+   requirement:
+   - power-L connected to sw1-COM
+   - there exists a single JB terminal j such that:
+       power-N connected to j
+       sw1-OUT (or sw1-IN) connected to j
+       j connected to both lampX-L and lampX-N (at least one lamp)
+*/
 function checkSolutionWorld1(){
-  // require power-L -> sw1-COM, sw1-T1 -> some JB terminal, that JB should connect both L and N of at least one lamp (L&N)
-  const jbIds = getJunctions();
-  const hasPowerToSwitch = connected('power-L','sw1-COM');
-  if(!hasPowerToSwitch) return false;
-  const switchToJB = jbIds.some(j => connected('sw1-T1', j));
-  if(!switchToJB) return false;
-  // neutral to JB
-  const neutralToJB = jbIds.some(j => connected('power-N', j));
-  if(!neutralToJB) return false;
-  // lamp L and N both connected (via JB) for at least one lamp
-  const lampIds = ['lamp1','lamp2'];
-  for(const lid of lampIds){
-    const Lok = jbIds.some(j => connected(j, `${lid}-L`));
-    const Nok = jbIds.some(j => connected(j, `${lid}-N`));
-    if(Lok && Nok) return true;
+  const jb = getJunctionIds();
+  if(!connected('power-L','sw1-COM')) return false;
+
+  // determine which sw1 terminal is used for output: IN or OUT
+  // we accept either IN or OUT as wiring expectation (user can wire either)
+  const swOuts = ['sw1-IN','sw1-OUT'];
+  for(const term of jb){
+    if(!connected('power-N', term)) continue;
+    // must be connected from one of sw1 outputs to this JB
+    const swConnected = swOuts.some(s => connected(s, term) || connected('sw1-COM', s) || connected('sw1-COM', term));
+    if(!swConnected) continue;
+    // check lamp L & N for either lamp1 or lamp2
+    for(const lamp of ['lamp1','lamp2']){
+      const Lok = connected(term, `${lamp}-L`);
+      const Nok = connected(term, `${lamp}-N`);
+      if(Lok && Nok) return true;
+    }
   }
   return false;
 }
@@ -287,12 +317,12 @@ function updateLamps(){
   if(world===1){
     ['lamp1','lamp2'].forEach(id=>{
       const el = document.getElementById(id);
-      const jb = getJunctions();
+      const jb = getJunctionIds();
       const lit = jb.some(j => connected(j, `${id}-L`) && connected(j, `${id}-N`));
       el.classList.toggle('lit', lit);
     });
   } else {
-    // world2: stricter
+    // world2 strict check
     const ok = checkWiringWorld2();
     const active = ok && isThreeWayActive() && hasLoadPath() && hasNeutralPath();
     document.getElementById('lamp1').classList.toggle('lit', active);
@@ -300,12 +330,12 @@ function updateLamps(){
   }
 }
 
-/* world2 helpers */
-function hasNeutralPath(){ return getJunctions().some(j => connected('power-N', j)); }
-function hasLoadPath(){ return getJunctions().some(j => connected('sw2-COM', j)); }
-function junctionFeedsLampL(){ return getJunctions().some(j => connected(j,'lamp1-L')) && getJunctions().some(j => connected(j,'lamp2-L')); }
-function junctionFeedsLampN(){ return getJunctions().some(j => connected(j,'lamp1-N')) && getJunctions().some(j => connected(j,'lamp2-N')); }
-function isThreeWayActive(){ const leftOut = sw1 ? 'sw1-T2' : 'sw1-T1'; const rightIn = sw2 ? 'sw2-T2' : 'sw2-T1'; return connected(leftOut, rightIn); }
+/* world2 helper functions */
+function hasNeutralPath(){ return getJunctionIds().some(j => connected('power-N', j)); }
+function hasLoadPath(){ return getJunctionIds().some(j => connected('sw2-COM', j)); }
+function junctionFeedsLampL(){ return getJunctionIds().some(j => connected(j,'lamp1-L')) && getJunctionIds().some(j => connected(j,'lamp2-L')); }
+function junctionFeedsLampN(){ return getJunctionIds().some(j => connected(j,'lamp1-N')) && getJunctionIds().some(j => connected(j,'lamp2-N')); }
+function isThreeWayActive(){ const leftOut = sw1 ? 'sw1-OUT' : 'sw1-IN'; const rightIn = sw2 ? 'sw2-T2' : 'sw2-T1'; return connected(leftOut, rightIn); }
 function checkWiringWorld2(){
   const cond1 = connected('power-L','sw1-COM');
   const cond2 = connected('sw1-T1','sw2-T1');
@@ -324,7 +354,7 @@ async function doBossSequenceWorld1(){
   try{ freezeSound.currentTime=0; freezeSound.play().catch(()=>{}); }catch(e){}
   hitText.style.display='block'; hitText.textContent='HIT - 40';
   bossPanel.classList.add('boss-damage');
-  await new Promise(r=>setTimeout(r,2000)); // keep as user-requested time
+  await new Promise(r=>setTimeout(r,2200)); // increased by 2s as requested
   bossPanel.classList.remove('boss-damage'); hitText.style.display='none';
   bossHP -= 40; updateBossHP();
   if(bossHP <= 0){
@@ -335,16 +365,16 @@ async function doBossSequenceWorld1(){
     return;
   }
   bossScreen.style.display='none';
-  // clear wires for next round
+  // reset wires for next
   connections.forEach(c=>{ if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
   connections = []; selected = null; removePreview(); updateLamps();
 }
 
-/* ---------- SET button ---------- */
+/* ---------- set button ---------- */
 setBtn.addEventListener('click', async ()=>{
   if(world===1){
     if(!checkSolutionWorld1()){ playerHP = Math.max(0, playerHP - 20); updatePlayerHP(); if(playerHP<=0) alert('PLAYER HP 0'); return; }
-    await animateLines(1400); // a little longer
+    await animateLines(1400);
     await doBossSequenceWorld1();
   } else {
     const lampLit = document.getElementById('lamp1').classList.contains('lit');
@@ -359,7 +389,7 @@ setBtn.addEventListener('click', async ()=>{
   }
 });
 
-/* reset / restart */
+/* reset/restart */
 resetWires.addEventListener('click', ()=>{
   connections.forEach(c=>{ if(c.shadowEl) c.shadowEl.remove(); if(c.mainEl) c.mainEl.remove(); });
   connections = []; selected=null; removePreview(); updateLamps();
@@ -373,8 +403,8 @@ restartBtn.addEventListener('click', ()=>{
 });
 
 /* switches */
-document.getElementById('sw1Btn').addEventListener('click', ()=>{ sw1 ^= 1; updateLamps(); });
-document.getElementById('sw2Btn').addEventListener('click', ()=>{ sw2 ^= 1; updateLamps(); });
+sw1Btn.addEventListener('click', ()=>{ sw1 ^= 1; updateLamps(); });
+sw2Btn.addEventListener('click', ()=>{ sw2 ^= 1; updateLamps(); });
 
 /* ---------- quiz ---------- */
 const questions = [
@@ -394,7 +424,10 @@ function renderQuiz(){
     b.className = 'quizOpt small';
     b.textContent = opt;
     b.dataset.index = i;
-    b.addEventListener('click', ()=>{ document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen')); b.classList.add('chosen'); });
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.quizOpt').forEach(x=>x.classList.remove('chosen'));
+      b.classList.add('chosen');
+    });
     quizOptions.appendChild(b);
   });
   quizIndex.textContent = (quizIdx+1) + ' / ' + questions.length;
