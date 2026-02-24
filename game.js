@@ -1,189 +1,201 @@
-// game.js — 完全差替版 (World1 → ボスの入りまで)
-// index.html と style.css を上書き後に同名で保存してください。
-// 必ずブラウザのキャッシュをクリアして再読込みを行ってください。
-
+/* game.js — 修正版（黒線可視化 / プレビュー安定化 / 4択クイズ復活 / JB端子改善）
+   注意: index.html は既に差し替え済みとのことなので、このファイルだけ上書きしてください。
+   保存後、iPhone Safari で「履歴とWebサイトデータを消去」→ページリロードを必ず行ってください。
+*/
 (() => {
   'use strict';
 
-  // short helpers
-  const $ = (s, r=document)=> r.querySelector(s);
+  /* ---- utilities ---- */
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const create = (tag, attrs={}, parent=null) => {
     const e = document.createElement(tag);
     Object.entries(attrs).forEach(([k,v])=>{
-      if(k==='style') Object.assign(e.style, v);
-      else if(k==='class') e.className = v;
+      if(k==='class') e.className = v;
+      else if(k==='style') Object.assign(e.style, v);
       else e.setAttribute(k,v);
     });
     if(parent) parent.appendChild(e);
     return e;
   };
 
-  // state
+  /* ---- state ---- */
   let canvas, ctx, DPR = window.devicePixelRatio || 1;
-  const terminals = new Map(); // id -> {el,cx,cy}
+  const terminals = new Map(); // id -> {el, cx, cy}
   let connections = []; // {from,to,color}
-  let selected = null; // DOM element
+  let selectedTerm = null;
   let pointer = {x:0,y:0,down:false};
   let playerHP = 100, bossHP = 100;
   const board = $('#board');
 
-  // init
+  /* ---- init ---- */
   function init(){
     canvas = $('#wireCanvas');
     ctx = canvas.getContext('2d');
-    // render devices
-    renderDevices();
-    // ensure terminals collected & handlers
+
+    // render devices (index.html may contain none; ensure board has devices)
+    if(!board) {
+      console.error('board element not found');
+      return;
+    }
+
+    renderDevicesIfMissing();
     collectTerminals();
     attachTerminalHandlers();
-    recalcCanvas();
-    window.addEventListener('resize', ()=>{ setTimeout(recalcCanvas,80); });
-    window.addEventListener('orientationchange', ()=> setTimeout(recalcCanvas,140));
-    // pointer capture on document so devices above canvas don't block preview
+
+    // pointer capture globally so UI overlay doesn't block preview
     ['pointermove','pointerdown','pointerup','pointercancel'].forEach(ev=>{
       document.addEventListener(ev, onPointer, {passive:false});
     });
-    // start render loop
-    requestAnimationFrame(loop);
-    // quiz show on start
+
+    // resize/calc
+    window.addEventListener('resize', debounce(recalcAll, 80));
+    window.addEventListener('orientationchange', debounce(recalcAll, 120));
+    // hook controls
+    $('#setBtn') && $('#setBtn').addEventListener('click', onSet);
+    $('#resetBtn') && $('#resetBtn').addEventListener('click', ()=>{ connections=[]; selectedTerm=null; collectTerminals(); });
+
+    // render loop
+    requestAnimationFrame(renderLoop);
+
+    // show quiz first
     showQuiz();
-    updateHP();
   }
 
-  // devices layout (safe coords to avoid overlap on typical iPhone)
-  function renderDevices(){
-    board.innerHTML = '';
-    // power
-    createDevice('power',36,8,28,14, buildPower);
-    // switch (left)
-    createDevice('switch1',6,24,22,22, buildSwitch);
-    // JB
-    createDevice('jb',28,34,44,18, buildJB);
-    // lamp bottom
-    createDevice('lamp1',34,56,28,22, buildLamp);
-    // controls already in HTML; ensure attach
-    $('#setBtn').addEventListener('click', onSet);
-    $('#resetBtn').addEventListener('click', ()=>{ connections=[]; selected=null; collectTerminals(); });
+  /* ---- debounce helper ---- */
+  function debounce(fn, ms){
+    let t;
+    return function(...a){ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
+  }
+
+  /* ---- ensure devices exist (if index already had them this is safe) ---- */
+  function renderDevicesIfMissing(){
+    // If the index replaced the markup, do nothing. Otherwise create minimal devices.
+    if($$('.device').length > 0) {
+      // still adjust classes/sizes for mobile
+      applyDeviceSizing();
+      return;
+    }
+    // create a set similar to earlier structure (safe fallback)
+    createDevice('power', 36, 8, 28, 14, buildPower);
+    createDevice('switch1', 6, 24, 22, 22, buildSwitch);
+    createDevice('jb', 28, 34, 44, 18, buildJB);
+    createDevice('lamp1', 34, 56, 28, 22, buildLamp);
   }
 
   function createDevice(id,left,top,w,h,builder){
-    const el = create('div',{class:'device', id:id, style:{left:left+'vw', top:top+'vh', width:w+'vw', height:h+'vh'}}, board);
+    const el = create('div',{class:'device', id, style:{left:left+'vw', top:top+'vh', width:w+'vw', height:h+'vh'}}, board);
     builder(el);
   }
 
+  function applyDeviceSizing(){
+    // minor fixes to ensure terminals are inside device bounds across iPhones
+    $$('.device').forEach(dev=>{
+      dev.style.minWidth = dev.style.width || '20vw';
+      dev.style.minHeight = dev.style.height || '12vh';
+    });
+  }
+
+  /* ---- individual device building helpers ---- */
   function buildPower(el){
     el.innerHTML = '';
     create('div',{class:'breaker'},el);
-    const row = create('div',{style:{display:'flex',gap:'6vw',width:'100%',justifyContent:'center',marginTop:'1vh'}},el);
-    const L = create('div',{class:'terminal mid','data-id':'power-L',style:{width:'7.4vw',height:'7.4vw',borderRadius:'999px',background:'#222',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}},row); L.textContent='L';
-    const N = create('div',{class:'terminal mid','data-id':'power-N',style:{width:'7.4vw',height:'7.4vw',borderRadius:'999px',background:'#222',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}},row); N.textContent='N';
+    const row = create('div',{style:{display:'flex',gap:'4vw',width:'100%',justifyContent:'center',marginTop:'1vh'}},el);
+    const L = create('div',{class:'terminal mid','data-id':'power-L',style:{width:'8vw',height:'8vw',display:'flex',alignItems:'center',justifyContent:'center'}},row); L.textContent='L';
+    const N = create('div',{class:'terminal mid','data-id':'power-N',style:{width:'8vw',height:'8vw',display:'flex',alignItems:'center',justifyContent:'center'}},row); N.textContent='N';
   }
-
   function buildSwitch(el){
     el.innerHTML = '';
-    el.style.background='#eaffef';
+    el.style.background = '#eaffef';
     const row = create('div',{style:{display:'flex',gap:'3vw',width:'100%',justifyContent:'space-around'}},el);
-    const IN = create('div',{class:'terminal small','data-id':'sw-IN',style:{width:'8vw',height:'8vw',borderRadius:'999px',background:'#222',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}},row); IN.textContent='IN';
-    const OUT = create('div',{class:'terminal small','data-id':'sw-OUT',style:{width:'8vw',height:'8vw',borderRadius:'999px',background:'#222',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center'}},row); OUT.textContent='OUT';
+    const IN = create('div',{class:'terminal small','data-id':'sw-IN',style:{width:'9vw',height:'9vw'}},row); IN.textContent='IN';
+    const OUT = create('div',{class:'terminal small','data-id':'sw-OUT',style:{width:'9vw',height:'9vw'}},row); OUT.textContent='OUT';
   }
-
   function buildJB(el){
-    el.innerHTML = '';
-    el.style.background = '#ddd';
-    // top 4, bottom 2
-    const topRow = create('div',{style:{display:'flex',gap:'5vw',width:'80%',justifyContent:'space-between',marginTop:'1vh'}},el);
+    el.innerHTML='';
+    el.style.background='#ddd';
+    // top 4 small vertical ovals (representive) and bottom 2 round
+    const top = create('div',{style:{display:'flex',justifyContent:'space-between',width:'86%',marginTop:'1vh'}},el);
     for(let i=1;i<=4;i++){
-      const t = create('div',{class:'terminal small','data-id':`jb-${i}`}, topRow);
-      t.style.width='7.4vw'; t.style.height='7.4vw';
-      t.style.borderRadius='999px'; t.style.background='#222';
+      const t = create('div',{class:'terminal small','data-id':`jb-${i}`,style:{width:'6.6vw',height:'9vw',borderRadius:'999px',background:'#222'}},top);
     }
-    const bottom = create('div',{style:{position:'absolute',bottom:'1.6vh',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'6vw'}},el);
-    const b1 = create('div',{class:'terminal small','data-id':'jb-b1'}, bottom); b1.style.background='#222';
-    const b2 = create('div',{class:'terminal small','data-id':'jb-b2'}, bottom); b2.style.background='#222';
+    const bottom = create('div',{style:{position:'absolute',bottom:'1.8vh',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'5.6vw'}},el);
+    create('div',{class:'terminal mid','data-id':'jb-b1',style:{width:'9vw',height:'9vw'}},bottom);
+    create('div',{class:'terminal mid','data-id':'jb-b2',style:{width:'9vw',height:'9vw'}},bottom);
   }
-
   function buildLamp(el){
     el.innerHTML = '';
-    el.style.background='#eee';
-    const icon = create('div',{style:{width:'12vw',height:'12vw',borderRadius:'999px',background:'radial-gradient(circle,#fff 40%,#ccc 100%)',marginTop:'1vh'}},el);
-    const row = create('div',{style:{display:'flex',gap:'6vw',width:'80%',justifyContent:'space-between',marginTop:'1vh'}},el);
-    const L = create('div',{class:'terminal mid','data-id':'lamp-L'},row); L.textContent='L';
-    const N = create('div',{class:'terminal mid','data-id':'lamp-N'},row); N.textContent='N';
+    el.style.background = '#eee';
+    const icon = create('div',{style:{width:'16vw',height:'12vh',borderRadius:'999px',background:'radial-gradient(circle,#fff 50%, #ddd 100%)',marginTop:'2vh'}},el);
+    const row = create('div',{style:{display:'flex',gap:'6vw',width:'70%',justifyContent:'space-between',marginTop:'1vh'}},el);
+    const L = create('div',{class:'terminal mid','data-id':'lamp-L',style:{width:'9vw',height:'9vw'}},row); L.textContent='L';
+    const N = create('div',{class:'terminal mid','data-id':'lamp-N',style:{width:'9vw',height:'9vw'}},row); N.textContent='N';
   }
 
-  // collect terminal elements and compute positions
+  /* ---- collect terminals positions ---- */
   function collectTerminals(){
     terminals.clear();
-    document.querySelectorAll('.terminal').forEach(el=>{
-      const id = el.getAttribute('data-id') || ('term-'+Math.random().toString(36).slice(2,8));
+    $$('.terminal').forEach(el=>{
+      const id = el.dataset.id || ('t-'+Math.random().toString(36).slice(2,8));
       el.dataset.id = id;
       terminals.set(id, { el, cx:0, cy:0 });
     });
-    recalcCanvas();
+    recalcCanvas(); // compute positions
   }
 
-  // attach terminal click handlers
+  /* ---- attach handlers ---- */
   function attachTerminalHandlers(){
-    document.querySelectorAll('.terminal').forEach(el=>{
-      el.onclick = (e)=>{
-        e.stopPropagation();
+    $$('.terminal').forEach(el=>{
+      el.onclick = (ev)=>{
+        ev.stopPropagation();
         onTerminalClick(el);
       };
     });
   }
 
   function onTerminalClick(el){
-    if(selected === el){
+    // toggle selection / connect
+    if(selectedTerm === el){
       el.classList.remove('terminal-selected');
-      selected = null;
+      selectedTerm = null;
       return;
     }
-    if(!selected){
-      selected = el;
+    if(!selectedTerm){
+      selectedTerm = el;
       el.classList.add('terminal-selected');
       return;
     }
-    // create/toggle connection
-    const a = selected.dataset.id, b = el.dataset.id;
-    if(!a || !b){ selected.classList.remove('terminal-selected'); selected=null; return; }
-    // if exist, remove
-    for(let i=0;i<connections.length;i++){
-      const c = connections[i];
-      if((c.from===a && c.to===b) || (c.from===b && c.to===a)){
-        connections.splice(i,1);
-        selected.classList.remove('terminal-selected');
-        selected=null;
-        return;
-      }
-    }
-    // else add
-    const color = colorForId(a);
+    // create or toggle connection
+    const a = selectedTerm.dataset.id, b = el.dataset.id;
+    if(!a || !b){ selectedTerm.classList.remove('terminal-selected'); selectedTerm=null; return; }
+    // if exists, remove
+    const idx = connections.findIndex(c=> (c.from===a && c.to===b) || (c.from===b && c.to===a));
+    if(idx>=0){ connections.splice(idx,1); selectedTerm.classList.remove('terminal-selected'); selectedTerm=null; return; }
+    // add with color rule
+    const color = colorFor(a,b);
     connections.push({from:a,to:b,color});
-    if(selected) selected.classList.remove('terminal-selected');
-    selected=null;
+    selectedTerm.classList.remove('terminal-selected');
+    selectedTerm = null;
   }
 
-  // color rule: L -> black, N -> white; default black
-  function colorForId(id){
-    if(!id) return '#000';
-    if(id.endsWith('-L') || id.includes('COM') || id.startsWith('jb')) return '#000000';
-    if(id.endsWith('-N')) return '#ffffff';
-    // fallback
+  // color rule: if any endpoint is '-N' -> white line, else black
+  function colorFor(a,b){
+    if(a && a.endsWith('-N')) return '#ffffff';
+    if(b && b.endsWith('-N')) return '#ffffff';
+    // if either contains 'jb' but other is 'lamp-N' handled above
     return '#000000';
   }
 
-  // pointer handling to track preview coords even when UI overlay on top
+  /* ---- pointer (global) ---- */
   function onPointer(e){
-    if(e.type === 'pointermove'){
-      pointer.x = e.clientX; pointer.y = e.clientY;
-    } else if(e.type === 'pointerdown'){
-      pointer.down = true; pointer.x = e.clientX; pointer.y = e.clientY;
-    } else if(e.type === 'pointerup' || e.type === 'pointercancel'){
-      pointer.down = false;
-    }
+    // track coords for preview even if UI on top
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    if(e.type === 'pointerdown') pointer.down = true;
+    if(e.type === 'pointerup' || e.type === 'pointercancel') pointer.down = false;
   }
 
-  // canvas sizing and terminal coords
+  /* ---- canvas resize and terminal coords ---- */
   function recalcCanvas(){
     if(!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -193,74 +205,85 @@
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
     ctx.setTransform(DPR,0,0,DPR,0,0);
-
-    // compute terminal center coords
+    // compute center coordinates for terminals
+    const boardRect = rect;
     terminals.forEach((v,k)=>{
       const r = v.el.getBoundingClientRect();
-      v.cx = r.left - rect.left + r.width/2;
-      v.cy = r.top - rect.top + r.height/2;
+      v.cx = r.left - boardRect.left + r.width/2;
+      v.cy = r.top - boardRect.top + r.height/2;
     });
   }
 
-  // drawing helpers
-  function clear(){ ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR); }
-  function drawCurve(x1,y1,x2,y2, color='#000', width=8){
-    ctx.save();
-    // if white main stroke, draw small dark outline behind for visibility
-    if(color === '#ffffff'){
-      ctx.lineWidth = width+4;
-      ctx.strokeStyle = '#222';
-      ctx.beginPath();
-      const mx=(x1+x2)/2, my=(y1+y2)/2 - 22;
-      ctx.moveTo(x1,y1);
-      ctx.quadraticCurveTo(mx,my,x2,y2);
-      ctx.stroke();
-      ctx.lineWidth = width;
-    }
+  function recalcAll(){ collectTerminals(); }
+
+  /* ---- drawing stable curves (outline + main stroke) ---- */
+  function drawCurve(a,b, opts={}){
+    const {color='#000000', width=8} = opts;
+    // control point for gentle curve
+    const mx = (a.x + b.x)/2;
+    const my = (a.y + b.y)/2 - Math.min(60, Math.abs(a.x-b.x)/2 + 10);
+
+    ctx.lineCap = 'round';
+
+    // outer stroke for visibility: choose contrasting outline
+    let outline;
+    if(color === '#ffffff') outline = '#222'; // dark outline for white
+    else outline = 'rgba(255,255,255,0.08)'; // slight light halo for black
+    ctx.beginPath();
+    ctx.lineWidth = width + 4;
+    ctx.strokeStyle = outline;
+    ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo(mx,my,b.x,b.y);
+    ctx.stroke();
+
+    // main stroke
+    ctx.beginPath();
     ctx.lineWidth = width;
     ctx.strokeStyle = color;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    const mx=(x1+x2)/2, my=(y1+y2)/2 - 22;
-    ctx.moveTo(x1,y1);
-    ctx.quadraticCurveTo(mx,my,x2,y2);
+    ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo(mx,my,b.x,b.y);
     ctx.stroke();
-    ctx.restore();
   }
 
-  // render loop
-  function loop(){
-    recalcCanvas(); // safe to call often (fast)
-    clear();
-    // draw persistent wires
+  /* ---- main render loop ---- */
+  function renderLoop(){
+    if(!canvas) return;
+    recalcCanvas(); // light-weight safe call to keep coords fresh
+    // clear
+    ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR);
+
+    // draw connections
     connections.forEach(c=>{
       const a = terminals.get(c.from);
       const b = terminals.get(c.to);
       if(!a || !b) return;
-      drawCurve(a.cx, a.cy, b.cx, b.cy, c.color, 8);
+      drawCurve({x:a.cx, y:a.cy}, {x:b.cx, y:b.cy}, {color: c.color, width: 8});
     });
+
     // draw preview if selected
-    if(selected){
-      const sid = selected.dataset.id;
-      const s = terminals.get(sid);
+    if(selectedTerm){
+      const s = terminals.get(selectedTerm.dataset.id);
       if(s){
-        // pointer relative to canvas
         const rect = canvas.getBoundingClientRect();
         const px = pointer.x - rect.left;
         const py = pointer.y - rect.top;
-        // preview: thin white line (always white for visibility)
-        drawCurve(s.cx, s.cy, px, py, '#ffffff', 4);
+        // preview thin white
+        drawCurve({x:s.cx, y:s.cy}, {x:px, y:py}, {color:'#ffffff', width:3});
       }
     }
-    requestAnimationFrame(loop);
+
+    requestAnimationFrame(renderLoop);
   }
 
-  // check world1 solution
-  function connHas(a,b){ return connections.some(c=> (c.from===a && c.to===b) || (c.from===b && c.to===a)); }
+  /* ---- solution check & set handling ---- */
+  function connHas(a,b){
+    return connections.some(c=> (c.from===a && c.to===b) || (c.from===b && c.to===a));
+  }
+
   function checkSolution(){
-    // require power-L->some jb*, power-N->some jb*, jb->sw-IN, sw-OUT->jb, lamp-L & lamp-N connected to jb
-    const jbIds = Array.from(terminals.keys()).filter(k => k.startsWith('jb-') || k.startsWith('jb-b'));
-    if(jbIds.length===0) return false;
+    // same basic conditions as before but resilient to jb-names
+    const jbIds = Array.from(terminals.keys()).filter(k=> k.startsWith('jb-') || k.startsWith('jb-b'));
+    if(!jbIds.length) return false;
     const anyPL = jbIds.some(j=> connHas('power-L', j));
     const anyPN = jbIds.some(j=> connHas('power-N', j));
     const jbToIn = jbIds.some(j=> connHas(j, 'sw-IN'));
@@ -270,74 +293,115 @@
     return anyPL && anyPN && jbToIn && outToJb && lampL && lampN;
   }
 
-  // actions
   function onSet(){
+    // if miswired penalize
     if(!checkSolution()){
-      playerHP = Math.max(0, playerHP-20); updateHP();
-      if(playerHP<=0){ alert('PLAYER HP 0 - game over'); resetAll(); }
-      else alert('配線誤り。PLAYER -20');
+      playerHP = Math.max(0, playerHP - 20);
+      updateHP();
+      if(playerHP <= 0){ alert('PLAYER HP 0 — game over'); resetAll(); }
+      else alert('配線ミス: PLAYER -20');
       return;
     }
-    // success -> pulse animation then boss
+    // success: brief wire animation (flicker) then boss overlay
     pulseThenBoss();
   }
 
   function pulseThenBoss(){
-    let t=0;
-    const iv = setInterval(()=>{
-      // quick redraw with thicker wires flicker
-      clear();
+    let steps=0;
+    const interval = setInterval(()=>{
+      // draw highlight flicker: increase width temporarily
+      ctx.clearRect(0,0,canvas.width/DPR, canvas.height/DPR);
       connections.forEach(c=>{
         const a = terminals.get(c.from), b = terminals.get(c.to);
         if(!a||!b) return;
-        drawCurve(a.cx,a.cy,b.cx,b.cy,c.color, 10 + (t%2?2:0));
+        drawCurve({x:a.cx,y:a.cy},{x:b.cx,y:b.cy},{color:c.color, width: 10 + (steps%2)*3});
       });
-      t++; if(t>4){ clearInterval(iv); showBoss(); }
+      steps++;
+      if(steps>4){ clearInterval(interval); showBoss(); }
     },120);
   }
 
   function showBoss(){
-    const bo = $('#bossOverlay'); bo.style.display='flex'; bo.setAttribute('aria-hidden','false');
-    $('#bossHP').style.width = bossHP+'%';
-    $('#attackBtn').onclick = ()=>{ reduceBoss(40); };
+    const bo = $('#bossOverlay');
+    if(bo){
+      bo.style.display='flex'; bo.setAttribute('aria-hidden','false');
+      $('#bossHP') && ($('#bossHP').style.width = bossHP + '%');
+      $('#attackBtn') && ($('#attackBtn').onclick = ()=>{ reduceBoss(40); });
+    } else {
+      alert('ボス（仮）: クリア');
+    }
   }
 
   function reduceBoss(d){
     bossHP = Math.max(0, bossHP - d);
-    $('#bossHP').style.width = bossHP+'%';
-    // damage flash
-    const f = create('div',{style:{position:'fixed',inset:0,background:'#fff',opacity:0.95,zIndex:1500}},document.body);
-    setTimeout(()=> f.remove(),300);
-    if(bossHP<=0){ setTimeout(()=>{ alert('BOSS撃破！World1クリア'); $('#bossOverlay').style.display='none'; },400); }
+    $('#bossHP') && ($('#bossHP').style.width = bossHP + '%');
+    const flash = create('div',{style:{position:'fixed',inset:0,background:'#fff',opacity:0.9,zIndex:2000}},document.body);
+    setTimeout(()=>flash.remove(),300);
+    if(bossHP<=0){
+      setTimeout(()=>{ alert('BOSS撃破！World1クリア'); $('#bossOverlay').style.display='none'; }, 400);
+    }
   }
 
-  function updateHP(){ const el = $('#playerHP'); if(el) el.style.width = playerHP+'%'; }
+  function updateHP(){ const el = $('#playerHP'); if(el) el.style.width = playerHP + '%'; }
 
-  function resetAll(){
-    connections=[]; selected=null; collectTerminals(); updateHP();
-    $('#bossOverlay').style.display='none';
-  }
+  function resetAll(){ connections=[]; selectedTerm=null; collectTerminals(); updateHP(); $('#bossOverlay') && ($('#bossOverlay').style.display='none'); }
 
-  // --- quiz minimal ---
+  /* ---- quiz system (4択, random) ---- */
+  const QUESTIONS = [
+    {q:'電気で L は何を表す？', opts:['中性線','活線(L)','地線','照明'], correct:1},
+    {q:'単相100VでLとNは？', opts:['L=中性,N=活線','L=活線,N=中性','どちらも地線','L=地線,N=活線'], correct:1},
+    {q:'接地の目的は？', opts:['電流を増やす','絶縁を破る','漏電時に安全に逃がす','スイッチ代わり'], correct:2},
+    {q:'片切スイッチとは？', opts:['2か所で操作する','1つの回路を入切','常時接続','漏電遮断器'], correct:1},
+    {q:'ジョイントボックスの役割は？', opts:['電気を貯める','配線を接続・保護','電圧を上げる','照明を点ける'], correct:1}
+  ];
+
   function showQuiz(){
-    const qmodal = $('#quizModal');
-    qmodal.style.display='flex';
-    qmodal.innerHTML = '';
-    const box = create('div',{style:{background:'#111',padding:'4vw',borderRadius:'8px',width:'86vw',color:'#fff'}},qmodal);
-    create('div',{style:{fontSize:'6vw',color:'#ffd200',fontWeight:800,marginBottom:'2vh'}},box).textContent='学科問題';
-    create('div',{id:'sampleQ',style:{fontSize:'4vw',marginBottom:'3vh'}},box).textContent='Lは何？';
-    const ok = create('button',{style:{padding:'2vh 6vw',borderRadius:'20px',fontSize:'4vw',background:'#ffd000',border:'none'}},box);
-    ok.textContent='開始'; ok.onclick = ()=>{ qmodal.style.display='none'; };
+    const modal = $('#quizModal');
+    if(!modal) return;
+    modal.style.display='flex';
+    modal.setAttribute('aria-hidden','false');
+    modal.innerHTML = '';
+    // pick 4 random questions (shuffle)
+    const qs = QUESTIONS.slice().sort(()=>0.5-Math.random()).slice(0,4);
+    let idx = 0;
+    function renderQ(){
+      modal.innerHTML = '';
+      const box = create('div',{style:{background:'#111',padding:'5vw',borderRadius:'8px',width:'86vw',color:'#fff'}},modal);
+      create('div',{style:{fontSize:'6vw',color:'#ffd200',fontWeight:800,marginBottom:'2vh'}},box).textContent='学科問題';
+      create('div',{id:'qtxt',style:{fontSize:'4vw',marginBottom:'3vh'}},box).textContent = qs[idx].q;
+      const optsWrap = create('div',{style:{display:'flex',flexDirection:'column',gap:'3vw'}},box);
+      qs[idx].opts.forEach((opt,i)=>{
+        const b = create('button',{class:'quizOpt',style:{padding:'2.6vh 3vw',borderRadius:'8px',fontSize:'4vw',textAlign:'left',background:'#222',color:'#fff',border:'none'}},optsWrap);
+        b.textContent = opt;
+        b.dataset.index = i;
+        b.onclick = ()=>{
+          // highlight selection
+          $$('.quizOpt', optsWrap).forEach(x=>x.style.background='#222');
+          b.style.background = '#ffd200';
+        };
+      });
+      const ctrl = create('div',{style:{display:'flex',gap:'4vw',marginTop:'3vh',alignItems:'center'}},box);
+      const next = create('button',{style:{padding:'1.8vh 4vw',borderRadius:'8px',fontSize:'4vw',background:'#ffd000',border:'none'}},ctrl);
+      next.textContent = (idx < qs.length-1) ? '次へ' : '回答';
+      next.onclick = ()=>{
+        const chosen = Array.from(optsWrap.querySelectorAll('.quizOpt')).find(x=> x.style.background === 'rgb(255, 210, 0)' || x.style.background === '#ffd200' || x.style.background === 'rgb(255, 210, 0)');
+        if(!chosen){ alert('選択してください'); return; }
+        const sel = Number(chosen.dataset.index);
+        if(sel !== qs[idx].correct){
+          playerHP = Math.max(0, playerHP - 10);
+          updateHP();
+        }
+        idx++;
+        if(idx < qs.length) renderQ();
+        else { modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+      };
+    }
+    renderQ();
   }
 
-  // final utilities: recompute terminals properly after DOM changes
-  function ensureUpdate(){
-    collectTerminals();
-    attachTerminalHandlers();
-    recalcCanvas();
-  }
-
-  // boot
-  document.addEventListener('DOMContentLoaded', ()=>{ init(); setTimeout(ensureUpdate,120); });
+  /* ---- start on DOM ready ---- */
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(()=>{ init(); }, 60);
+  });
 
 })();
