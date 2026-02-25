@@ -2,394 +2,166 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>俺らの電工 - WORLD1 (Enhance & Fixed)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>俺らの電工 - GOD CONNECTION</title>
 <style>
-:root{
-  --bg:#000;
-  --panel:#e6e6e6;
-  --term-bg:#222;
-  --wire:#ffd800;
-  --wirew:6;
-  --device-w:96px;
-  --device-padding:8px;
-  --boss-hp-color:#e74c3c;
-  --boss-hp-back:#2b1818;
-  --lamp-glow: rgba(255,220,80,0.95);
-}
-html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; overflow: hidden;}
-#wireLayer{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3000}
+:root { --neon: #ffd000; --bg: #000; --panel: #ddd; }
+body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
 
-/* header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px; height: 60px; box-sizing: border-box;}
-.title{font-size:20px;margin:0;font-weight:700}
-.hp-area{width:46%;min-width:180px}
-.bar{width:100%;height:12px;background:#222;border-radius:12px;overflow:hidden}
-.player{height:100%;width:100%;background:#34d058;border-radius:12px; transition: width 0.3s ease;}
+/* タイトル画面 (IMG_2184再現) */
+#titleScreen { position: fixed; inset: 0; background: #000; z-index: 30000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.title-logo { font-size: 48px; font-weight: 900; color: var(--neon); text-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon); }
+.start-btn { margin-top: 50px; padding: 20px 60px; font-size: 24px; background: var(--neon); border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
 
-/* board */
-#board-wrap{position:relative;width:100%;height:calc(100vh - 240px);box-sizing:border-box;padding:8px 16px;overflow:hidden}
-#board{position:relative;width:100%;height:100%}
+/* HPバー (IMG_2172再現) */
+#hpUI { position: fixed; top: 10px; width: 90%; left: 5%; display: none; justify-content: space-between; z-index: 10000; }
+.hp-container { width: 45%; }
+.hp-bar-bg { height: 12px; background: #333; border-radius: 6px; overflow: hidden; border: 1px solid #555; }
+.hp-bar-fill { height: 100%; width: 100%; transition: 0.5s; background: var(--neon); }
 
-/* devices */
-.device{position:absolute;width:var(--device-w);padding:var(--device-padding);background:var(--panel);border-radius:12px;color:#000;box-shadow:0 12px 30px rgba(0,0,0,0.5);transform:translate(-50%,-50%);text-align:center;z-index:60; transition: background 0.3s ease, box-shadow 0.3s ease;}
-.device h3{margin:6px 0 8px 0;font-size:12px}
-.terminal{display:inline-flex;justify-content:center;align-items:center;width:28px;height:28px;margin:4px;background:var(--term-bg);color:#fff;border-radius:50%;font-size:12px;cursor:pointer;user-select:none}
-.selected{outline:3px solid #ffd800; box-shadow: 0 0 10px #ffd800;}
+/* 配線レイヤー */
+#wireLayer { position: fixed; inset: 0; pointer-events: none; z-index: 5000; }
+.wire-path { fill: none; stroke-width: 6; stroke-linecap: round; }
 
-/* icons */
-.device .icon{width:56px;height:56px;display:block;margin:6px auto; position: relative;}
-.icon svg{width:100%;height:100%}
+/* ゲーム盤面 (IMG_2186再現) */
+#board { position: relative; width: 100%; height: 100vh; display: none; }
+.device { position: absolute; width: 90px; background: var(--panel); border-radius: 8px; color: #000; padding: 10px; transform: translate(-50%, -50%); text-align: center; z-index: 1000; }
+.term { display: inline-block; width: 25px; height: 25px; background: #222; color: #fff; border-radius: 50%; margin: 4px; cursor: pointer; font-size: 10px; line-height: 25px; }
+.sel { outline: 3px solid var(--neon); }
 
-/* Lamp Glow Logic */
-.device.lit {
-  background: #fff9c4 !important;
-  box-shadow: 0 0 40px var(--lamp-glow), inset 0 0 15px #fff;
-}
-.device.lit .bulb-shape { fill: #ffd200 !important; filter: drop-shadow(0 0 10px #ff0); }
-
-/* junction */
-#junction{left:40%;top:42%;width:124px;padding:12px;background:#d6d6d6;border-radius:14px;z-index:70;transform:translate(-50%,-50%)}
-.jb-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.jb-term{width:18px;height:18px;border-radius:50%;background:#222;display:inline-block;cursor:pointer}
-
-/* controls */
-.controls{height:180px;padding:12px 18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-button#setBtn{padding:14px 36px;border-radius:26px;border:none;background:#ffd000;color:#000;font-weight:700; cursor: pointer;}
-button.small{padding:8px 12px;margin:8px;border-radius:12px;border:none;background:#333;color:#fff; cursor: pointer;}
-.note{font-size:13px;color:#bbb;text-align:center;margin-top:8px}
-
-/* modal and screens */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;padding:36px;z-index:9500;}
-.modal-backdrop.show{display:flex}
-.titleBig{font-size:48px;color:#ffd200;font-weight:800;margin-bottom:12px; text-shadow: 0 0 20px rgba(255,210,0,0.5);}
-.quizBox{background:#111;padding:24px;border-radius:16px;max-width:500px;width:90%;color:#fff; border: 1px solid #333;}
-
-/* boss panel */
-#bossScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:9200;color:#fff; background: rgba(0,0,0,0.8);}
-#bossPanel{width:86%;max-width:600px;background:#0d0d0d;border-radius:14px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.9);display:flex;gap:18px;align-items:center;}
-#bossImgPlaceholder{width:120px;height:120px;background:#333;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;}
-.bossHPbar{height:100%;width:100%;background:var(--boss-hp-color);transition:width 700ms ease;border-radius:12px}
-
-/* effects */
-@keyframes shake { 0%,100%{transform:translate(0)} 20%{transform:translate(-10px,5px)} 40%{transform:translate(10px,-5px)} 60%{transform:translate(-10px,-5px)} 80%{transform:translate(10px,5px)} }
-.damage-shake { animation: shake 0.4s ease-in-out; }
-
-#explosion{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(0.1);width:300px;height:300px;background:radial-gradient(circle, #fff, #ff0, #f00, transparent);border-radius:50%;display:none;z-index:9999;opacity:0.8;}
-#defeatDialog{position:fixed;left:50%;top:60%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#ffd200;padding:20px;border-radius:10px;display:none;z-index:10000;font-weight:bold;font-size:24px; border: 2px solid #ffd200;}
+/* モーダル */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 20000; display: none; align-items: center; justify-content: center; }
+.card { width: 85%; max-width: 340px; background: #1a1a1a; padding: 20px; border-radius: 15px; text-align: center; }
+.ans-btn { display: block; width: 100%; margin: 10px 0; padding: 15px; background: #333; color: #fff; border: none; border-radius: 8px; }
 </style>
 </head>
 <body>
-  <svg id="wireLayer" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
-  <div id="versionBadge">version: 2026-02-24T2200</div>
 
-  <div class="header">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="title">俺らの電工 β</div>
-      <div style="font-size:13px;color:#ccc;">Round: <span id="roundLabel">1</span>/3</div>
+<div id="titleScreen">
+    <h1 class="title-logo">俺らの電工</h1>
+    <button id="startBtn" class="start-btn">現場入り</button>
+</div>
+
+<div id="hpUI">
+    <div class="hp-container">
+        <div>PLAYER: <span id="pHPText">100</span></div>
+        <div class="hp-bar-bg"><div id="pHPBar" class="hp-bar-fill"></div></div>
     </div>
-    <div class="hp-area">
-      <div class="bar"><div id="playerHP" class="player"></div></div>
+    <div class="hp-container">
+        <div>BOSS: <span id="bHPText">100</span></div>
+        <div class="hp-bar-bg"><div id="bHPBar" class="hp-bar-fill" style="background:#f00;"></div></div>
     </div>
-    <div style="text-align:right;font-size:12px;color:#aaa;">STATE: <strong id="stateLabel">TITLE</strong></div>
-  </div>
+</div>
 
-  <div id="board-wrap">
-    <div id="board">
-      <div id="junction" class="device">
-        <h3>Joint Box</h3>
-        <div class="jb-dots">
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-          <div class="jb-term" data-id="jb"></div>
-        </div>
-      </div>
-
-      <div class="device" id="power" style="left:15%; top:25%;">
-        <h3>電源</h3>
-        <div class="icon">
-          <svg viewBox="0 0 64 64"><rect x="10" y="10" width="44" height="44" fill="#333" rx="4"/><rect x="20" y="15" width="24" height="20" fill="#ffd000" rx="2"/><text x="24" y="30" font-size="8" fill="#000">ON</text></svg>
-        </div>
-        <div class="terminal" data-id="power-L">L</div>
-        <div class="terminal" data-id="power-N">N</div>
-      </div>
-
-      <div class="device" id="switch" style="left:80%; top:25%;">
-        <h3>片切SW</h3>
-        <div class="icon">
-          <svg viewBox="0 0 64 64"><rect x="15" y="10" width="34" height="44" fill="#fff" stroke="#ccc" rx="4"/><circle cx="32" cy="32" r="10" fill="#eee" stroke="#999"/><path d="M32 25 L32 39" stroke="#333" stroke-width="4"/></svg>
-        </div>
-        <div class="terminal" data-id="switch-IN">IN</div>
-        <div class="terminal" data-id="switch-OUT">OUT</div>
-        <div id="switchState" style="font-size:10px; margin-top:4px;">OFF</div>
-      </div>
-
-      <div id="lampsContainer"></div>
+<div id="quizScreen" class="modal">
+    <div class="card">
+        <h2 id="qText" style="font-size:18px;"></h2>
+        <div id="ansBox"></div>
     </div>
-  </div>
+</div>
 
-  <div class="controls">
-    <div style="display:flex;gap:12px;">
-      <button id="switchBtn" class="small">SWITCH</button>
-      <button id="setBtn">SET (通電)</button>
-      <button id="resetWires" class="small">Reset</button>
-      <button id="restart" class="small">Restart</button>
-    </div>
-    <p class="note">端子を2つ選んで配線。SWITCHをONにしてからSETを押せ！</p>
-  </div>
+<svg id="wireLayer"></svg>
+<div id="board"></div>
 
-  <div id="titleScreen" class="modal-backdrop show">
-    <div class="titleBig">俺らの電工</div>
-    <p>WORLD1: チュートリアル</p>
-    <button id="toQuiz" style="padding:15px 40px; font-size:20px; background:#ffd000; border:none; border-radius:30px; cursor:pointer; font-weight:bold;">開始 (学科問題へ)</button>
-  </div>
-
-  <div id="quizScreen" class="modal-backdrop">
-    <div class="quizBox">
-      <h2 id="quizQuestion"></h2>
-      <div id="quizOptions" style="display:grid; gap:10px; margin:20px 0;"></div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="quizIndex"></span>
-        <button id="answerBtn" class="small" style="background:#ffd000; color:#000;">回答する</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="bossScreen">
-    <div id="bossPanel">
-      <div id="bossImgPlaceholder">👹</div>
-      <div style="flex:1">
-        <h2 id="bossName">汚ねえ大工</h2>
-        <div class="bar" style="background:#2b1818;"><div id="bossHPbar" class="bossHPbar"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="explosion"></div>
-  <div id="defeatDialog"></div>
+<div style="position:fixed; bottom:20px; width:100%; text-align:center; z-index:10000;">
+    <button id="swToggle" style="padding:15px; background:#444; color:#fff; border:none; border-radius:5px;">スイッチ: OFF</button>
+    <button id="setBtn" style="padding:15px 40px; font-size:20px; background:var(--neon); border:none; border-radius:5px;">SET (通電確認)</button>
+</div>
 
 <script>
-let bossHP = 100, playerHP = 100, roundNum = 1, switchOn = false;
-let selected = null, connections = [], state = 'title', quizIdx = 0;
-
-const questions = [
-  {q:'コンセントの左側の長い穴（N）は何側？', opts:['接地側','非接地側','電圧側','爆破側'], correct:0},
-  {q:'電気の「L」は何の略？', opts:['Low','Line(Live)','Light','Loop'], correct:1},
-  {q:'ジョイントボックス内で電線を接続する部品は？', opts:['ネジ','差込形コネクタ','ボンド','テープのみ'], correct:1}
+let pHP = 100, bHP = 100, qIdx = 0, lines = [], selTerm = null, swOn = false;
+const quizzes = [
+    {q:"接地側（白線）を繋ぐべき端子記号は？", a:["L","W (N)","E","S"], c:1},
+    {q:"電圧側（黒線）の色は？", a:["白","黒","緑","赤"], c:1},
+    {q:"スイッチの結線で正しいのは？", a:["黒を切る","白を切る","両方切る"], c:0}
 ];
 
-/* --- System --- */
-function setState(s) {
-  state = s;
-  document.getElementById('stateLabel').textContent = s.toUpperCase();
-  document.getElementById('titleScreen').style.display = (s === 'title') ? 'flex' : 'none';
-  document.getElementById('quizScreen').style.display = (s === 'quiz') ? 'flex' : 'none';
-  document.getElementById('bossScreen').style.display = (s === 'boss') ? 'flex' : 'none';
+// 初期化
+document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('titleScreen').style.display = 'none';
+    document.getElementById('hpUI').style.display = 'flex';
+    nextQuiz();
+});
+
+function nextQuiz() {
+    if(qIdx >= quizzes.length) {
+        document.getElementById('quizScreen').style.display = 'none';
+        initBoard();
+        return;
+    }
+    document.getElementById('quizScreen').style.display = 'flex';
+    const q = quizzes[qIdx];
+    document.getElementById('qText').innerText = q.q;
+    const box = document.getElementById('ansBox'); box.innerHTML = '';
+    q.a.forEach((t, i) => {
+        const b = document.createElement('button');
+        b.className = 'ans-btn'; b.innerText = t;
+        b.onclick = () => {
+            if(i === q.c) { qIdx++; nextQuiz(); }
+            else { damagePlayer(20); alert("学科不合格！ダメージ！"); }
+        };
+        box.appendChild(b);
+    });
 }
 
-function updateHP() {
-  document.getElementById('playerHP').style.width = playerHP + "%";
-  document.getElementById('bossHPbar').style.width = bossHP + "%";
-  document.getElementById('roundLabel').textContent = roundNum;
+function initBoard() {
+    document.getElementById('board').style.display = 'block';
+    const b = document.getElementById('board');
+    const devices = [
+        {name:'電源', x:50, y:20, terms:['L','N']},
+        {name:'Joint Box', x:50, y:45, terms:['1','2','3','4']},
+        {name:'スイッチ', x:30, y:75, terms:['IN','OUT']},
+        {name:'照明', x:70, y:75, terms:['L','N']}
+    ];
+    devices.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'device';
+        el.style.left = d.x + '%'; el.style.top = d.y + '%';
+        el.innerHTML = `<div>${d.name}</div>` + d.terms.map(t => `<div class="term" id="${d.name}-${t}">${t}</div>`).join('');
+        b.appendChild(el);
+    });
+    document.querySelectorAll('.term').forEach(t => t.onclick = (e) => {
+        if(!selTerm) { selTerm = e.target; selTerm.classList.add('sel'); }
+        else {
+            lines.push([selTerm.id, e.target.id]);
+            drawWires();
+            selTerm.classList.remove('sel'); selTerm = null;
+        }
+    });
 }
 
-/* --- Quiz --- */
-function renderQuiz() {
-  const q = questions[quizIdx];
-  document.getElementById('quizQuestion').textContent = q.q;
-  const optCont = document.getElementById('quizOptions');
-  optCont.innerHTML = '';
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'small';
-    btn.textContent = opt;
-    btn.onclick = () => {
-      Array.from(optCont.children).forEach(b => b.style.border = "none");
-      btn.style.border = "2px solid #ffd000";
-      btn.dataset.chosen = i;
-    };
-    optCont.appendChild(btn);
-  });
-  document.getElementById('quizIndex').textContent = `Q ${quizIdx + 1}/${questions.length}`;
+function drawWires() {
+    const svg = document.getElementById('wireLayer'); svg.innerHTML = '';
+    lines.forEach(l => {
+        const p1 = document.getElementById(l[0]).getBoundingClientRect();
+        const p2 = document.getElementById(l[1]).getBoundingClientRect();
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", `M ${p1.left+12} ${p1.top+12} L ${p2.left+12} ${p2.top+12}`);
+        path.setAttribute("class", "wire-path");
+        path.setAttribute("stroke", l[0].includes('N') || l[1].includes('N') ? "#eee" : "#555");
+        svg.appendChild(path);
+    });
 }
 
-document.getElementById('toQuiz').onclick = () => { quizIdx = 0; renderQuiz(); setState('quiz'); };
-
-document.getElementById('answerBtn').onclick = () => {
-  const selectedBtn = Array.from(document.getElementById('quizOptions').children).find(b => b.dataset.chosen !== undefined);
-  if (!selectedBtn) return alert('選択してください');
-  
-  if (parseInt(selectedBtn.dataset.chosen) !== questions[quizIdx].correct) {
-    playerHP -= 20; updateHP(); alert('不正解！HPダメージ');
-  }
-  
-  quizIdx++;
-  if (quizIdx < questions.length) renderQuiz(); else startPlay();
+document.getElementById('swToggle').onclick = (e) => {
+    swOn = !swOn;
+    e.target.innerText = "スイッチ: " + (swOn ? "ON" : "OFF");
 };
 
-/* --- Board Logic --- */
-function startPlay() {
-  setState('play');
-  createLamps(roundNum);
-  resizeSVG();
+function damagePlayer(amt) {
+    pHP -= amt;
+    document.getElementById('pHPBar').style.width = pHP + '%';
+    document.getElementById('pHPText').innerText = pHP;
+    if(pHP <= 0) { alert("現場追放..."); location.reload(); }
 }
 
-function createLamps(count) {
-  const container = document.getElementById('lampsContainer');
-  container.innerHTML = '';
-  for(let i=1; i<=count; i++) {
-    const id = `lamp-${i}`;
-    const div = document.createElement('div');
-    div.className = 'device';
-    div.id = id;
-    div.style.left = (35 + i*15) + "%";
-    div.style.top = "65%";
-    div.innerHTML = `<h3>照明-${i}</h3><div class="icon"><svg viewBox="0 0 64 64"><path class="bulb-shape" d="M32 10 A15 15 0 1 0 32 40 L32 50" fill="#eee" stroke="#333" stroke-width="2"/></svg></div>
-    <div class="terminal" data-id="${id}-L">L</div><div class="terminal" data-id="${id}-N">N</div>`;
-    container.appendChild(div);
-  }
-  attachTerminalListeners();
-  randomizePositions();
-}
-
-function attachTerminalListeners() {
-  document.querySelectorAll('.terminal, .jb-term').forEach(t => {
-    t.onclick = (e) => {
-      if (state !== 'play') return;
-      if (selected === t) { t.classList.remove('selected'); selected = null; return; }
-      if (!selected) { selected = t; t.classList.add('selected'); return; }
-      
-      const idA = selected.dataset.id || 'jb';
-      const idB = t.dataset.id || 'jb';
-      if (idA !== idB) {
-        connections.push([idA, idB, selected, t]);
-        drawWire(selected, t, idA, idB);
-      }
-      selected.classList.remove('selected');
-      selected = null;
-    };
-  });
-}
-
-function drawWire(elA, elB, idA, idB) {
-  const svg = document.getElementById('wireLayer');
-  const rA = elA.getBoundingClientRect();
-  const rB = elB.getBoundingClientRect();
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", rA.left + rA.width/2);
-  line.setAttribute("y1", rA.top + rA.height/2);
-  line.setAttribute("x2", rB.left + rB.width/2);
-  line.setAttribute("y2", rB.top + rB.height/2);
-  line.setAttribute("stroke", "#ffd800");
-  line.setAttribute("stroke-width", "6");
-  line.setAttribute("stroke-linecap", "round");
-  line.dataset.pair = `${idA}-${idB}`;
-  svg.appendChild(line);
-}
-
-/* --- Validation --- */
-function checkCircuit() {
-  const has = (a, b) => connections.some(c => (c[0]===a && c[1]===b) || (c[0]===b && c[1]===a));
-  
-  // 基本経路: PowerL -> JB -> SW_IN | SW_OUT -> JB -> LampL | LampN -> JB -> PowerN
-  const pLtoJB = has('power-L', 'jb');
-  const jBtoSWin = has('jb', 'switch-IN');
-  const swOutToJB = has('jb', 'switch-OUT');
-  const pNtoJB = has('power-N', 'jb');
-  
-  if (!(pLtoJB && jBtoSWin && swOutToJB && pNtoJB)) return false;
-
-  let allLampsOk = true;
-  for(let i=1; i<=roundNum; i++){
-    if (!(has('jb', `lamp-${i}-L`) && has('jb', `lamp-${i}-N`))) allLampsOk = false;
-  }
-  return allLampsOk;
-}
-
-function updateVisuals() {
-  const isOk = checkCircuit() && switchOn;
-  document.querySelectorAll('[id^="lamp-"]').forEach(el => {
-    if (isOk) el.classList.add('lit'); else el.classList.remove('lit');
-  });
-}
-
-/* --- Buttons --- */
-document.getElementById('switchBtn').onclick = () => {
-  switchOn = !switchOn;
-  document.getElementById('switchState').textContent = switchOn ? "ON" : "OFF";
-  document.getElementById('switch').style.background = switchOn ? "#e7ffec" : "#e6e6e6";
-  updateVisuals();
+document.getElementById('setBtn').onclick = () => {
+    if(!swOn) { alert("スイッチが入っていません！"); return; }
+    bHP -= 20;
+    document.getElementById('bHPBar').style.width = bHP + '%';
+    document.getElementById('bHPText').innerText = bHP;
+    alert("通電確認！");
 };
-
-document.getElementById('setBtn').onclick = async () => {
-  if (!switchOn) return alert("スイッチがOFFです");
-  if (!checkCircuit()) {
-    playerHP -= 20; updateHP();
-    document.body.classList.add('damage-shake');
-    setTimeout(() => document.body.classList.remove('damage-shake'), 400);
-    return alert("不完全な回路です！ショートまたは未接続です。");
-  }
-  
-  updateVisuals();
-  await new Promise(r => setTimeout(r, 800));
-  doBossBattle();
-};
-
-async function doBossBattle() {
-  setState('boss');
-  await new Promise(r => setTimeout(r, 500));
-  bossHP -= 40;
-  updateHP();
-  document.getElementById('bossPanel').classList.add('damage-shake');
-  
-  if (bossHP <= 0) {
-    const exp = document.getElementById('explosion');
-    exp.style.display = 'block';
-    exp.style.transition = 'transform 0.5s ease-out, opacity 0.5s';
-    setTimeout(() => { exp.style.transform = 'translate(-50%,-50%) scale(2)'; exp.style.opacity = '0'; }, 10);
-    
-    const diag = document.getElementById('defeatDialog');
-    diag.style.display = 'block';
-    diag.textContent = "汚ねえ回路を...浄化完了だ！";
-    setTimeout(() => { location.reload(); }, 3000);
-  } else {
-    setTimeout(() => {
-      roundNum++;
-      bossHP = 100;
-      connections = [];
-      document.getElementById('wireLayer').innerHTML = '';
-      updateHP();
-      startPlay();
-    }, 2000);
-  }
-}
-
-document.getElementById('resetWires').onclick = () => {
-  connections = [];
-  document.getElementById('wireLayer').innerHTML = '';
-  updateVisuals();
-};
-
-document.getElementById('restart').onclick = () => location.reload();
-
-/* --- Utility --- */
-function resizeSVG() {
-  const svg = document.getElementById('wireLayer');
-  svg.setAttribute("width", window.innerWidth);
-  svg.setAttribute("height", window.innerHeight);
-}
-
-function randomizePositions() {
-  const devices = document.querySelectorAll('.device:not(#junction)');
-  devices.forEach(d => {
-    d.style.left = (15 + Math.random() * 70) + "%";
-    d.style.top = (20 + Math.random() * 50) + "%";
-  });
-}
-
-window.onresize = resizeSVG;
-updateHP();
 </script>
 </body>
 </html>
