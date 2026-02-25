@@ -6,28 +6,26 @@
 <title>俺らの電工 - GOD CONNECTION</title>
 <style>
 :root { --neon: #ffd000; --bg: #000; }
-body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow: hidden; }
+body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
 
-/* タイトル画面 */
 #titleScreen { position: fixed; inset: 0; background: #000; z-index: 30000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .title-logo { font-size: 48px; font-weight: 900; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
 .start-btn { margin-top: 50px; padding: 20px 60px; font-size: 24px; background: var(--neon); border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
 
-/* HP */
 #hpUI { position: fixed; top: 10px; width: 100%; display: none; justify-content: space-around; z-index: 10000; }
 .hp-bar { width: 40%; height: 10px; background: #333; }
 .fill { height: 100%; width: 100%; background: var(--neon); transition: 0.3s; }
 
-/* ゲーム盤面 */
-#board { position: relative; width: 100%; height: 100vh; display: none; }
+#board { position: relative; width: 100%; height: calc(100vh - 150px); display: none; }
 .device { position: absolute; width: 90px; background: #ddd; color: #000; padding: 10px; border-radius: 8px; transform: translate(-50%, -50%); text-align: center; }
-.term { display: inline-block; width: 20px; height: 20px; background: #333; color: #fff; margin: 5px; cursor: pointer; border-radius: 50%; }
-.sel { outline: 3px solid #f00; }
+.term { display: inline-block; width: 26px; height: 26px; background: #333; color: #fff; margin: 3px; cursor: pointer; border-radius: 50%; font-size: 10px; line-height: 26px; }
+.sel { outline: 3px solid #f00; transform: scale(1.2); }
 
-/* モーダル */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 20000; display: none; align-items: center; justify-content: center; }
 .card { width: 80%; background: #222; padding: 20px; border-radius: 15px; text-align: center; }
 .ans-btn { display: block; width: 100%; margin: 10px 0; padding: 15px; background: #444; color: #fff; border: none; }
+
+#wireLayer { position: fixed; inset: 0; pointer-events: none; z-index: 5000; }
 </style>
 </head>
 <body>
@@ -38,8 +36,8 @@ body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; o
 </div>
 
 <div id="hpUI">
-    <div>PLAYER HP: <span id="pHPText">100</span><div class="hp-bar"><div id="pHP" class="fill"></div></div></div>
-    <div>BOSS HP: <span id="bHPText">100</span><div class="hp-bar"><div id="bHP" class="fill"></div></div></div>
+    <div>PLAYER: <span id="pHPText">100</span><div class="hp-bar"><div id="pHP" class="fill"></div></div></div>
+    <div>BOSS: <span id="bHPText">100</span><div class="hp-bar"><div id="bHP" class="fill"></div></div></div>
 </div>
 
 <div id="quizScreen" class="modal">
@@ -49,20 +47,18 @@ body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; o
     </div>
 </div>
 
+<svg id="wireLayer"></svg>
 <div id="board"></div>
 
-<div style="position:fixed; bottom:20px; width:100%; text-align:center;">
-    <button id="setBtn" style="padding:20px 40px; font-size:20px; background:var(--neon);">SET (通電確認)</button>
+<div style="position:fixed; bottom:20px; width:100%; text-align:center; z-index:10000;">
+    <button id="swToggle" style="padding:15px; margin-right:10px;">SW: OFF</button>
+    <button id="setBtn" style="padding:15px 40px; font-size:20px; background:var(--neon);">SET (通電確認)</button>
 </div>
 
 <script>
-let pHP = 100, bHP = 100, qIdx = 0;
-const quizzes = [
-    {q:"接地側（白線）を繋ぐのは？", a:["L","W (N)","E"], c:1},
-    {q:"スイッチの結線で正しいのは？", a:["黒線を切る","白線を切る","両方切る"], c:0}
-];
+let pHP = 100, bHP = 100, qIdx = 0, lines = [], sel = null, swOn = false;
+const quizzes = [{q:"接地側（白線）を繋ぐのは？", a:["L","W (N)","E"], c:1}, {q:"スイッチの結線で正しいのは？", a:["黒線を切る","白線を切る","両方切る"], c:0}];
 
-// 初期化：ボタンイベントを確実に登録
 document.getElementById('startBtn').addEventListener('click', () => {
     document.getElementById('titleScreen').style.display = 'none';
     document.getElementById('hpUI').style.display = 'flex';
@@ -72,7 +68,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 function nextQuiz() {
     if(qIdx >= quizzes.length) {
         document.getElementById('quizScreen').style.display = 'none';
-        document.getElementById('board').style.display = 'block';
+        initBoard();
         return;
     }
     document.getElementById('quizScreen').style.display = 'flex';
@@ -90,12 +86,49 @@ function nextQuiz() {
     });
 }
 
+function initBoard() {
+    document.getElementById('board').style.display = 'block';
+    const b = document.getElementById('board');
+    // デバイス配置
+    const devs = [
+        {n:'電源', x:50, y:20, t:['L','N']},
+        {n:'JB', x:50, y:50, t:['1','2','3','4']},
+        {n:'SW', x:30, y:80, t:['IN','OUT']},
+        {n:'照明', x:70, y:80, t:['L','N']}
+    ];
+    devs.forEach((d, i) => {
+        const el = document.createElement('div'); el.className = 'device';
+        el.style.left = d.x + '%'; el.style.top = d.y + '%';
+        el.innerHTML = `<div>${d.n}</div>` + d.t.map(t => `<div class="term" id="${d.n}-${t}">${t}</div>`).join('');
+        b.appendChild(el);
+    });
+    document.querySelectorAll('.term').forEach(t => t.onclick = (e) => {
+        if(!sel) { sel = e.target; sel.classList.add('sel'); }
+        else { lines.push([sel.id, e.target.id]); draw(); sel.classList.remove('sel'); sel = null; }
+    });
+}
+
+function draw() {
+    const svg = document.getElementById('wireLayer'); svg.innerHTML = '';
+    lines.forEach(l => {
+        const p1 = document.getElementById(l[0]).getBoundingClientRect();
+        const p2 = document.getElementById(l[1]).getBoundingClientRect();
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", `M ${p1.left+13} ${p1.top+13} L ${p2.left+13} ${p2.top+13}`);
+        path.setAttribute("stroke", "white"); path.setAttribute("stroke-width", "5");
+        svg.appendChild(path);
+    });
+}
+
+document.getElementById('swToggle').onclick = (e) => {
+    swOn = !swOn;
+    e.target.innerText = "SW: " + (swOn ? "ON" : "OFF");
+};
+
 document.getElementById('setBtn').onclick = () => {
-    // 通電判定ロジック
-    alert("通電チェック完了！");
-    bHP -= 20;
-    document.getElementById('bHP').style.width = bHP + "%";
-    if(bHP <= 0) alert("ボス撃破！");
+    if(!swOn) { alert("スイッチがOFFだ！"); return; }
+    bHP -= 20; document.getElementById('bHP').style.width = bHP + "%";
+    alert("通電確認完了！");
 };
 </script>
 </body>
