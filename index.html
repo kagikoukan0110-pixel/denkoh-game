@@ -3,222 +3,199 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>俺らの電工 - 2026 完結編</title>
+<title>俺らの電工 - GOD FREEZE EDITION</title>
 <style>
 :root {
   --bg: #000;
-  --panel: #e6e6e6;
+  --panel: #dcdcdc;
   --term-bg: #222;
   --gold: linear-gradient(to bottom, #fff700 0%, #ffcc00 50%, #b8860b 100%);
 }
 
-html, body { height: 100%; margin: 0; background: var(--bg); color: #fff; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; overflow: hidden; touch-action: none; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
 #wireLayer { position: fixed; inset: 0; pointer-events: none; z-index: 3000; }
 
-/* 演出系 */
-@keyframes rainbow { 0% {filter: hue-rotate(0deg) brightness(2.5);} 100% {filter: hue-rotate(360deg) brightness(2.5);} }
-.flash-rainbow { animation: rainbow 0.1s infinite !important; }
+/* フリーズ演出 */
+@keyframes god-freeze { 0% { opacity: 1; filter: brightness(3) invert(0); } 50% { opacity: 0.1; filter: brightness(8) invert(1); } 100% { opacity: 1; filter: brightness(3) invert(0); } }
+.freeze-effect { animation: god-freeze 0.04s infinite !important; }
 
-@keyframes god-freeze { 0% { opacity: 1; filter: brightness(5) invert(0); } 50% { opacity: 0; filter: brightness(10) invert(1); } 100% { opacity: 1; filter: brightness(5) invert(0); } }
-.freeze-effect { animation: god-freeze 0.04s infinite; }
-
-/* ◯×フィードバック */
-#feedback { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font-size: 200px; font-weight: bold; z-index: 10000; pointer-events: none; }
-.fb-ok { color: #ff4444; } .fb-ng { color: #4444ff; }
+/* プチュン（白光） */
+#puchun { position: fixed; inset: 0; background: #fff; opacity: 0; z-index: 12000; pointer-events: none; }
+@keyframes puchun-flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+.puchun-active { animation: puchun-flash 0.4s ease-out; }
 
 /* 黄金文字「撃破」 */
-#victoryScreen { display: none; position: fixed; inset: 0; background: #000; z-index: 11000; align-items: center; justify-content: center; flex-direction: column; }
+#victoryScreen { display: none; position: fixed; inset: 0; background: #000; z-index: 11000; align-items: center; justify-content: center; }
 .gold-text {
-    font-size: 120px; font-weight: bold; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 30px rgba(255,215,0,1)); transform: scale(1.5); animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    font-size: 80px; font-weight: bold; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(255,215,0,0.9)); transform: scale(1); animation: godIn 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards;
 }
-@keyframes zoomIn { from { transform: scale(8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes godIn { from { transform: scale(8); opacity: 0; } to { transform: scale(1.2); opacity: 1; } }
 
-/* モーダル */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 9000; }
-.modal-backdrop.show { display: flex; }
-.card { width: 88%; max-width: 450px; background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #333; text-align: center; position: relative; }
+/* ◯×フィードバック */
+#feedback { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font-size: 150px; font-weight: bold; z-index: 10000; pointer-events: none; }
+.fb-ok { color: #ff3333; } .fb-ng { color: #3333ff; }
 
-/* デバイス */
-.device { position: absolute; width: 100px; min-height: 120px; padding: 5px; background: var(--panel); border-radius: 12px; color: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.8); text-align: center; z-index: 60; transition: transform 0.2s; }
-.device h3 { margin: 2px; font-size: 10px; }
-.terminal { display: inline-flex; justify-content: center; align-items: center; width: 30px; height: 30px; margin: 3px; background: var(--term-bg); color: #fff; border-radius: 50%; font-size: 11px; cursor: pointer; }
-.selected { outline: 4px solid #ffd800; box-shadow: 0 0 15px #ffd800; }
-.wire-line { stroke-linecap: round; stroke-width: 7; }
-.wire-black { stroke: #111; filter: drop-shadow(0 0 2px #fff); }
-.wire-white { stroke: #fff; filter: drop-shadow(0 0 2px #333); }
+/* コンパクトデバイス */
+.device { position: absolute; width: 72px; min-height: 90px; padding: 4px; background: var(--panel); border-radius: 8px; color: #000; box-shadow: 0 3px 8px rgba(0,0,0,0.6); transform: translate(-50%, -50%); text-align: center; z-index: 60; }
+.device h3 { margin: 2px 0; font-size: 9px; white-space: nowrap; border-bottom: 1px solid #bbb; }
+.terminal { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 22px; margin: 2px; background: var(--term-bg); color: #fff; border-radius: 50%; font-size: 9px; cursor: pointer; }
+.selected { outline: 3px solid #ffd800; box-shadow: 0 0 8px #ffd800; }
+.wire-line { stroke-linecap: round; stroke-width: 5; }
+.wire-black { stroke: #111; filter: drop-shadow(0 0 1px #fff); }
+.wire-white { stroke: #fff; filter: drop-shadow(0 0 1px #000); }
 
-.controls { position: fixed; bottom: 0; width: 100%; height: 110px; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 4000; }
-.main-btn { padding: 12px 60px; background: #ffd000; color: #000; border: none; border-radius: 40px; font-weight: bold; font-size: 22px; box-shadow: 0 4px 0 #b39200; }
-.main-btn:active { transform: translateY(2px); box-shadow: none; }
+/* UI */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.96); display: none; align-items: center; justify-content: center; z-index: 9000; }
+.modal-backdrop.show { display: flex; flex-direction: column; }
+.card { width: 80%; max-width: 340px; background: #111; padding: 20px; border-radius: 12px; border: 1px solid #333; text-align: center; }
+.ans-btn { display:block; width:100%; margin:8px 0; padding:10px; background:#222; color:#fff; border:1px solid #444; border-radius:6px; font-size:13px; }
+.controls { position: fixed; bottom: 0; width: 100%; height: 90px; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; z-index: 4000; }
+.main-btn { padding: 10px 40px; background: #ffd000; color: #000; border: none; border-radius: 20px; font-weight: bold; font-size: 18px; }
 </style>
 </head>
 <body>
 
 <svg id="wireLayer"></svg>
 <div id="feedback"></div>
-
-<div id="victoryScreen">
-    <div class="gold-text">撃破</div>
-    <p style="color: #ffd000; margin-top: 20px; letter-spacing: 5px;">MISSION COMPLETE</p>
-</div>
+<div id="puchun"></div>
+<div id="victoryScreen"><div class="gold-text">撃破</div></div>
 
 <div id="quizScreen" class="modal-backdrop show">
   <div class="card">
-    <div style="font-size: 14px; color: #aaa;" id="qCount">ROUND 1/5</div>
-    <h2 id="qText" style="min-height: 80px; display: flex; align-items: center; justify-content: center;">Loading...</h2>
+    <div id="qCount" style="font-size: 11px; color: #777;"></div>
+    <h3 id="qText" style="margin: 15px 0; font-size: 15px;"></h3>
     <div id="answers"></div>
-    <div style="margin-top: 15px; background: #333; height: 10px; border-radius: 5px; overflow: hidden;">
-        <div id="hpBar" style="width: 100%; height: 100%; background: #34d058; transition: 0.3s;"></div>
+    <div style="margin-top: 15px; background: #222; height: 6px; border-radius: 3px; overflow: hidden;">
+        <div id="hpBar" style="width: 100%; height: 100%; background: #28a745; transition: 0.3s;"></div>
     </div>
   </div>
 </div>
 
 <div id="bossScreen" class="modal-backdrop">
   <div class="card">
-    <h2 style="color:#ff4444; margin:0; letter-spacing: 2px;">TARGET: 汚ねえ大工</h2>
-    <div style="position: relative; margin: 15px 0;">
-        <img src="boss.png.jpg" style="width:100%; border-radius:10px; border:2px solid red;" onerror="this.src='https://placehold.jp/30/808080/ffffff/400x300.png?text=BOSSSSSS'">
-    </div>
-    <div style="height:25px; background:#000; border:1px solid #555; border-radius:15px; overflow:hidden;">
-      <div id="bossHP" style="height:100%; width:100%; background:linear-gradient(90deg, #ff0000, #990000); transition:width 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28);"></div>
+    <h4 style="color:#ff4444; margin:0 0 8px 0;">TARGET: 汚ねえ大工</h4>
+    <img src="boss.png.jpg" style="width:100%; border-radius:6px; border:1px solid #ff4444;" onerror="this.src='https://placehold.jp/20/333333/ffffff/300x200.png?text=BOSSSSSS'">
+    <div style="height:15px; background:#000; border:1px solid #333; border-radius:8px; margin-top:10px; overflow:hidden;">
+      <div id="bossHP" style="height:100%; width:100%; background:linear-gradient(90deg, #f00, #800); transition: width 0.4s;"></div>
     </div>
   </div>
 </div>
 
-<div id="board" style="position:relative; width:100%; height:calc(100vh - 110px); display:none;"></div>
+<div id="board" style="position:relative; width:100%; height:calc(100vh - 90px); display:none;"></div>
 
 <div class="controls" id="gameControls">
-  <div style="display:flex; gap:10px;">
-    <button id="swBtn" style="background:#444; color:#fff; border:none; padding:8px 20px; border-radius:5px;">SWITCH: OFF</button>
-    <button onclick="resetWires()" style="background:#444; color:#fff; border:none; padding:8px 20px; border-radius:5px;">RESET</button>
+  <div style="display:flex; gap:8px;">
+    <button id="swBtn" style="background:#333; color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:11px;">SWITCH: OFF</button>
+    <button onclick="resetWires()" style="background:#333; color:#fff; border:none; padding:4px 12px; border-radius:4px; font-size:11px;">RESET</button>
   </div>
-  <button id="setBtn" class="main-btn">SET (通電)</button>
+  <button id="setBtn" class="main-btn">SET (通電確認)</button>
 </div>
 
 <script>
-// --- 1. クイズプール (20問) ---
-const quizPool = [
-    {q: "黒線と白線、触るとビリッとくる（電気がある）のは？", a: ["白線", "黒線", "どっちもこない", "どっちもくる"], c: 1},
-    {q: "家のコンセントを勝手に交換していい人は？", a: ["器用な人", "大家さん", "電気工事士", "誰でも"], c: 2},
-    {q: "電気の流れにくさを表す単位は？", a: ["ボルト", "アンペア", "オーム", "ワット"], c: 2},
-    {q: "普通のコンセント、左側の穴が少し長い理由は？", a: ["デザイン", "差しやすくするため", "接地（アース）用", "予備"], c: 2},
-    {q: "電線を繋ぐ時、黄色い持ち手の「ガチャン」とやる道具は？", a: ["ペンチ", "圧着工具", "ハンダごて", "ニッパー"], c: 1},
-    {q: "水回りのコンセントに必要な安全装置は？", a: ["ブレーカー", "漏電遮断器", "温度計", "タイマー"], c: 1},
-    {q: "電気の「圧力」を表すのは？", a: ["V（ボルト）", "A（アンペア）", "Ω（オーム）", "Hz（ヘルツ）"], c: 0},
-    {q: "ブレーカーが落ちるのは、電気がどうなった時？", a: ["足りない時", "使いすぎた時", "余った時", "夜になった時"], c: 1},
-    {q: "VVFケーブルの「V」は何を意味する？", a: ["バニラ", "ビニル", "ビクトリー", "電圧"], c: 1},
-    {q: "ショート（短絡）した時に出るのは？", a: ["水", "火花", "風", "音"], c: 1},
-    {q: "LEDライトのメリットは？", a: ["熱くなる", "寿命が短い", "電気代が安い", "重い"], c: 2},
-    {q: "アース線の色は一般的に何色？", a: ["赤", "黒", "緑", "白"], c: 2},
-    {q: "100Vより高い、エアコン等で使う電圧は？", a: ["150V", "200V", "300V", "500V"], c: 1},
-    {q: "電気工事で一番やってはいけないことは？", a: ["掃除", "活線（電気を通したまま）作業", "早起き", "道具を磨く"], c: 1},
-    {q: "三相3線式、主にどこで使われる？", a: ["一般住宅", "工場・ビル", "公園", "学校のトイレ"], c: 1},
-    {q: "絶縁抵抗計（メガー）は何を調べる道具？", a: ["重さ", "漏電のしにくさ", "電線の長さ", "明るさ"], c: 1},
-    {q: "ブレーカーにある赤いテストボタンの役割は？", a: ["爆発する", "強制的に漏電状態にする", "リセット", "飾り"], c: 1},
-    {q: "スイッチの「L」端子には何を繋ぐ？", a: ["白線", "黒線（電源側）", "緑線", "何も繋がない"], c: 1},
-    {q: "電線を剥く時に使う便利な道具は？", a: ["カッター", "VVFストリッパー", "ハサミ", "定規"], c: 1},
-    {q: "コンセントの裏にある「W」の文字は何を指す？", a: ["黒線(Work)", "白線(White)", "西(West)", "警告(Warning)"], c: 1}
+const pool = [
+    {q:"電線で触ると危ない（電圧がある）のは？", a:["白線","黒線","アース線","ビニール"], c:1},
+    {q:"コンセントの左側の長い穴の役割は？", a:["差しやすくするため","接地（アース）側","放熱","飾り"], c:1},
+    {q:"無免許でコンセントの交換をしてもいい？", a:["OK","絶対にダメ","大家ならOK","日曜ならOK"], c:1},
+    {q:"リングスリーブを潰す黄色い道具は？", a:["ペンチ","圧着工具","ニッパー","ハンマー"], c:1},
+    {q:"電線を剥く時に使う『ガチャン』とやる道具は？", a:["カッター","VVFストリッパー","ハサミ","爪"], c:1},
+    {q:"ブレーカーが落ちる原因で多いのは？", a:["電気が足りない","使いすぎ（過負荷）","湿気が多い","夜だから"], c:1},
+    {q:"アース線の一般的な色は？", a:["赤","緑","青","黒"], c:1},
+    {q:"VVFケーブルの内部の絶縁体は何色？", a:["赤と青","黒と白","黄と緑","紫と橙"], c:1},
+    {q:"電気工事で一番大切なことは？", a:["スピード","安全（感電防止）","安さ","見た目"], c:1},
+    {q:"回路に電気が流れているか確認する道具は？", a:["温度計","検電器","定規","コンパス"], c:1},
+    {q:"LED電球の特徴は？", a:["すぐ切れる","寿命が長く省エネ","すごく熱い","重い"], c:1},
+    {q:"100V回路の絶縁抵抗の基準値は？", a:["0.1MΩ以上","100MΩ以上","0MΩ","1Ω"], c:0},
+    {q:"スイッチの『L』に繋ぐべきなのは？", a:["白線","黒線（非接地側）","緑線","どこでも"], c:1},
+    {q:"感電を防ぐために水回りに設置するのは？", a:["換気扇","漏電遮断器","温度計","鏡"], c:1},
+    {q:"三相3線式200Vは何に使われる？", a:["スマホ充電","業務用エアコン・工場","電卓","ドライヤー"], c:1},
+    {q:"コードを束ねたまま使うとどうなる？", a:["便利になる","発熱して危険","電圧が上がる","音が良くなる"], c:1},
+    {q:"コンセントの『W』マークは何を繋ぐ目印？", a:["黒(Work)","白(White)","警告(Warning)","水(Water)"], c:1},
+    {q:"トラッキング現象とは何にホコリが溜まること？", a:["カバン","コンセントの隙間","靴","テレビの中"], c:1},
+    {q:"電気抵抗の単位は？", a:["V","A","Ω","W"], c:2},
+    {q:"絶縁テープは何のために巻く？", a:["飾り","電気を遮断し保護する","滑り止め","重くする"], c:1}
 ];
 
-// --- 2. 状態管理 ---
-let currentQuizSet = [];
-let hp = 100, bHP = 100, round = 1, qIdx = 0, switchOn = false;
-let sel = null, lines = [];
+let currentQ = [], qIdx = 0, hp = 100, bHP = 100, round = 1, swOn = false, sel = null, lines = [];
 
-// --- 3. クイズエンジン (ランダム5問) ---
-function initQuiz() {
-    currentQuizSet = quizPool.sort(() => Math.random() - 0.5).slice(0, 5);
+function init() {
+    currentQ = pool.sort(() => Math.random() - 0.5).slice(0, 5);
     renderQ();
 }
 
 function renderQ() {
-    if (qIdx >= 5) {
+    if(qIdx >= 5) {
         document.getElementById('quizScreen').classList.remove('show');
         document.getElementById('board').style.display = 'block';
         document.getElementById('gameControls').style.display = 'flex';
         setupRound(); return;
     }
-    const q = currentQuizSet[qIdx];
-    document.getElementById('qCount').textContent = `問題 ${qIdx + 1} / 5`;
+    const q = currentQ[qIdx];
+    document.getElementById('qCount').textContent = `QUESTION ${qIdx+1} / 5`;
     document.getElementById('qText').textContent = q.q;
     const ans = document.getElementById('answers'); ans.innerHTML = '';
     q.a.forEach((t, i) => {
         const b = document.createElement('button');
-        b.style = "display:block; width:100%; margin:10px 0; padding:15px; background:#333; color:#fff; border:1px solid #555; border-radius:10px;";
+        b.className = 'ans-btn';
         b.textContent = t;
-        b.onclick = () => checkAns(i === q.c);
+        b.onclick = () => {
+            const ok = i === q.c;
+            const f = document.getElementById('feedback');
+            f.style.display = 'flex'; f.textContent = ok ? "◯" : "×"; f.className = ok ? "fb-ok" : "fb-ng";
+            if(!ok) { hp -= 20; document.getElementById('hpBar').style.width = hp + "%"; }
+            setTimeout(() => { f.style.display = 'none'; if(hp <= 0) location.reload(); qIdx++; renderQ(); }, 600);
+        };
         ans.appendChild(b);
     });
 }
 
-function checkAns(correct) {
-    const f = document.getElementById('feedback');
-    f.style.display = 'flex';
-    f.textContent = correct ? "◯" : "×";
-    f.className = correct ? "fb-ok" : "fb-ng";
-    if(!correct) { hp -= 20; document.getElementById('hpBar').style.width = hp + "%"; }
-    setTimeout(() => {
-        f.style.display = 'none';
-        if(hp <= 0) location.reload();
-        qIdx++; renderQ();
-    }, 800);
-}
-
-// --- 4. 配線ボード (固定配置) ---
 function setupRound() {
     const b = document.getElementById('board'); b.innerHTML = '';
     lines = []; document.getElementById('wireLayer').innerHTML = '';
     
-    // 固定座標定義 (%)
+    // 画面中央寄りに配置 (25%〜75%の範囲)
     const pos = {
-        p: {x:15, y:20}, jb: {x:50, y:50}, sw: {x:15, y:80},
-        l1: {x:80, y:20}, l2: {x:80, y:50}, l3: {x:80, y:80}
+        p: {x:25, y:20}, jb: {x:50, y:45}, sw: {x:25, y:75},
+        l1: {x:75, y:20}, l2: {x:75, y:45}, l3: {x:75, y:70}
     };
 
-    addDev('p', '電源', pos.p.x, pos.p.y, `<div class="terminal" data-id="p-L">L</div><div class="terminal" data-id="p-N">N</div>`);
-    addDev('jb', 'Joint Box', pos.jb.x, pos.jb.y, Array.from({length:6},(_,i)=>`<div class="terminal" data-id="jb-${i}"></div>`).join(''));
-    addDev('sw', 'スイッチ', pos.sw.x, pos.sw.y, `<div class="terminal" data-id="sw-i">IN</div><div class="terminal" data-id="sw-o">OUT</div>`);
-    
-    for(let i=1; i<=round; i++) {
-        const lp = pos[`l${i}`];
-        addDev(`l${i}`, `照明-${i}`, lp.x, lp.y, `<div class="terminal" data-id="l${i}-L">L</div><div class="terminal" data-id="l${i}-N">N</div>`);
-    }
-    document.querySelectorAll('.terminal').forEach(t => t.onclick = clickT);
+    addD('p', '電源', pos.p, `<div class="terminal" data-id="p-L">L</div><div class="terminal" data-id="p-N">N</div>`);
+    addD('jb', 'JB', pos.jb, Array.from({length:6},(_,i)=>`<div class="terminal" data-id="jb-${i}"></div>`).join(''));
+    addD('sw', 'SW', pos.sw, `<div class="terminal" data-id="sw-i">IN</div><div class="terminal" data-id="sw-o">OUT</div>`);
+    for(let i=1; i<=round; i++) addD(`l${i}`, `照明-${i}`, pos[`l${i}`], `<div class="terminal" data-id="l${i}-L">L</div><div class="terminal" data-id="l${i}-N">N</div>`);
+
+    document.querySelectorAll('.terminal').forEach(t => t.onclick = (e) => {
+        const t = e.target;
+        if(!sel) { sel = t; t.classList.add('selected'); return; }
+        if(sel === t) { sel.classList.remove('selected'); sel = null; return; }
+        lines.push([sel.dataset.id, t.dataset.id]);
+        sel.classList.remove('selected'); sel = null;
+        draw();
+    });
 }
 
-function addDev(id, name, x, y, html) {
+function addD(id, n, p, h) {
     const d = document.createElement('div'); d.className = 'device'; d.id = id;
-    d.style.left = x + "%"; d.style.top = y + "%"; d.innerHTML = `<h3>${name}</h3>` + html;
+    d.style.left = p.x + "%"; d.style.top = p.y + "%"; d.innerHTML = `<h3>${n}</h3>` + h;
     document.getElementById('board').appendChild(d);
 }
 
-function clickT(e) {
-    const t = e.target;
-    if(!sel) { sel = t; t.classList.add('selected'); return; }
-    if(sel === t) { sel.classList.remove('selected'); sel = null; return; }
-    lines.push([sel.dataset.id, t.dataset.id]);
-    sel.classList.remove('selected'); sel = null;
-    drawLines();
-}
-
-function drawLines() {
+function draw() {
     const s = document.getElementById('wireLayer'); s.innerHTML = '';
     lines.forEach(c => {
         const a = document.querySelector(`[data-id="${c[0]}"]`).getBoundingClientRect();
         const b = document.querySelector(`[data-id="${c[1]}"]`).getBoundingClientRect();
         const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        l.setAttribute("x1", a.left+15); l.setAttribute("y1", a.top+15);
-        l.setAttribute("x2", b.left+15); l.setAttribute("y2", b.top+15);
+        l.setAttribute("x1", a.left+11); l.setAttribute("y1", a.top+11);
+        l.setAttribute("x2", b.left+11); l.setAttribute("y2", b.top+11);
         const isL = c[0].match(/L|i|o/) || c[1].match(/L|i|o/);
         l.setAttribute("class", `wire-line ${isL ? 'wire-black' : 'wire-white'}`);
         s.appendChild(l);
     });
 }
 
-// --- 5. 判定・フリーズ演出 ---
 document.getElementById('setBtn').onclick = () => {
-    if(!switchOn) { alert("スイッチをONにせよ！"); return; }
+    if(!swOn) { alert("スイッチOFF!"); return; }
     document.body.classList.add('flash-rainbow');
     bHP -= 34; document.getElementById('bossHP').style.width = Math.max(0, bHP) + "%";
     
@@ -228,36 +205,45 @@ document.getElementById('setBtn').onclick = () => {
             document.body.classList.remove('flash-rainbow');
             if(bHP <= 0) { triggerGodFreeze(); } 
             else { document.getElementById('bossScreen').classList.remove('show'); round++; setupRound(); }
-        }, 1500);
+        }, 1200);
     }, 200);
 };
 
 function triggerGodFreeze() {
-    // freeze.mp3 再生
-    new Audio('freeze.mp3').play().catch(()=>{});
+    const audio = new Audio('freeze.mp3');
+    audio.play().catch(()=>{});
     
+    // 1. フリーズ開始（激しい点滅）
     document.body.classList.add('freeze-effect');
     
     setTimeout(() => {
-        document.body.classList.remove('freeze-effect');
-        document.body.style.background = "#000";
-        document.querySelectorAll('div').forEach(d => d.style.display = 'none');
+        // 2. プチュン演出（白フラッシュ）
+        const p = document.getElementById('puchun');
+        p.classList.add('puchun-active');
         
         setTimeout(() => {
-            document.getElementById('victoryScreen').style.display = 'flex';
-        }, 2000); // 2秒暗転
-    }, 3000); // 3秒フリーズ
+            // 3. 暗転（すべてを隠す）
+            document.body.classList.remove('freeze-effect');
+            document.querySelectorAll('body > *:not(#puchun):not(#victoryScreen)').forEach(el => el.style.display = 'none');
+            document.body.style.background = "#000";
+            
+            setTimeout(() => {
+                // 4. 黄金の「撃破」
+                document.getElementById('victoryScreen').style.display = 'flex';
+            }, 2000); 
+        }, 200); // プチュンの中盤で暗転へ
+    }, 2800); // 3秒弱でプチュン発生
 }
 
 document.getElementById('swBtn').onclick = (e) => {
-    switchOn = !switchOn;
-    e.target.textContent = `SWITCH: ${switchOn ? 'ON' : 'OFF'}`;
-    e.target.style.background = switchOn ? '#ffd000' : '#444';
+    swOn = !swOn;
+    e.target.textContent = `SWITCH: ${swOn ? 'ON' : 'OFF'}`;
+    e.target.style.background = swOn ? '#ffd000' : '#333';
+    e.target.style.color = swOn ? '#000' : '#fff';
 };
 
-function resetWires() { lines = []; drawLines(); }
-
-window.onload = initQuiz;
+function resetWires() { lines = []; draw(); }
+window.onload = init;
 </script>
 </body>
 </html>
