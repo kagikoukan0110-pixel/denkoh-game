@@ -3,78 +3,80 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>俺らの電工 - 視認性強化版</title>
+<title>俺らの電工 - GOD CONNECTION</title>
 <style>
 :root {
   --bg: #000;
   --panel: #e0e0e0;
   --gold: linear-gradient(to bottom, #fff700 0%, #ffcc00 50%, #b8860b 100%);
+  --neon: #ffd000;
 }
 
 html, body { height: 100%; margin: 0; background: var(--bg); color: #fff; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; overflow: hidden; touch-action: none; }
 
-/* 配線レイヤー（最前面付近） */
-#wireLayer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5000; }
+/* --- タイトル画面 --- */
+#titleScreen {
+  position: fixed; inset: 0; background: #000; z-index: 30000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center;
+  background-image: radial-gradient(circle at center, #222 0%, #000 100%);
+}
+.title-logo {
+  font-size: 42px; font-weight: 900; color: var(--neon);
+  text-shadow: 0 0 10px var(--neon), 0 0 30px var(--neon), 0 0 60px #ff8c00;
+  letter-spacing: 2px; line-height: 1.2; margin-bottom: 10px;
+  animation: flicker 3s infinite alternate;
+}
+.title-sub { font-size: 20px; color: #fff; letter-spacing: 5px; }
+.presents { font-size: 11px; color: #888; margin-bottom: 60px; letter-spacing: 2px; text-transform: uppercase; }
 
-/* アイコン描画 */
+.start-btn-container { position: relative; }
+.start-btn {
+  padding: 15px 60px; font-size: 22px; font-weight: bold;
+  background: transparent; color: var(--neon); border: 2px solid var(--neon);
+  border-radius: 50px; cursor: pointer;
+  box-shadow: 0 0 15px var(--neon);
+  transition: all 0.3s; position: relative; z-index: 2;
+  animation: pulseBtn 1.5s infinite alternate;
+}
+.start-btn:active { transform: scale(0.95); }
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.5; text-shadow: none; }
+}
+@keyframes pulseBtn {
+  from { box-shadow: 0 0 20px var(--neon), inset 0 0 0 var(--neon); }
+  to { box-shadow: 0 0 50px var(--neon), inset 0 0 30px var(--neon); transform: scale(1.05); }
+}
+
+/* --- 以下、既存のスタイル --- */
+#wireLayer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5000; }
 .icon-breaker { width: 32px; height: 40px; background: #444; margin: 0 auto 5px; border: 2px solid #222; position: relative; }
 .icon-breaker::before { content: 'ON'; position: absolute; top: 4px; left: 4px; background: #f00; color: #fff; font-size: 8px; font-weight: bold; padding: 1px 2px; border-radius: 1px; }
-
 .icon-switch { width: 28px; height: 28px; background: #fff; border: 2px solid #bbb; border-radius: 4px; margin: 0 auto 5px; box-shadow: inset 0 0 4px #ccc; }
-
 .icon-lamp { width: 34px; height: 34px; border: 2px solid #666; border-radius: 50%; margin: 0 auto 5px; background: #ddd; position: relative; }
 .icon-lamp::after { content: '×'; color: #444; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; }
-
-/* ◯×フィードバック */
 #feedback { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font-size: 160px; font-weight: bold; z-index: 20000; pointer-events: none; text-shadow: 0 0 20px #000; }
 .fb-ok { color: #ff3333; } .fb-ng { color: #3333ff; }
-
-/* フリーズ・プチュン */
 @keyframes god-freeze { 0% { opacity: 1; filter: brightness(3) invert(0); } 50% { opacity: 0.1; filter: brightness(8) invert(1); } 100% { opacity: 1; filter: brightness(3) invert(0); } }
 .freeze-effect { animation: god-freeze 0.04s infinite !important; }
 #puchun { position: fixed; inset: 0; background: #fff; opacity: 0; z-index: 25000; pointer-events: none; }
 .puchun-active { animation: puchun-flash 0.5s ease-out; }
 @keyframes puchun-flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-
-/* 撃破演出：中央からゆっくり巨大化 */
 #victoryScreen { display: none; position: fixed; inset: 0; background: #000; z-index: 21000; align-items: center; justify-content: center; }
-.gold-text {
-    font-size: 110px; font-weight: bold; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 30px rgba(255,215,0,0.8));
-    opacity: 0; transform: scale(0.3);
-    animation: godSlowIn 3.0s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
-}
-@keyframes godSlowIn { 
-    0% { opacity: 0; transform: scale(0.3); } 
-    15% { opacity: 1; }
-    100% { opacity: 1; transform: scale(1.3); } 
-}
-
-/* ダメージ演出（ボス画面の上にかぶせる） */
+.gold-text { font-size: 110px; font-weight: bold; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 30px rgba(255,215,0,0.8)); opacity: 0; transform: scale(0.3); animation: godSlowIn 3.0s cubic-bezier(0.1, 0.7, 0.1, 1) forwards; }
+@keyframes godSlowIn { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 1; } 100% { opacity: 1; transform: scale(1.3); } }
 #damageOverlay { display: none; position: fixed; inset: 0; background: rgba(255,0,0,0.6); z-index: 15000; align-items: center; justify-content: center; font-size: 70px; font-weight: bold; color: #fff; }
 .shake { animation: shake 0.1s infinite; }
 @keyframes shake { 0% { transform: translate(6px, 6px); } 50% { transform: translate(-6px, -6px); } }
-
-/* デバイス */
 .device { position: absolute; width: 68px; min-height: 80px; padding: 6px; background: var(--panel); border-radius: 8px; color: #000; box-shadow: 0 4px 8px rgba(0,0,0,0.6); transform: translate(-50%, -50%); text-align: center; z-index: 1000; }
 .device h3 { margin: 0 0 4px; font-size: 9px; white-space: nowrap; border-bottom: 1px solid #bbb; }
 .terminal { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 22px; margin: 2px; background: #222; color: #fff; border-radius: 50%; font-size: 9px; cursor: pointer; }
 .selected { outline: 3px solid #ffd800; box-shadow: 0 0 10px #ffd800; }
-
-/* 配線パス（視認性強化） */
 .wire-path { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-/* 黒線：強力な白い二重光彩で縁取り */
-.wire-black { 
-  stroke: #111; 
-  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #fff); 
-}
-/* 白線：黒い縁取りでくっきりさせる */
-.wire-white { 
-  stroke: #fff; 
-  filter: drop-shadow(0 0 2px #000); 
-}
-
-/* UI */
+.wire-black { stroke: #111; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #fff); }
+.wire-white { stroke: #fff; filter: drop-shadow(0 0 2px #000); }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.97); display: none; align-items: center; justify-content: center; z-index: 9000; }
 .modal-backdrop.show { display: flex; flex-direction: column; }
 .card { width: 85%; max-width: 320px; background: #111; padding: 20px; border-radius: 12px; border: 1px solid #444; text-align: center; }
@@ -85,13 +87,23 @@ html, body { height: 100%; margin: 0; background: var(--bg); color: #fff; font-f
 </head>
 <body>
 
+<div id="titleScreen">
+  <div class="title-logo">
+    俺らの電工<br><span class="title-sub">- GOD CONNECTION -</span>
+  </div>
+  <p class="presents">presents by 貴電</p>
+  <div class="start-btn-container">
+    <button id="startBtn" class="start-btn">GAME START</button>
+  </div>
+</div>
+
 <svg id="wireLayer"></svg>
 <div id="feedback"></div>
 <div id="damageOverlay">DAMAGE!</div>
 <div id="puchun"></div>
 <div id="victoryScreen"><div class="gold-text">撃破</div></div>
 
-<div id="quizScreen" class="modal-backdrop show">
+<div id="quizScreen" class="modal-backdrop">
   <div class="card">
     <div id="qCount" style="font-size: 11px; color: #888;"></div>
     <h3 id="qText" style="margin: 15px 0; font-size: 16px;">質問読み込み中...</h3>
@@ -137,6 +149,20 @@ const pool = [
 ];
 
 let currentQ = [], qIdx = 0, hp = 100, bHP = 100, round = 1, swOn = false, sel = null, lines = [];
+
+// --- タイトル画面からのスタート処理 ---
+document.getElementById('startBtn').onclick = () => {
+    // タイトル画面をフェードアウト風に隠す
+    const title = document.getElementById('titleScreen');
+    title.style.transition = 'opacity 0.5s';
+    title.style.opacity = '0';
+    setTimeout(() => {
+        title.style.display = 'none';
+        // クイズ画面を表示してゲーム開始
+        document.getElementById('quizScreen').classList.add('show');
+        init();
+    }, 500);
+};
 
 function init() {
     currentQ = pool.sort(() => Math.random() - 0.5).slice(0, 5);
@@ -273,7 +299,7 @@ document.getElementById('swBtn').onclick = (e) => {
 };
 
 function resetWires() { lines = []; draw(); }
-window.onload = init;
+// window.onload は削除し、スタートボタンで init() を呼ぶ
 </script>
 </body>
 </html>
