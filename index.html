@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>俺らの電工 - 完璧版</title>
+<title>俺らの電工 - 視認性強化版</title>
 <style>
 :root {
   --bg: #000;
@@ -61,10 +61,18 @@ html, body { height: 100%; margin: 0; background: var(--bg); color: #fff; font-f
 .terminal { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 22px; margin: 2px; background: #222; color: #fff; border-radius: 50%; font-size: 9px; cursor: pointer; }
 .selected { outline: 3px solid #ffd800; box-shadow: 0 0 10px #ffd800; }
 
-/* 配線パス */
+/* 配線パス（視認性強化） */
 .wire-path { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-.wire-black { stroke: #111; filter: drop-shadow(0 0 1px #fff); }
-.wire-white { stroke: #fff; filter: drop-shadow(0 0 1px #000); }
+/* 黒線：強力な白い二重光彩で縁取り */
+.wire-black { 
+  stroke: #111; 
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #fff); 
+}
+/* 白線：黒い縁取りでくっきりさせる */
+.wire-white { 
+  stroke: #fff; 
+  filter: drop-shadow(0 0 2px #000); 
+}
 
 /* UI */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.97); display: none; align-items: center; justify-content: center; z-index: 9000; }
@@ -200,7 +208,6 @@ function draw() {
         const x2 = b.left + b.width/2; const y2 = b.top + b.height/2;
 
         const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        // 90度配線（カギ型）：水平に移動してから垂直に折れる
         const d = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
         p.setAttribute("d", d);
         const isL = c[0].match(/L|i|o/) || c[1].match(/L|i|o/);
@@ -212,11 +219,9 @@ function draw() {
 document.getElementById('setBtn').onclick = () => {
     if(!swOn) { alert("スイッチがOFFだ！"); return; }
     
-    // 1. ボス画面をまず出す
     document.getElementById('bossScreen').classList.add('show');
     
     setTimeout(() => {
-        // 2. ボスに対してダメージ演出
         const overlay = document.getElementById('damageOverlay');
         overlay.style.display = 'flex';
         document.getElementById('bossCard').classList.add('shake');
@@ -228,7 +233,6 @@ document.getElementById('setBtn').onclick = () => {
             overlay.style.display = 'none';
             document.getElementById('bossCard').classList.remove('shake');
             
-            // 3. 撃破チェック
             if(bHP <= 0) {
                 triggerGodFreeze();
             } else {
@@ -251,7 +255,6 @@ function triggerGodFreeze() {
         
         setTimeout(() => {
             document.body.classList.remove('freeze-effect');
-            // 全隠し（暗転）
             document.querySelectorAll('body > *:not(#puchun):not(#victoryScreen)').forEach(el => el.style.display = 'none');
             document.body.style.background = "#000";
             
