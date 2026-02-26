@@ -2,116 +2,250 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>電気工事士の試練 - WORLD 2：三路の迷宮</title>
     <style>
-        body { background: #121212; color: #fff; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; margin: 0; overflow: hidden; }
-        #header { background: #000; padding: 15px; border-bottom: 3px solid #00ffcc; display: flex; justify-content: space-between; align-items: center; }
-        #title { font-size: 24px; font-weight: bold; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
-        
-        .status-box { display: flex; gap: 20px; font-size: 18px; }
-        .hp-container { width: 200px; height: 20px; background: #333; border: 2px solid #fff; position: relative; }
-        #hp-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ff0000, #00ff00); transition: 0.3s; }
+        :root {
+            --cyan: #00ffcc;
+            --red: #ff4444;
+            --bg: #000000;
+            --panel: #1a1a1a;
+            --text: #ffffff;
+        }
 
-        #main-stage { position: relative; width: 100vw; height: calc(100vh - 70px); background: #1e1e1e; display: flex; justify-content: center; align-items: center; }
-        canvas { background: #2a2a2a; box-shadow: 0 0 30px rgba(0,0,0,1); border-radius: 8px; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-        /* UI Overlay */
-        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
-        .card { background: #333; padding: 40px; border: 2px solid #00ffcc; border-radius: 15px; text-align: center; max-width: 600px; }
-        .btn { padding: 12px 30px; margin: 10px; cursor: pointer; background: #444; color: #fff; border: 1px solid #00ffcc; border-radius: 5px; font-size: 18px; }
-        .btn:hover { background: #00ffcc; color: #000; }
+        /* ヘッダー：デザイン完全再現 */
+        #header {
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        #controls { position: absolute; bottom: 30px; display: flex; gap: 20px; }
-        .ctrl-btn { padding: 20px 40px; font-size: 20px; font-weight: bold; cursor: pointer; border-radius: 10px; border: none; }
-        #set-btn { background: #00ffcc; color: #000; }
-        #reset-btn { background: #ff4444; color: #fff; }
+        #title-area {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan);
+        }
 
-        #msg-box { position: absolute; top: 20px; left: 20px; font-family: monospace; color: #00ffcc; font-size: 16px; pointer-events: none; }
+        .status-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .hp-container {
+            width: 150px;
+            height: 14px;
+            background: #333;
+            border: 1px solid #fff;
+            position: relative;
+        }
+
+        #hp-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #00ff00);
+            transition: width 0.3s ease;
+        }
+
+        /* ゲームエリア */
+        #main-stage {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        #log-box {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 0.85rem;
+            color: var(--cyan);
+            pointer-events: none;
+            line-height: 1.4;
+            z-index: 10;
+        }
+
+        #canvas-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16 / 10;
+            background: var(--panel);
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* クイズモーダル：IMG_2205再現 */
+        #quiz-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .quiz-card {
+            background: #2d2d2d;
+            border: 2px solid var(--cyan);
+            border-radius: 15px;
+            padding: 30px;
+            width: 85%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .quiz-q { font-size: 1.1rem; margin-bottom: 25px; font-weight: bold; }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .opt-btn {
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: #fff;
+            padding: 15px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* ボタン：IMG_2206再現 */
+        #footer {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: var(--bg);
+        }
+
+        .main-btn {
+            padding: 18px 35px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        #set-btn { background: var(--cyan); color: #000; }
+        #reset-btn { background: var(--red); color: #fff; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div id="title">電気工事士の試練 <span id="world-tag">WORLD 1</span></div>
-    <div class="status-box">
-        <div>称号: <span id="rank">見習い</span></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            HP: <div class="hp-container"><div id="hp-bar"></div></div>
-        </div>
+    <div id="title-area">電気工事士の試練 <span id="current-world">WORLD 1</span></div>
+    <div class="status-area">
+        <div>称号: <span id="rank-name">見習い</span></div>
+        <div>HP: </div>
+        <div class="hp-container"><div id="hp-bar"></div></div>
     </div>
 </div>
 
 <div id="main-stage">
-    <canvas id="gameCanvas"></canvas>
-    <div id="msg-box"></div>
-    
-    <div id="ui-overlay">
-        <div id="quiz-ui" class="card">
-            <h2 id="q-text">問題</h2>
-            <div id="q-options"></div>
-        </div>
+    <div id="log-box"></div>
+    <div id="canvas-container">
+        <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div id="controls">
-        <button id="set-btn" class="ctrl-btn">点灯試験 (SET)</button>
-        <button id="reset-btn" class="ctrl-btn">全配線解除</button>
+    <div id="quiz-overlay">
+        <div class="quiz-card">
+            <div id="q-text" class="quiz-q"></div>
+            <div id="q-options" class="quiz-options"></div>
+        </div>
     </div>
+</div>
+
+<div id="footer">
+    <button id="set-btn" class="main-btn">点灯試験 (SET)</button>
+    <button id="reset-btn" class="main-btn">全配線解除</button>
 </div>
 
 <script>
 /**
- * 構成データ：完璧な複線図とクイズ
+ * 完璧なデータ構成
  */
-const WORLDS = [
-    {
-        id: 1,
-        title: "基本の単一回路",
-        quiz: [
-            { q: "VVF1.6-2cの「2c」とは何のこと？", a: ["2センチ", "2芯", "2重被覆", "2サイクル"], c: 1 },
-            { q: "電源の「L」は何色の電線を使うのが一般的？", a: ["白", "緑", "赤", "黒"], c: 3 }
-        ],
-        nodes: [
-            { id: 'L', x: 400, y: 80, label: 'L', group: 'pwr' },
-            { id: 'N', x: 500, y: 80, label: 'N', group: 'pwr' },
-            { id: 's1_0', x: 450, y: 350, label: '0', group: 'sw1' },
-            { id: 's1_1', x: 450, y: 410, label: '1', group: 'sw1' },
-            { id: 'l_L', x: 750, y: 200, label: 'L', group: 'lamp' },
-            { id: 'l_N', x: 800, y: 200, label: 'N', group: 'lamp' }
-        ],
-        switches: { sw1: { type: '1way', state: 0, internal: [[0,1]] } }
-    },
-    {
-        id: 2,
-        title: "三路の迷宮",
-        quiz: [
-            { q: "三路スイッチを2個使ってできることは？", a: ["1か所で制御", "3か所で制御", "2か所で制御", "調光"], c: 2 },
-            { q: "三路スイッチ裏面の「0」は何端子？", a: ["接地", "共通", "渡り1", "渡り3"], c: 1 }
-        ],
-        nodes: [
-            { id: 'L', x: 100, y: 80, label: 'L', group: 'pwr' },
-            { id: 'N', x: 150, y: 80, label: 'N', group: 'pwr' },
-            // 左スイッチ：0は左
-            { id: 'swA_0', x: 120, y: 400, label: '0', group: 'swA' },
-            { id: 'swA_1', x: 220, y: 370, label: '1', group: 'swA' },
-            { id: 'swA_3', x: 220, y: 430, label: '3', group: 'swA' },
-            // 右スイッチ：0は右
-            { id: 'swB_0', x: 780, y: 400, label: '0', group: 'swB' },
-            { id: 'swB_1', x: 680, y: 370, label: '1', group: 'swB' },
-            { id: 'swB_3', x: 680, y: 430, label: '3', group: 'swB' },
-            // 中央JB
-            { id: 'jb1', x: 450, y: 280, label: 'JB', group: 'jb' },
-            // ランプ
-            { id: 'l_L', x: 420, y: 120, label: 'L', group: 'lamp' },
-            { id: 'l_N', x: 480, y: 120, label: 'N', group: 'lamp' }
-        ],
-        switches: { 
-            swA: { type: '3way', state: 0 }, 
-            swB: { type: '3way', state: 0 } 
+const DATA = {
+    worlds: [
+        {
+            id: 1,
+            label: "基本の単一回路",
+            rank: "見習い",
+            quizzes: [
+                { q: "VVF1.6-2cの「2c」とは何のこと？", o: ["2センチ", "2芯", "2重被覆", "2サイクル"], c: 1 },
+                { q: "電源の「L」端子に接続すべき電線の色は？", o: ["白", "赤", "黒", "緑"], c: 2 }
+            ],
+            nodes: [
+                { id: 'L', x: 450, y: 100, label: 'L', color: '#ff4444' },
+                { id: 'N', x: 550, y: 100, label: 'N', color: '#ffffff' },
+                { id: 'sw_0', x: 500, y: 350, label: '0', color: '#00ffcc', group: 'sw1' },
+                { id: 'sw_1', x: 500, y: 430, label: '1', color: '#00ffcc', group: 'sw1' },
+                { id: 'lp_L', x: 750, y: 250, label: 'L', color: '#00ffcc' },
+                { id: 'lp_N', x: 810, y: 250, label: 'N', color: '#ffffff' }
+            ],
+            switches: { sw1: { type: '1way', state: 0 } }
+        },
+        {
+            id: 2,
+            label: "三路の迷宮",
+            rank: "一般職士",
+            quizzes: [
+                { q: "三路スイッチの共通端子番号はどれ？", o: ["1", "3", "0", "E"], c: 2 },
+                { q: "図の三路スイッチ、0番端子は左右どちら？", o: ["常に左", "常に右", "製品による", "左右非対称"], c: 3 }
+            ],
+            nodes: [
+                { id: 'L', x: 120, y: 80, label: 'L', color: '#ff4444' },
+                { id: 'N', x: 190, y: 80, label: 'N', color: '#ffffff' },
+                // 左三路：0は左 (IMG_2202再現)
+                { id: 'swA_0', x: 150, y: 420, label: '0', color: '#00ffcc', group: 'swA' },
+                { id: 'swA_1', x: 260, y: 380, label: '1', color: '#00ffcc', group: 'swA' },
+                { id: 'swA_3', x: 260, y: 460, label: '3', color: '#00ffcc', group: 'swA' },
+                // 右三路：0は右 (IMG_2202再現)
+                { id: 'swB_0', x: 750, y: 420, label: '0', color: '#00ffcc', group: 'swB' },
+                { id: 'swB_1', x: 640, y: 380, label: '1', color: '#00ffcc', group: 'swB' },
+                { id: 'swB_3', x: 640, y: 460, label: '3', color: '#00ffcc', group: 'swB' },
+                // ジョイントボックス(JB)
+                { id: 'jb', x: 450, y: 300, label: 'JB', color: '#00ffcc' },
+                // 負荷：中央上部
+                { id: 'lp_L', x: 420, y: 120, label: 'L', color: '#ff4444' },
+                { id: 'lp_N', x: 480, y: 120, label: 'N', color: '#ffffff' }
+            ],
+            switches: { swA: { type: '3way', state: 0 }, swB: { type: '3way', state: 0 } }
         }
-    }
-];
+    ]
+};
 
-class Game {
+class ElectricianGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -128,105 +262,119 @@ class Game {
         this.canvas.width = 900;
         this.canvas.height = 550;
         this.loadWorld();
-        this.attachEvents();
-        this.tick();
+        this.setupEvents();
+        this.animate();
     }
 
     loadWorld() {
-        const w = WORLDS[this.worldIdx];
+        const w = DATA.worlds[this.worldIdx];
         this.lines = [];
         this.isLampOn = false;
-        document.getElementById('world-tag').innerText = `WORLD ${w.id}: ${w.title}`;
+        document.getElementById('current-world').innerText = `WORLD ${w.id}: ${w.label}`;
+        document.getElementById('rank-name').innerText = w.rank;
         this.startQuiz();
     }
 
     startQuiz() {
-        const w = WORLDS[this.worldIdx];
-        const quiz = w.quiz[Math.floor(Math.random()*w.quiz.length)];
+        const w = DATA.worlds[this.worldIdx];
+        const quiz = w.quizzes[Math.floor(Math.random() * w.quizzes.length)];
         
-        document.getElementById('ui-overlay').style.display = 'flex';
+        const overlay = document.getElementById('quiz-overlay');
+        overlay.style.display = 'flex';
         document.getElementById('q-text').innerText = quiz.q;
-        const opts = document.getElementById('q-options');
-        opts.innerHTML = '';
         
-        quiz.a.forEach((text, i) => {
-            const b = document.createElement('button');
-            b.className = 'btn';
-            b.innerText = text;
-            b.onclick = () => {
+        const optsArea = document.getElementById('q-options');
+        optsArea.innerHTML = '';
+        quiz.o.forEach((txt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = txt;
+            btn.onclick = () => {
                 if(i === quiz.c) {
                     this.log("正解！施工を開始せよ。");
-                    document.getElementById('ui-overlay').style.display = 'none';
+                    overlay.style.display = 'none';
                 } else {
-                    this.hp -= 20;
-                    this.updateUI();
-                    this.log("不正解！HP減少。");
-                    if(this.hp <= 0) this.gameOver();
+                    this.damage(20, "不正解！HP減少。");
                 }
             };
-            opts.appendChild(b);
+            optsArea.appendChild(btn);
         });
     }
 
-    updateUI() {
-        document.getElementById('hp-bar').style.width = this.hp + "%";
-        if(this.worldIdx > 0) document.getElementById('rank').innerText = "一般職士";
+    damage(val, msg) {
+        this.hp -= val;
+        this.log(msg);
+        document.getElementById('hp-bar').style.width = Math.max(0, this.hp) + "%";
+        if(this.hp <= 0) {
+            alert("施工失敗... 現場復帰せよ。");
+            location.reload();
+        }
     }
 
-    log(m) {
-        const b = document.getElementById('msg-box');
-        b.innerHTML = `> ${m}<br>` + b.innerHTML;
+    log(msg) {
+        const box = document.getElementById('log-box');
+        box.innerHTML = `> ${msg}<br>` + box.innerHTML;
     }
 
-    attachEvents() {
+    setupEvents() {
         this.canvas.onmousedown = (e) => {
-            const r = this.canvas.getBoundingClientRect();
-            const x = e.clientX - r.left;
-            const y = e.clientY - r.top;
-            
-            const node = WORLDS[this.worldIdx].nodes.find(n => Math.hypot(n.x-x, n.y-y) < 20);
-            if(node) {
-                if(!this.selected) {
+            const rect = this.canvas.getBoundingClientRect();
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            const w = DATA.worlds[this.worldIdx];
+            const node = w.nodes.find(n => Math.hypot(n.x - x, n.y - y) < 20);
+
+            if (node) {
+                if (!this.selected) {
                     this.selected = node;
                 } else {
-                    if(this.selected.id !== node.id) {
+                    if (this.selected.id !== node.id) {
                         this.lines.push({ f: this.selected.id, t: node.id });
                     }
                     this.selected = null;
                 }
             } else {
-                // スイッチ切り替え判定
-                const w = WORLDS[this.worldIdx];
+                // スイッチ切り替え判定：ノード0の近辺をタップでトグル
                 for(let key in w.switches) {
-                    const n0 = w.nodes.find(n => n.id === key+'_0');
-                    if(n0 && Math.hypot(n0.x-x, n0.y-y) < 60) {
+                    const n0 = w.nodes.find(n => n.id === key+'_0' || n.id === 'sw_0');
+                    if(n0 && Math.hypot(n0.x - x, n0.y - y) < 60) {
                         w.switches[key].state = 1 - w.switches[key].state;
                         this.log("スイッチ操作");
-                        this.evalCircuit();
+                        this.checkConnectivity();
                     }
                 }
             }
         };
 
-        document.getElementById('set-btn').onclick = () => this.evalCircuit(true);
-        document.getElementById('reset-btn').onclick = () => { this.lines = []; this.isLampOn = false; };
+        document.getElementById('reset-btn').onclick = () => {
+            this.lines = [];
+            this.isLampOn = false;
+            this.log("全配線解除。");
+        };
+
+        document.getElementById('set-btn').onclick = () => {
+            this.checkConnectivity(true);
+        };
     }
 
-    evalCircuit(isFinal = false) {
-        const w = WORLDS[this.worldIdx];
+    checkConnectivity(isFinal = false) {
+        const w = DATA.worlds[this.worldIdx];
         const edges = [...this.lines.map(l => [l.f, l.t])];
         
-        // スイッチ内部結線をエッジに追加
+        // スイッチ内部結線の追加
         for(let key in w.switches) {
             const sw = w.switches[key];
             if(sw.type === '3way') {
                 edges.push([key+'_0', sw.state === 0 ? key+'_1' : key+'_3']);
             } else {
-                if(sw.state === 1) edges.push(['s1_0', 's1_1']);
+                if(sw.state === 0) edges.push(['sw_0', 'sw_1']);
             }
         }
 
-        const canReach = (start, target) => {
+        const canConnect = (start, target) => {
             let visited = new Set();
             let queue = [start];
             while(queue.length > 0) {
@@ -242,110 +390,110 @@ class Game {
         };
 
         // 短絡チェック
-        if(canReach('L', 'N')) {
-            this.hp -= 50;
-            this.log("バチンッ！短絡（ショート）だ！");
-            this.updateUI();
-            if(this.hp <= 0) this.gameOver();
+        if(canConnect('L', 'N')) {
+            this.damage(50, "バチンッ！短絡（ショート）だ！");
             return;
         }
 
-        this.isLampOn = canReach('L', 'l_L') && canReach('N', 'l_N');
+        this.isLampOn = canConnect('L', 'lp_L') && canConnect('N', 'lp_N');
 
         if(isFinal) {
             if(this.isLampOn) {
                 this.log("点灯成功！ボス撃破！");
-                setTimeout(() => this.nextWorld(), 1000);
+                setTimeout(() => this.win(), 1200);
             } else {
-                this.hp -= 10;
-                this.log("不点灯... HP減少。");
-                this.updateUI();
+                this.damage(10, "不点灯... 回路が未完成だ。");
             }
         }
     }
 
-    nextWorld() {
+    win() {
         this.worldIdx++;
-        if(this.worldIdx < WORLDS.length) {
+        if(this.worldIdx < DATA.worlds.length) {
             this.loadWorld();
-            this.updateUI();
         } else {
-            alert("おめでとう！神施工の称号を授与する！");
+            alert("全工程終了！ あなたは真の『神施工士』だ！");
             location.reload();
         }
     }
 
-    gameOver() {
-        alert("施工失敗... 現場復帰せよ。");
-        location.reload();
-    }
-
-    tick() {
+    animate() {
         const ctx = this.ctx;
-        ctx.clearRect(0,0,900,550);
+        const w = DATA.worlds[this.worldIdx];
+        ctx.clearRect(0, 0, 900, 550);
 
-        // 複線図の補助枠
-        ctx.strokeStyle = '#444';
-        ctx.setLineDash([5,5]);
-        ctx.strokeRect(50, 50, 800, 450);
+        // 補助枠
+        ctx.strokeStyle = '#333';
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(40, 40, 820, 470);
         ctx.setLineDash([]);
 
-        // 配線描画
+        // 配線
         this.lines.forEach(l => {
-            const n1 = WORLDS[this.worldIdx].nodes.find(n => n.id === l.f);
-            const n2 = WORLDS[this.worldIdx].nodes.find(n => n.id === l.t);
+            const n1 = w.nodes.find(n => n.id === l.f);
+            const n2 = w.nodes.find(n => n.id === l.t);
             ctx.beginPath();
-            ctx.lineWidth = 5;
-            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#eee';
+            ctx.lineCap = 'round';
             ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
             ctx.stroke();
         });
 
-        // デバイス描画
-        WORLDS[this.worldIdx].nodes.forEach(n => {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, 12, 0, Math.PI*2);
-            ctx.fillStyle = n.id.includes('L') ? '#ff4444' : (n.id.includes('N') ? '#fff' : '#00ffcc');
-            if(this.selected === n) ctx.strokeStyle = 'yellow', ctx.lineWidth=3, ctx.stroke();
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.fillText(n.label, n.x-5, n.y-20);
-        });
-
-        // 三路スイッチの「外枠」描画
-        const w = WORLDS[this.worldIdx];
+        // デバイス外枠（プロ仕様）
         for(let key in w.switches) {
-            const sw = w.switches[key];
             const nodes = w.nodes.filter(n => n.group === key);
             if(nodes.length > 0) {
-                ctx.strokeStyle = '#666';
+                ctx.strokeStyle = '#444';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(nodes[0].x-30, nodes[0].y-50, 140, 100);
-                // 内部導通
+                ctx.strokeRect(nodes[0].x - 40, nodes[0].y - 60, 150, 120);
+                
+                // 内部状態表示（オレンジ線）
                 ctx.beginPath();
                 ctx.strokeStyle = 'orange';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
+                const sw = w.switches[key];
                 const n0 = nodes.find(n => n.id.endsWith('_0'));
-                const nt = nodes.find(n => n.id.endsWith('_' + (sw.state===0?'1':'3')));
-                if(n0 && nt) { ctx.moveTo(n0.x, n0.y); ctx.lineTo(nt.x, nt.y); ctx.stroke(); }
+                const targetId = sw.type === '3way' ? (sw.state === 0 ? '_1' : '_3') : '_1';
+                const nt = nodes.find(n => n.id.endsWith(targetId));
+                if(n0 && nt && (sw.type === '3way' || sw.state === 0)) {
+                    ctx.moveTo(n0.x, n0.y); ctx.lineTo(nt.x, nt.y);
+                    ctx.stroke();
+                }
             }
         }
 
-        // ランプ点灯演出
-        if(this.isLampOn) {
+        // ノード
+        w.nodes.forEach(n => {
             ctx.beginPath();
-            ctx.arc(450, 120, 40, 0, Math.PI*2);
-            const grad = ctx.createRadialGradient(450,120,5,450,120,40);
-            grad.addColorStop(0, 'yellow'); grad.addColorStop(1, 'rgba(255,255,0,0)');
+            ctx.arc(n.x, n.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = n.color;
+            ctx.shadowBlur = (this.selected === n) ? 15 : 0;
+            ctx.shadowColor = n.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(n.label, n.x - 5, n.y - 25);
+        });
+
+        // ランプ点灯演出（IMG_2207再現）
+        if(this.isLampOn) {
+            const lpNode = w.nodes.find(n => n.id === 'lp_L');
+            ctx.beginPath();
+            ctx.arc(lpNode.x + 30, lpNode.y, 45, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(lpNode.x+30, lpNode.y, 5, lpNode.x+30, lpNode.y, 45);
+            grad.addColorStop(0, 'rgba(255, 255, 0, 0.9)');
+            grad.addColorStop(1, 'rgba(255, 255, 0, 0)');
             ctx.fillStyle = grad;
             ctx.fill();
         }
 
-        requestAnimationFrame(() => this.tick());
+        requestAnimationFrame(() => this.animate());
     }
 }
 
-const game = new Game();
+const game = new ElectricianGame();
 </script>
 </body>
 </html>
