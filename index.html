@@ -1,499 +1,323 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>電気工事士の試練 - WORLD 2：三路の迷宮</title>
-    <style>
-        :root {
-            --cyan: #00ffcc;
-            --red: #ff4444;
-            --bg: #000000;
-            --panel: #1a1a1a;
-            --text: #ffffff;
-        }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>俺らの電工 - GOD CONNECTION FINAL</title>
+<style>
+/* --- 基礎設定 --- */
+* { box-sizing: border-box; user-select: none; }
+body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
+.hidden { display: none !important; }
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+/* --- アニメーション群 --- */
+@keyframes pulseGlow { 0%, 100% { text-shadow: 0 0 10px #ffd000; } 50% { text-shadow: 0 0 30px #ffaa00; } }
+@keyframes shake { 0% { transform:translate(0,0); } 10% { transform:translate(-10px,-10px); } 30% { transform:translate(10px,10px); } 50% { transform:translate(-10px,10px); } 100% { transform:translate(0,0); } }
+@keyframes flowDash { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+@keyframes puchunLine { 0% { transform: scaleY(0); opacity: 0; } 50% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(0); opacity: 0; } }
+@keyframes rainbow { 0% { background: #ff0000; } 20% { background: #ffff00; } 40% { background: #00ff00; } 60% { background: #00ffff; } 80% { background: #0000ff; } 100% { background: #ff00ff; } }
+.monochrome { filter: grayscale(100%) brightness(0.7) contrast(150%); }
 
-        /* ヘッダー：デザイン完全再現 */
-        #header {
-            padding: 15px 20px;
-            border-bottom: 2px solid var(--cyan);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+/* --- タイトル --- */
+#titleScreen { position: fixed; inset: 0; background: radial-gradient(circle, #333 0%, #000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+.title-logo { font-size: 50px; color: #ffd000; animation: pulseGlow 2s infinite; }
+.presents { font-size: 14px; color: #aaa; margin-top: 10px; letter-spacing: 3px; }
 
-        #title-area {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--cyan);
-            text-shadow: 0 0 10px var(--cyan);
-        }
+/* --- クイズ --- */
+#quizScreen { position: fixed; inset: 0; background: #111; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+.quiz-mark { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 250px; font-weight: bold; pointer-events: none; opacity: 0; z-index: 9500; transition: opacity 0.2s; }
+.mark-o { color: #00d4ff; } .mark-x { color: #ff3333; }
 
-        .status-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 0.9rem;
-        }
+/* --- 配線パート --- */
+#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; }
+#board { flex: 1; position: relative; width: 100%; overflow: hidden; }
+#wireLayer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        .hp-container {
-            width: 150px;
-            height: 14px;
-            background: #333;
-            border: 1px solid #fff;
-            position: relative;
-        }
+.device { position: absolute; background: #ccc; color: #000; border: 2px solid #444; border-radius: 6px; padding: 5px; text-align: center; z-index: 20; transform: translate(-50%, -50%); min-width: 85px; }
+.dev-title { font-size: 11px; font-weight: bold; border-bottom: 1px solid #777; margin-bottom: 4px; }
+.term-row { display: flex; justify-content: center; gap: 8px; }
+.term { width: 30px; height: 30px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: 2px solid #000; }
+.term.sel { background: #ffd000; color: #000; box-shadow: 0 0 10px #ffd000; }
 
-        #hp-bar {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #00ff00);
-            transition: width 0.3s ease;
-        }
+.wire-white { stroke: #fff; stroke-width: 6; fill: none; }
+.wire-black { stroke: #444; stroke-width: 8; fill: none; filter: drop-shadow(0 0 1px #fff); }
+.wire-glow { stroke: #ffd000; stroke-width: 6; stroke-dasharray: 10, 15; animation: flowDash 0.5s linear infinite; fill: none; display: none; }
 
-        /* ゲームエリア */
-        #main-stage {
-            flex-grow: 1;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-        }
+#controls { height: 90px; background: #1a1a1a; display: flex; justify-content: center; align-items: center; gap: 15px; border-top: 2px solid #333; }
+.btn-set { padding: 15px 40px; background: #ffd000; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; }
 
-        #log-box {
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            font-size: 0.85rem;
-            color: var(--cyan);
-            pointer-events: none;
-            line-height: 1.4;
-            z-index: 10;
-        }
+/* --- ボス演出 --- */
+#bossScreen { position: fixed; inset: 0; background: #000; z-index: 8000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#bossImg { width: 220px; height: 220px; background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 0 20px #ff0000); }
+.hp-bar-wrap { width: 80%; height: 20px; background: #333; border: 2px solid #fff; margin-top: 30px; border-radius: 10px; overflow: hidden; }
+#hpFill { width: 100%; height: 100%; background: linear-gradient(90deg, #f00, #ff6a00); transition: width 0.5s; }
 
-        #canvas-container {
-            width: 100%;
-            max-width: 800px;
-            aspect-ratio: 16 / 10;
-            background: var(--panel);
-            border-radius: 10px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            position: relative;
-        }
+/* --- プチュン演出 --- */
+#puchunScreen { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; align-items: center; justify-content: center; }
+.flash-line { position: absolute; width: 100%; height: 10px; background: #fff; box-shadow: 0 0 40px #b700ff; opacity: 0; }
+.gekiha { font-size: 120px; color: #ffd000; text-shadow: 0 0 30px #ff0000; opacity: 0; font-weight: 900; }
+.rainbow-bg { animation: rainbow 0.15s infinite !important; }
 
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* クイズモーダル：IMG_2205再現 */
-        #quiz-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .quiz-card {
-            background: #2d2d2d;
-            border: 2px solid var(--cyan);
-            border-radius: 15px;
-            padding: 30px;
-            width: 85%;
-            max-width: 500px;
-            text-align: center;
-        }
-
-        .quiz-q { font-size: 1.1rem; margin-bottom: 25px; font-weight: bold; }
-
-        .quiz-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .opt-btn {
-            background: transparent;
-            border: 1px solid var(--cyan);
-            color: #fff;
-            padding: 15px 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        /* ボタン：IMG_2206再現 */
-        #footer {
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            background: var(--bg);
-        }
-
-        .main-btn {
-            padding: 18px 35px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            min-width: 150px;
-        }
-
-        #set-btn { background: var(--cyan); color: #000; }
-        #reset-btn { background: var(--red); color: #fff; }
-    </style>
+.btn-gold { padding: 15px 40px; background: linear-gradient(#ffe066, #d4af37); color: #000; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+</style>
 </head>
 <body>
 
-<div id="header">
-    <div id="title-area">電気工事士の試練 <span id="current-world">WORLD 1</span></div>
-    <div class="status-area">
-        <div>称号: <span id="rank-name">見習い</span></div>
-        <div>HP: </div>
-        <div class="hp-container"><div id="hp-bar"></div></div>
+<div id="titleScreen">
+    <div class="title-logo">俺らの電工</div>
+    <div style="color:red; letter-spacing:5px;">GOD CONNECTION</div>
+    <div class="presents">presents by 貴電</div>
+    <button class="btn-gold" style="margin-top:40px;" onclick="startQuiz()">現場入り</button>
+</div>
+
+<div id="quizScreen" class="hidden">
+    <div id="qCount" style="color:#aaa; margin-bottom:10px;"></div>
+    <div id="qText" style="font-size:22px; margin-bottom:30px; text-align:center;"></div>
+    <div id="ansBox" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+</div>
+<div id="quizResult" class="quiz-mark"></div>
+
+<div id="gameScreen" class="hidden">
+    <div id="board"><svg id="wireLayer"></svg></div>
+    <div id="controls">
+        <button style="padding:10px 20px; background:#444; color:#fff; border:none;" onclick="resetWires()">RESET</button>
+        <button class="btn-set" onclick="checkCircuit()">SET (通電)</button>
     </div>
 </div>
 
-<div id="main-stage">
-    <div id="log-box"></div>
-    <div id="canvas-container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
-
-    <div id="quiz-overlay">
-        <div class="quiz-card">
-            <div id="q-text" class="quiz-q"></div>
-            <div id="q-options" class="quiz-options"></div>
-        </div>
-    </div>
+<div id="bossScreen" class="hidden">
+    <div style="color:red; font-weight:bold; margin-bottom:10px;">高電圧魔神 アーク</div>
+    <div id="bossImg" style="background-image: url('boss.png.jpg');"></div>
+    <div class="hp-bar-wrap"><div id="hpFill"></div></div>
 </div>
 
-<div id="footer">
-    <button id="set-btn" class="main-btn">点灯試験 (SET)</button>
-    <button id="reset-btn" class="main-btn">全配線解除</button>
+<div id="puchunScreen" class="hidden">
+    <div id="puchunLine" class="flash-line"></div>
+    <div id="gekihaText" class="gekiha">撃破</div>
+    <button id="restartBtn" class="btn-gold hidden" style="position:absolute; bottom:15%;" onclick="location.reload()">タイトルへ戻る</button>
 </div>
 
 <script>
-/**
- * 完璧なデータ構成
- */
-const DATA = {
-    worlds: [
-        {
-            id: 1,
-            label: "基本の単一回路",
-            rank: "見習い",
-            quizzes: [
-                { q: "VVF1.6-2cの「2c」とは何のこと？", o: ["2センチ", "2芯", "2重被覆", "2サイクル"], c: 1 },
-                { q: "電源の「L」端子に接続すべき電線の色は？", o: ["白", "赤", "黒", "緑"], c: 2 }
-            ],
-            nodes: [
-                { id: 'L', x: 450, y: 100, label: 'L', color: '#ff4444' },
-                { id: 'N', x: 550, y: 100, label: 'N', color: '#ffffff' },
-                { id: 'sw_0', x: 500, y: 350, label: '0', color: '#00ffcc', group: 'sw1' },
-                { id: 'sw_1', x: 500, y: 430, label: '1', color: '#00ffcc', group: 'sw1' },
-                { id: 'lp_L', x: 750, y: 250, label: 'L', color: '#00ffcc' },
-                { id: 'lp_N', x: 810, y: 250, label: 'N', color: '#ffffff' }
-            ],
-            switches: { sw1: { type: '1way', state: 0 } }
-        },
-        {
-            id: 2,
-            label: "三路の迷宮",
-            rank: "一般職士",
-            quizzes: [
-                { q: "三路スイッチの共通端子番号はどれ？", o: ["1", "3", "0", "E"], c: 2 },
-                { q: "図の三路スイッチ、0番端子は左右どちら？", o: ["常に左", "常に右", "製品による", "左右非対称"], c: 3 }
-            ],
-            nodes: [
-                { id: 'L', x: 120, y: 80, label: 'L', color: '#ff4444' },
-                { id: 'N', x: 190, y: 80, label: 'N', color: '#ffffff' },
-                // 左三路：0は左 (IMG_2202再現)
-                { id: 'swA_0', x: 150, y: 420, label: '0', color: '#00ffcc', group: 'swA' },
-                { id: 'swA_1', x: 260, y: 380, label: '1', color: '#00ffcc', group: 'swA' },
-                { id: 'swA_3', x: 260, y: 460, label: '3', color: '#00ffcc', group: 'swA' },
-                // 右三路：0は右 (IMG_2202再現)
-                { id: 'swB_0', x: 750, y: 420, label: '0', color: '#00ffcc', group: 'swB' },
-                { id: 'swB_1', x: 640, y: 380, label: '1', color: '#00ffcc', group: 'swB' },
-                { id: 'swB_3', x: 640, y: 460, label: '3', color: '#00ffcc', group: 'swB' },
-                // ジョイントボックス(JB)
-                { id: 'jb', x: 450, y: 300, label: 'JB', color: '#00ffcc' },
-                // 負荷：中央上部
-                { id: 'lp_L', x: 420, y: 120, label: 'L', color: '#ff4444' },
-                { id: 'lp_N', x: 480, y: 120, label: 'N', color: '#ffffff' }
-            ],
-            switches: { swA: { type: '3way', state: 0 }, swB: { type: '3way', state: 0 } }
-        }
-    ]
-};
+const el = id => document.getElementById(id);
+const audio = new Audio('freeze.mp3');
 
-class ElectricianGame {
-    constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.worldIdx = 0;
-        this.hp = 100;
-        this.lines = [];
-        this.selected = null;
-        this.isLampOn = false;
-        
-        this.init();
+// クイズデータ
+const quizzes = [
+    {q:"接地側（白線）を繋ぐべき端子記号は？", a:["L","W (N)","E"], c:1},
+    {q:"電圧側（黒線）をスイッチに入れる理由は？", a:["電圧を切るため","色を合わせるため","意味はない"], c:0},
+    {q:"図記号『●L』は何を指す？", a:["コンセント","位置表示灯","確認表示灯"], c:1},
+    {q:"絶縁抵抗計の別称は？", a:["テスタ","メガー","クランプ"], c:1},
+    {q:"ブレーカーの正式名称は？", a:["電力計","電磁開閉器","配線用遮断器"], c:2}
+];
+
+let round = 1; 
+let qIdx = 0;
+let lines = [];
+let selTerm = null;
+
+// --- クイズ処理 ---
+function startQuiz() {
+    el('titleScreen').classList.add('hidden');
+    el('quizScreen').classList.remove('hidden');
+    loadQuiz();
+}
+
+function loadQuiz() {
+    if(qIdx >= quizzes.length) {
+        el('quizScreen').classList.add('hidden');
+        el('gameScreen').classList.remove('hidden');
+        initBoard();
+        return;
+    }
+    const q = quizzes[qIdx];
+    el('qCount').innerText = `第 ${qIdx+1} / 5 問`;
+    el('qText').innerText = q.q;
+    el('ansBox').innerHTML = '';
+    q.a.forEach((txt, i) => {
+        const b = document.createElement('button');
+        b.style = "width:80%; padding:15px; margin:5px; background:#333; color:#fff; border:1px solid #555; border-radius:10px; font-weight:bold;";
+        b.innerText = txt;
+        b.onclick = () => {
+            const isCorrect = (i === q.c);
+            const res = el('quizResult');
+            res.innerText = isCorrect ? '◯' : '✖';
+            res.className = `quiz-mark ${isCorrect ? 'mark-o' : 'mark-x'}`;
+            res.style.opacity = 1;
+            setTimeout(() => {
+                res.style.opacity = 0;
+                if(isCorrect) { qIdx++; loadQuiz(); }
+            }, 800);
+        };
+        el('ansBox').appendChild(b);
+    });
+}
+
+// --- 配線ボード構築 ---
+function initBoard() {
+    const board = el('board');
+    // デバイス全消去（SVG以外）
+    const devs = board.querySelectorAll('.device');
+    devs.forEach(d => d.remove());
+    lines = [];
+    drawWires();
+
+    // デバイス配置
+    addDev('p', '電源', 50, 15, [['p-L','L'],['p-N','N']]);
+    addDev('jb', 'JB', 50, 45, [['j1','1'],['j2','2'],['j3','3'],['j4','4']]);
+    addDev('sw', 'スイッチ', 25, 75, [['s-i','IN'],['s-o','OUT']]);
+    
+    // ラウンドに合わせて照明を増やす
+    for(let i=0; i<round; i++) {
+        const xPos = round === 1 ? 75 : (60 + (i * 15));
+        addDev(`l${i}`, `照明${i+1}`, xPos, 75, [[`l${i}-L`,'L'],[`l${i}-N`,'N']]);
     }
 
-    init() {
-        this.canvas.width = 900;
-        this.canvas.height = 550;
-        this.loadWorld();
-        this.setupEvents();
-        this.animate();
-    }
-
-    loadWorld() {
-        const w = DATA.worlds[this.worldIdx];
-        this.lines = [];
-        this.isLampOn = false;
-        document.getElementById('current-world').innerText = `WORLD ${w.id}: ${w.label}`;
-        document.getElementById('rank-name').innerText = w.rank;
-        this.startQuiz();
-    }
-
-    startQuiz() {
-        const w = DATA.worlds[this.worldIdx];
-        const quiz = w.quizzes[Math.floor(Math.random() * w.quizzes.length)];
-        
-        const overlay = document.getElementById('quiz-overlay');
-        overlay.style.display = 'flex';
-        document.getElementById('q-text').innerText = quiz.q;
-        
-        const optsArea = document.getElementById('q-options');
-        optsArea.innerHTML = '';
-        quiz.o.forEach((txt, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'opt-btn';
-            btn.innerText = txt;
-            btn.onclick = () => {
-                if(i === quiz.c) {
-                    this.log("正解！施工を開始せよ。");
-                    overlay.style.display = 'none';
-                } else {
-                    this.damage(20, "不正解！HP減少。");
-                }
-            };
-            optsArea.appendChild(btn);
-        });
-    }
-
-    damage(val, msg) {
-        this.hp -= val;
-        this.log(msg);
-        document.getElementById('hp-bar').style.width = Math.max(0, this.hp) + "%";
-        if(this.hp <= 0) {
-            alert("施工失敗... 現場復帰せよ。");
-            location.reload();
-        }
-    }
-
-    log(msg) {
-        const box = document.getElementById('log-box');
-        box.innerHTML = `> ${msg}<br>` + box.innerHTML;
-    }
-
-    setupEvents() {
-        this.canvas.onmousedown = (e) => {
-            const rect = this.canvas.getBoundingClientRect();
-            const scaleX = this.canvas.width / rect.width;
-            const scaleY = this.canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-
-            const w = DATA.worlds[this.worldIdx];
-            const node = w.nodes.find(n => Math.hypot(n.x - x, n.y - y) < 20);
-
-            if (node) {
-                if (!this.selected) {
-                    this.selected = node;
-                } else {
-                    if (this.selected.id !== node.id) {
-                        this.lines.push({ f: this.selected.id, t: node.id });
-                    }
-                    this.selected = null;
-                }
+    document.querySelectorAll('.term').forEach(t => {
+        t.onclick = (e) => {
+            if(!selTerm) {
+                selTerm = e.target;
+                selTerm.classList.add('sel');
             } else {
-                // スイッチ切り替え判定：ノード0の近辺をタップでトグル
-                for(let key in w.switches) {
-                    const n0 = w.nodes.find(n => n.id === key+'_0' || n.id === 'sw_0');
-                    if(n0 && Math.hypot(n0.x - x, n0.y - y) < 60) {
-                        w.switches[key].state = 1 - w.switches[key].state;
-                        this.log("スイッチ操作");
-                        this.checkConnectivity();
-                    }
+                if(selTerm !== e.target) {
+                    lines.push([selTerm.dataset.id, e.target.dataset.id]);
+                    drawWires();
                 }
+                selTerm.classList.remove('sel');
+                selTerm = null;
             }
         };
+    });
+}
 
-        document.getElementById('reset-btn').onclick = () => {
-            this.lines = [];
-            this.isLampOn = false;
-            this.log("全配線解除。");
-        };
+function addDev(id, title, x, y, terms) {
+    const d = document.createElement('div');
+    d.className = 'device';
+    d.style.left = x + '%'; d.style.top = y + '%';
+    let h = `<div class="dev-title">${title}</div><div class="term-row">`;
+    terms.forEach(t => h += `<div class="term" data-id="${t[0]}">${t[1]}</div>`);
+    d.innerHTML = h + `</div>`;
+    el('board').appendChild(d);
+}
 
-        document.getElementById('set-btn').onclick = () => {
-            this.checkConnectivity(true);
-        };
-    }
-
-    checkConnectivity(isFinal = false) {
-        const w = DATA.worlds[this.worldIdx];
-        const edges = [...this.lines.map(l => [l.f, l.t])];
+function drawWires() {
+    const svg = el('wireLayer');
+    svg.innerHTML = '';
+    const bRect = el('board').getBoundingClientRect();
+    lines.forEach((pair, idx) => {
+        const t1 = document.querySelector(`[data-id="${pair[0]}"]`);
+        const t2 = document.querySelector(`[data-id="${pair[1]}"]`);
+        if(!t1 || !t2) return;
+        const r1 = t1.getBoundingClientRect();
+        const r2 = t2.getBoundingClientRect();
+        const x1 = r1.left - bRect.left + 15, y1 = r1.top - bRect.top + 15;
+        const x2 = r2.left - bRect.left + 15, y2 = r2.top - bRect.top + 15;
         
-        // スイッチ内部結線の追加
-        for(let key in w.switches) {
-            const sw = w.switches[key];
-            if(sw.type === '3way') {
-                edges.push([key+'_0', sw.state === 0 ? key+'_1' : key+'_3']);
-            } else {
-                if(sw.state === 0) edges.push(['sw_0', 'sw_1']);
-            }
+        const isBlack = pair[0].match(/L|i|o/) || pair[1].match(/L|i|o/);
+        const pathStr = `M ${x1} ${y1} Q ${(x1+x2)/2 + (idx*5)} ${(y1+y2)/2 - 20} ${x2} ${y2}`;
+        
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", pathStr);
+        p.setAttribute("class", isBlack ? "wire-black" : "wire-white");
+        svg.appendChild(p);
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        g.setAttribute("d", pathStr);
+        g.setAttribute("class", "wire-glow");
+        svg.appendChild(g);
+    });
+}
+
+function resetWires() { lines = []; drawWires(); }
+
+// --- 判定ロジック ---
+function checkCircuit() {
+    const adj = {};
+    lines.forEach(l => {
+        if(!adj[l[0]]) adj[l[0]] = []; if(!adj[l[1]]) adj[l[1]] = [];
+        adj[l[0]].push(l[1]); adj[l[1]].push(l[0]);
+    });
+
+    const getNet = (start) => {
+        const v = new Set(); const q = [start];
+        while(q.length){
+            const n = q.shift();
+            if(!v.has(n)){ v.add(n); (adj[n]||[]).forEach(x => q.push(x)); }
         }
+        return v;
+    };
 
-        const canConnect = (start, target) => {
-            let visited = new Set();
-            let queue = [start];
-            while(queue.length > 0) {
-                let curr = queue.shift();
-                if(curr === target) return true;
-                visited.add(curr);
-                edges.forEach(e => {
-                    if(e[0] === curr && !visited.has(e[1])) queue.push(e[1]);
-                    if(e[1] === curr && !visited.has(e[0])) queue.push(e[0]);
-                });
-            }
-            return false;
-        };
+    const netL = getNet('p-L');
+    const netN = getNet('p-N');
+    const netSW = getNet('s-o');
 
-        // 短絡チェック
-        if(canConnect('L', 'N')) {
-            this.damage(50, "バチンッ！短絡（ショート）だ！");
-            return;
-        }
-
-        this.isLampOn = canConnect('L', 'lp_L') && canConnect('N', 'lp_N');
-
-        if(isFinal) {
-            if(this.isLampOn) {
-                this.log("点灯成功！ボス撃破！");
-                setTimeout(() => this.win(), 1200);
-            } else {
-                this.damage(10, "不点灯... 回路が未完成だ。");
-            }
-        }
+    // 条件：LがSW-INへ、SW-OUTが全ランプのLへ、全ランプのNが電源Nへ
+    let lampOk = true;
+    for(let i=0; i<round; i++) {
+        if(!netSW.has(`l${i}-L`) || !netN.has(`l${i}-N`)) lampOk = false;
     }
 
-    win() {
-        this.worldIdx++;
-        if(this.worldIdx < DATA.worlds.length) {
-            this.loadWorld();
-        } else {
-            alert("全工程終了！ あなたは真の『神施工士』だ！");
-            location.reload();
-        }
-    }
-
-    animate() {
-        const ctx = this.ctx;
-        const w = DATA.worlds[this.worldIdx];
-        ctx.clearRect(0, 0, 900, 550);
-
-        // 補助枠
-        ctx.strokeStyle = '#333';
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(40, 40, 820, 470);
-        ctx.setLineDash([]);
-
-        // 配線
-        this.lines.forEach(l => {
-            const n1 = w.nodes.find(n => n.id === l.f);
-            const n2 = w.nodes.find(n => n.id === l.t);
-            ctx.beginPath();
-            ctx.lineWidth = 6;
-            ctx.strokeStyle = '#eee';
-            ctx.lineCap = 'round';
-            ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
-            ctx.stroke();
-        });
-
-        // デバイス外枠（プロ仕様）
-        for(let key in w.switches) {
-            const nodes = w.nodes.filter(n => n.group === key);
-            if(nodes.length > 0) {
-                ctx.strokeStyle = '#444';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(nodes[0].x - 40, nodes[0].y - 60, 150, 120);
-                
-                // 内部状態表示（オレンジ線）
-                ctx.beginPath();
-                ctx.strokeStyle = 'orange';
-                ctx.lineWidth = 3;
-                const sw = w.switches[key];
-                const n0 = nodes.find(n => n.id.endsWith('_0'));
-                const targetId = sw.type === '3way' ? (sw.state === 0 ? '_1' : '_3') : '_1';
-                const nt = nodes.find(n => n.id.endsWith(targetId));
-                if(n0 && nt && (sw.type === '3way' || sw.state === 0)) {
-                    ctx.moveTo(n0.x, n0.y); ctx.lineTo(nt.x, nt.y);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        // ノード
-        w.nodes.forEach(n => {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, 14, 0, Math.PI * 2);
-            ctx.fillStyle = n.color;
-            ctx.shadowBlur = (this.selected === n) ? 15 : 0;
-            ctx.shadowColor = n.color;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText(n.label, n.x - 5, n.y - 25);
-        });
-
-        // ランプ点灯演出（IMG_2207再現）
-        if(this.isLampOn) {
-            const lpNode = w.nodes.find(n => n.id === 'lp_L');
-            ctx.beginPath();
-            ctx.arc(lpNode.x + 30, lpNode.y, 45, 0, Math.PI * 2);
-            const grad = ctx.createRadialGradient(lpNode.x+30, lpNode.y, 5, lpNode.x+30, lpNode.y, 45);
-            grad.addColorStop(0, 'rgba(255, 255, 0, 0.9)');
-            grad.addColorStop(1, 'rgba(255, 255, 0, 0)');
-            ctx.fillStyle = grad;
-            ctx.fill();
-        }
-
-        requestAnimationFrame(() => this.animate());
+    if(netL.has('s-i') && lampOk && !netL.has('p-N')) {
+        document.querySelectorAll('.wire-glow').forEach(w => w.style.display = 'block');
+        setTimeout(showBossPhase, 1200);
+    } else {
+        alert("不点灯... 配線ミスだ！");
     }
 }
 
-const game = new ElectricianGame();
+// --- ボス・プチュン演出 ---
+function showBossPhase() {
+    el('gameScreen').classList.add('hidden');
+    el('bossScreen').classList.remove('hidden');
+    el('hpFill').style.width = ((4 - round) / 3 * 100) + '%';
+
+    setTimeout(() => {
+        const b = el('bossScreen');
+        if(round < 3) {
+            // 通常ダメージ
+            b.style.animation = 'shake 0.5s infinite';
+            setTimeout(() => {
+                b.style.animation = '';
+                round++;
+                el('bossScreen').classList.add('hidden');
+                el('gameScreen').classList.remove('hidden');
+                initBoard();
+            }, 1000);
+        } else {
+            // --- 最終撃破：プチュン演出 ---
+            b.classList.add('monochrome');
+            b.style.animation = 'shake 0.1s infinite';
+            
+            setTimeout(() => {
+                // 静寂の始まり
+                el('bossScreen').classList.add('hidden');
+                el('puchunScreen').classList.remove('hidden');
+                
+                // フリーズ音再生と閃光
+                audio.play();
+                const line = el('puchunLine');
+                line.style.animation = 'puchunLine 0.5s forwards';
+
+                setTimeout(() => {
+                    // 2秒の完全暗転（静寂）
+                    line.style.display = 'none';
+                    
+                    setTimeout(() => {
+                        // 撃破フェードイン
+                        const geki = el('gekihaText');
+                        geki.style.transition = 'opacity 2s';
+                        geki.style.opacity = 1;
+
+                        setTimeout(() => {
+                            // レインボーフラッシュ降臨
+                            el('puchunScreen').classList.add('rainbow-bg');
+                            el('restartBtn').classList.remove('hidden');
+                        }, 2200);
+                    }, 2000);
+                }, 500);
+            }, 1500);
+        }
+    }, 500);
+}
 </script>
 </body>
 </html>
