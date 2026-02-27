@@ -29,12 +29,12 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 /* デバイス（重なり防止のためサイズを調整し、paddingを確保） */
 .device { position: absolute; background: #ccc; color: #000; border: 2px solid #444; border-radius: 4px; padding: 6px; text-align: center; z-index: 20; transform: translate(-50%, -50%); box-shadow: 4px 4px 0 #000; min-width: 90px; }
 .dev-title { font-size: 11px; font-weight: bold; border-bottom: 1px solid #777; margin-bottom: 8px; background: #ddd; padding: 2px; }
-.term { width: 34px; height: 34px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 2px solid #000; position: relative; z-index: 60; }
+.term { width: 26px; height: 26px; background: #222; color: #fff26border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 2px solid #000; position: relative; z-index: 60; }
 .term.sel { background: #ffd000 !important; color: #000; box-shadow: 0 0 15px #ffd000; }
 
 /* 3路スイッチ配置（厳守修正） */
-.layout-3way-left { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.layout-3way-right { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-direction: row; }
+.layout-3way-left { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.layout-3way-right { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-direction: row; }
 .term-col { display: flex; flex-direction: column; gap: 8px; }
 
 .dev-lamp.on { background: #ffd000; box-shadow: 0 0 60px #ffd000; }
@@ -78,7 +78,7 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 
 <div id="titleScreen">
     <div class="title-logo">俺らの電工</div>
-    <div class="subtitle">~ vs 汚ねえ大工 ~</div>
+    <div class="subtitle">~ presents by 貴電 ~</div>
     <button style="margin-top:50px; padding:20px 60px; background:#ffd000; border:none; border-radius:40px; font-weight:bold; font-size:22px; cursor:pointer;" onclick="startFlow()">現場へ入場</button>
 </div>
 
@@ -353,7 +353,7 @@ function advanceGame() {
         el('nextBtn').classList.add('hidden');
         startFlow();
     } else {
-        alert("全工区の施工完了！おめでとう、貴電の誇りだ！");
+        alert("全工区の施工完了！おめでとう！");
         location.reload();
     }
 }
