@@ -20,10 +20,16 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 
 /* ゲーム画面 */
 #gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 100; transition: filter 0.1s; }
-#statusHeader { height: 60px; border-bottom: 3px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; font-size: 12px; }
-.hp-label { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
-#playerHpBox { background: #004400; color: #0f0; border: 1px solid #0f0; }
-#bossHpBox { background: #440000; color: #ff4444; border: 1px solid #ff4444; }
+#statusHeader { height: 70px; border-bottom: 3px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; padding: 0 10px; }
+
+/* HPゲージ用スタイル */
+.hp-container { display: flex; flex-direction: column; width: 35%; min-width: 100px; }
+.hp-label { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
+.hp-bar-bg { width: 100%; height: 12px; background: #333; border: 1px solid #777; border-radius: 6px; overflow: hidden; position: relative; }
+.hp-bar-fill { height: 100%; width: 100%; transition: width 0.3s ease-out; }
+.player-fill { background: linear-gradient(to right, #00ff00, #008800); box-shadow: 0 0 10px #00ff00; }
+.boss-fill-mini { background: linear-gradient(to right, #ff4444, #880000); box-shadow: 0 0 10px #ff0000; }
+.hp-val { font-size: 12px; text-align: right; margin-top: 2px; }
 
 #board { flex: 1; position: relative; background: #0a0a0a; overflow: hidden; }
 
@@ -94,9 +100,17 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 
 <div id="gameScreen" class="hidden">
     <div id="statusHeader">
-        <div id="dispWorld" style="color:#ffd000; font-weight:bold;">WORLD 1</div>
-        <div id="playerHpBox" class="hp-label">俺の体力: <span id="playerHpText">100</span></div>
-        <div id="bossHpBox" class="hp-label">BOSS HP: <span id="bossHpText">100</span></div>
+        <div class="hp-container">
+            <div class="hp-label" style="color:#0f0;">俺の体力</div>
+            <div class="hp-bar-bg"><div id="playerHpFill" class="hp-bar-fill player-fill"></div></div>
+            <div class="hp-val" id="playerHpText" style="color:#0f0;">100</div>
+        </div>
+        <div id="dispWorld" style="color:#ffd000; font-weight:bold; font-size:14px;">WORLD 1</div>
+        <div class="hp-container">
+            <div class="hp-label" style="color:#f44;">BOSS HP</div>
+            <div class="hp-bar-bg"><div id="bossHpFillMini" class="hp-bar-fill boss-fill-mini"></div></div>
+            <div class="hp-val" id="bossHpText" style="color:#f44;">100</div>
+        </div>
     </div>
     <div id="board"><svg id="wireLayer"></svg></div>
     <div id="controls">
@@ -126,7 +140,6 @@ let world = 1, phase = 1, bossHp = 100, playerHp = 100, qIdx = 0, lines = [], se
 let currentQuizzes = [];
 let swStates = { sw1:false, swA:false, swB:false };
 
-// ガチ50問クイズプール
 const quizPool = [
     {q:"接地側電線（N）の絶縁被覆の色は？", a:["黒","白","赤","緑"], c:1},
     {q:"VVF1.6-2cの「2c」とは何のこと？", a:["2センチ","2芯","2重被覆","2サイクル"], c:1},
@@ -198,8 +211,17 @@ function startFlow() {
 }
 
 function updateHpUI() {
-    el('playerHpText').innerText = playerHp;
-    el('bossHpText').innerText = bossHp;
+    // プレイヤーHP更新
+    const pPercent = Math.max(0, playerHp);
+    el('playerHpFill').style.width = pPercent + '%';
+    el('playerHpText').innerText = pPercent;
+    
+    // ボスHP更新
+    const bPercent = Math.max(0, bossHp);
+    el('bossHpFillMini').style.width = bPercent + '%';
+    el('bossHpFill').style.width = bPercent + '%';
+    el('bossHpText').innerText = bPercent;
+
     if(playerHp <= 0) {
         alert("施工不能... 現場から叩き出された。");
         location.reload();
@@ -323,7 +345,6 @@ function checkCircuit() {
     };
     const netL = getNet('p-L'), netN = getNet('p-N');
     
-    // 短絡チェック
     if(netL.has('p-N')) { 
         alert("短絡（ショート）！貴電の恥だぞ！"); 
         playerHp -= 10;
@@ -349,15 +370,14 @@ function checkCircuit() {
 
 function showBossDamage() {
     const bossScr = el('bossBattleOverlay');
-    const hpFill = el('bossHpFill');
     const container = el('bossContainer');
     bossScr.style.display = 'flex';
-    hpFill.style.width = bossHp + '%';
+    updateHpUI();
     
     setTimeout(() => {
         bossHp -= 34;
         if(bossHp < 0) bossHp = 0;
-        hpFill.style.width = bossHp + '%';
+        updateHpUI();
         container.classList.add('shake');
         
         setTimeout(() => {
