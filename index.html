@@ -3,70 +3,73 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>俺らの電工 - 汚ねえ大工 殲滅戦</title>
+<title>俺らの電工 presents by 貴電</title>
 <style>
 * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
 .hidden { display: none !important; }
 
-/* タイトル・クイズ演出 */
-#titleScreen { position: fixed; inset: 0; background: radial-gradient(circle, #333 0%, #000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
-.title-logo { font-size: 32px; color: #ffd000; text-align: center; text-shadow: 0 0 15px #ffaa00; }
+/* タイトル画面 */
+#titleScreen { position: fixed; inset: 0; background: radial-gradient(circle, #222 0%, #000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+.title-logo { font-size: 36px; color: #ffd000; text-align: center; text-shadow: 0 0 20px #ffaa00; }
+.subtitle { font-size: 16px; color: #fff; margin-top: 10px; letter-spacing: 2px; }
+
+/* クイズ画面 */
 #quizScreen { position: fixed; inset: 0; background: #111; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
 .quiz-mark { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 250px; font-weight: bold; pointer-events: none; opacity: 0; z-index: 9500; }
 
 /* ゲームボード */
-#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; }
-#statusHeader { height: 50px; border-bottom: 2px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; font-size: 14px; }
+#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; transition: filter 0.2s; }
+#statusHeader { height: 50px; border-bottom: 2px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; z-index: 100; }
 #board { flex: 1; position: relative; background: #0a0a0a; overflow: hidden; }
-#wireLayer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-/* デバイス基本スタイル */
+/* 【重要】配線レイヤーをデバイス(20)より上のz-index(30)へ */
+#wireLayer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
+
+/* デバイス */
 .device { position: absolute; background: #ccc; color: #000; border: 2px solid #444; border-radius: 4px; padding: 4px; text-align: center; z-index: 20; transform: translate(-50%, -50%); box-shadow: 4px 4px 0 #000; }
-.dev-title { font-size: 9px; font-weight: bold; border-bottom: 1px solid #777; margin-bottom: 4px; background: #ddd; white-space: nowrap; }
-.term { width: 28px; height: 28px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border: 2px solid #000; position: relative; }
+.dev-title { font-size: 9px; font-weight: bold; border-bottom: 1px solid #777; margin-bottom: 4px; background: #ddd; }
+.term { width: 30px; height: 30px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid #000; position: relative; z-index: 25; }
 .term.sel { background: #ffd000 !important; color: #000; box-shadow: 0 0 15px #ffd000; }
 
-/* 3路スイッチ特殊レイアウト */
-.layout-3way-left { display: flex; align-items: center; gap: 10px; padding: 10px; }
-.layout-3way-right { display: flex; align-items: center; flex-direction: row-reverse; gap: 10px; padding: 10px; }
+/* 3路レイアウト */
+.layout-3way-left { display: flex; align-items: center; gap: 12px; padding: 8px; }
+.layout-3way-right { display: flex; align-items: center; flex-direction: row-reverse; gap: 12px; padding: 8px; }
 .term-col { display: flex; flex-direction: column; gap: 8px; }
 
-/* 器具個別 */
-.dev-breaker { width: 90px; }
-.dev-jb { width: 220px; height: 70px; border: 2px dashed #999; background: #555; }
-.dev-lamp { width: 80px; border-radius: 15px; transition: 0.3s; }
-.dev-lamp.on { background: #ffd000; box-shadow: 0 0 30px #ffd000; }
-.term-row { display: flex; justify-content: center; gap: 10px; padding: 5px; }
+.dev-lamp.on { background: #ffd000; box-shadow: 0 0 40px #ffd000; }
 
-/* 配線 */
-.wire-white { stroke: #fff; stroke-width: 6; fill: none; stroke-linecap: round; }
-.wire-black { stroke: #333; stroke-width: 7; fill: none; stroke-linecap: round; }
+/* 配線描画 */
+.wire-white { stroke: #eee; stroke-width: 6; fill: none; stroke-linecap: round; }
+.wire-black { stroke: #222; stroke-width: 7; fill: none; stroke-linecap: round; }
 .wire-glow { stroke: #ffd000; stroke-width: 4; stroke-dasharray: 10, 15; animation: flow 0.5s linear infinite; fill: none; display: none; }
 @keyframes flow { from { stroke-dashoffset: 25; } to { stroke-dashoffset: 0; } }
 
-#controls { height: 100px; background: #1a1a1a; display: flex; justify-content: center; align-items: center; gap: 20px; border-top: 2px solid #333; }
-.btn-set { padding: 15px 40px; background: #ffd000; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; }
-.btn-reset { padding: 10px 20px; background: #444; color: #fff; border: none; border-radius: 8px; }
-
-/* ボス・演出 */
+/* ボス画面 */
 #bossScreen { position: fixed; inset: 0; background: #000; z-index: 8000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-#hpBar { width: 80%; height: 20px; background: #333; border: 2px solid #fff; margin-top: 20px; border-radius: 10px; overflow: hidden; }
-#hpFill { width: 100%; height: 100%; background: linear-gradient(90deg, #f00, #ff6a00); transition: width 0.5s; }
-@keyframes shake { 0%, 100% { transform:translate(0,0); } 25% { transform:translate(-5px,5px); } 75% { transform:translate(5px,-5px); } }
-@keyframes puchun { 0% { transform: scaleY(0); opacity: 0; } 50% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(0); opacity: 0; } }
+.boss-img { width: 200px; height: 200px; object-fit: contain; }
+
+/* 特殊演出用 */
+#puchunOverlay { position: fixed; inset: 0; background: #000; z-index: 20000; display: none; align-items: center; justify-content: center; }
+#pLine { width: 100%; height: 2px; background: #fff; transform: scaleX(0); }
+#gekihaText { position: absolute; color: #ffd000; font-size: 70px; font-weight: 900; text-shadow: 0 0 20px #f00; opacity: 0; transform: scale(2); transition: 0.5s; }
+
+@keyframes flash { 0%, 100% { background: #000; } 50% { background: #fff; } }
+.flashing { animation: flash 0.05s infinite; }
+.grayscale { filter: grayscale(100%) contrast(1.5); }
 </style>
 </head>
 <body>
 
 <div id="titleScreen">
-    <div class="title-logo">俺らの電工<br><span style="font-size:18px; color:red;">~ vs 汚ねえ大工 ~</span></div>
-    <button style="margin-top:30px; padding:15px 30px; background:#ffd000; border:none; border-radius:20px; font-weight:bold;" onclick="startWorldQuiz()">現場に入る</button>
+    <div class="title-logo">俺らの電工</div>
+    <div class="subtitle">presents by 貴電</div>
+    <button style="margin-top:40px; padding:15px 40px; background:#ffd000; border:none; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="startWorldQuiz()">現場へ急行する</button>
 </div>
 
 <div id="quizScreen" class="hidden">
-    <div id="qText" style="font-size:18px; margin-bottom:20px; text-align:center;"></div>
-    <div id="ansBox" style="width:100%; display:flex; flex-direction:column; gap:10px; align-items:center;"></div>
+    <div id="qText" style="font-size:18px; margin-bottom:20px;"></div>
+    <div id="ansBox" style="width:100%; display:flex; flex-direction:column; gap:12px; align-items:center;"></div>
 </div>
 <div id="quizResult" class="quiz-mark"></div>
 
@@ -74,25 +77,26 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
     <div id="statusHeader">
         <div id="dispWorld" style="color:#ffd000"></div>
         <div id="dispPhase"></div>
-        <div id="dispRank" style="color:#0f0"></div>
+        <div id="dispRank" style="color:#0f0">貴電専属</div>
     </div>
     <div id="board"><svg id="wireLayer"></svg></div>
-    <div id="controls">
-        <button class="btn-reset" onclick="resetWires()">全解線</button>
-        <button class="btn-set" onclick="checkCircuit()">点灯試験 (SET)</button>
+    <div id="controls" style="height:100px; background:#111; display:flex; justify-content:center; gap:20px; align-items:center; border-top:2px solid #333;">
+        <button onclick="resetWires()" style="padding:10px 20px; background:#444; color:#fff; border:none; border-radius:5px;">全解線</button>
+        <button onclick="checkCircuit()" style="padding:15px 40px; background:#ffd000; font-weight:bold; border:none; border-radius:5px;">点灯試験 (SET)</button>
     </div>
 </div>
 
 <div id="bossScreen" class="hidden">
-    <div style="color:red; font-size:24px; margin-bottom:10px;">強敵：汚ねえ大工</div>
-    <div id="bossEmoji" style="font-size:80px;">👹</div>
-    <div id="hpBar"><div id="hpFill"></div></div>
+    <div style="color:red; font-size:24px; margin-bottom:20px;">LAST BOSS</div>
+    <img src="boss.png" class="boss-img" alt="BOSS" onerror="this.src='https://via.placeholder.com/200/FF0000/FFFFFF?text=BOSS_IMG'">
+    <div style="width:80%; height:10px; background:#333; margin-top:20px; border:1px solid #fff;">
+        <div id="hpFill" style="width:100%; height:100%; background:red; transition: 0.5s;"></div>
+    </div>
 </div>
 
-<div id="puchunScreen" class="hidden" style="position:fixed; inset:0; background:#000; z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <div id="pLine" style="width:100%; height:2px; background:#fff; opacity:0;"></div>
-    <div id="resText" style="color:#ffd000; font-size:60px; font-weight:900; opacity:0;">撃破</div>
-    <button id="nextBtn" class="hidden" style="margin-top:30px; padding:10px 40px;" onclick="advanceWorld()">次の現場へ</button>
+<div id="puchunOverlay">
+    <div id="pLine"></div>
+    <div id="gekihaText">撃破降臨</div>
 </div>
 
 <script>
@@ -101,9 +105,9 @@ let world = 1, phase = 1, qIdx = 0, lines = [], selTerm = null;
 let swStates = { sw1:false, swA:false, swB:false };
 
 const quizData = [
-    {q:"接地側電線（N）の色は何色？", a:["黒","白","赤","緑"], c:1},
-    {q:"3路スイッチで、電源や負荷に繋ぐ共通端子の番号は？", a:["0","1","3","E"], c:0},
-    {q:"VVF1.6-3c の「3c」とは何のこと？", a:["3センチ","3芯","3重被覆","3回巻く"], c:1}
+    {q:"非接地側電線（L）の基本の色は？", a:["白","黒","緑","青"], c:1},
+    {q:"3路スイッチの「0」は何と呼ぶ？", a:["コモン","アース","アウト","ニュートラル"], c:0},
+    {q:"この現場の提供は？", a:["汚ねえ大工","どこかの誰か","貴電","不明"], c:2}
 ];
 
 function startWorldQuiz() {
@@ -119,7 +123,7 @@ function loadQuiz() {
     el('ansBox').innerHTML = '';
     q.a.forEach((t, i) => {
         const b = document.createElement('button');
-        b.style = "width:80%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:8px;";
+        b.style = "width:80%; padding:15px; background:#222; color:#fff; border:1px solid #444; border-radius:10px;";
         b.innerText = t;
         b.onclick = () => {
             const ok = (i === q.c);
@@ -135,36 +139,28 @@ function loadQuiz() {
 function initBoard() {
     el('dispWorld').innerText = `WORLD ${world}`;
     el('dispPhase').innerText = `PHASE ${phase}/3`;
-    el('dispRank').innerText = world === 1 ? "見習い" : "職人";
     const board = el('board');
     board.querySelectorAll('.device').forEach(d => d.remove());
     lines = []; drawWires();
 
-    // ブレーカーとJB
     addDev('p', 'ブレーカー', 50, 15, [['p-L','L'],['p-N','N']], 'dev-breaker', 'std');
     addDev('jb', 'JB', 50, 45, [['j1','1'],['j2','2'],['j3','3'],['j4','4'],['j5','5'],['j6','6']], 'dev-jb', 'std');
 
     if(world === 1) {
-        // 単路スイッチ
-        addDev('sw1', 'スイッチ', 30, 80, [['s1-0','0'],['s1-1','1']], 'dev-sw', 'std');
-        // ランプ (重ならないように配置)
-        for(let i=0; i<phase; i++) {
-            addDev(`l${i}`, `ランプ${i+1}`, 55 + (i * 20), 80, [[`l${i}-L`,'L'],[`l${i}-N`,'N']], 'dev-lamp', 'std');
-        }
+        addDev('sw1', '片切SW', 30, 80, [['s1-0','0'],['s1-1','1']], 'dev-sw', 'std');
+        for(let i=0; i<phase; i++) addDev(`l${i}`, `ランプ${i+1}`, 55+(i*15), 80, [[`l${i}-L`,'L'],[`l${i}-N`,'N']], 'dev-lamp', 'std');
     } else {
-        // 3路スイッチ（指示通りの端子配置）
+        // 3路スイッチ配置（指示通り）
         addDev('swA', '3路SW(左)', 20, 80, [['a-0','0'],['a-1','1'],['a-3','3']], 'dev-sw', '3way-left');
-        addDev('swB', '3路SW(右)', 55, 80, [['b-1','1'],['b-3','3'],['b-0','0']], 'dev-sw', '3way-right');
-        for(let i=0; i<phase; i++) {
-            addDev(`l${i}`, `ランプ${i+1}`, 85, 60 + (i * 15), [[`l${i}-L`,'L'],[`l${i}-N`,'N']], 'dev-lamp', 'std');
-        }
+        addDev('swB', '3路SW(右)', 50, 80, [['b-1','1'],['b-3','3'],['b-0','0']], 'dev-sw', '3way-right');
+        for(let i=0; i<phase; i++) addDev(`l${i}`, `ランプ${i+1}`, 85, 60+(i*12), [[`l${i}-L`,'L'],[`l${i}-N`,'N']], 'dev-lamp', 'std');
     }
 
     document.querySelectorAll('.term').forEach(t => t.onclick = handleTerm);
     document.querySelectorAll('.dev-sw').forEach(sw => sw.onclick = () => {
         const id = sw.dataset.devid;
         swStates[id] = !swStates[id];
-        sw.classList.toggle('on', swStates[id]);
+        sw.style.filter = swStates[id] ? "brightness(1.5)" : "none";
     });
 }
 
@@ -172,39 +168,20 @@ function addDev(id, title, x, y, terms, cls, layout) {
     const d = document.createElement('div');
     d.className = `device ${cls}`; d.dataset.devid = id;
     d.style.left = x + '%'; d.style.top = y + '%';
-    let inner = `<div class="dev-title">${title}</div>`;
-    
-    if(layout === 'std') {
-        inner += `<div class="term-row">` + terms.map(t => `<div class="term" data-tid="${t[0]}">${t[1]}</div>`).join('') + `</div>`;
-    } else if(layout === '3way-left') {
-        inner += `<div class="layout-3way-left">
-            <div class="term" data-tid="${terms[0][0]}">${terms[0][1]}</div>
-            <div class="term-col">
-                <div class="term" data-tid="${terms[1][0]}">${terms[1][1]}</div>
-                <div class="term" data-tid="${terms[2][0]}">${terms[2][1]}</div>
-            </div>
-        </div>`;
-    } else if(layout === '3way-right') {
-        inner += `<div class="layout-3way-right">
-            <div class="term" data-tid="${terms[2][0]}">${terms[2][1]}</div>
-            <div class="term-col">
-                <div class="term" data-tid="${terms[0][0]}">${terms[0][1]}</div>
-                <div class="term" data-tid="${terms[1][0]}">${terms[1][1]}</div>
-            </div>
-        </div>`;
-    }
-    d.innerHTML = inner;
-    el('board').appendChild(d);
+    let html = `<div class="dev-title">${title}</div>`;
+    if(layout==='std') html += `<div class="term-row" style="display:flex; justify-content:center; gap:10px; padding:5px;">` + terms.map(t=>`<div class="term" data-tid="${t[0]}">${t[1]}</div>`).join('') + `</div>`;
+    else if(layout==='3way-left') html += `<div class="layout-3way-left"><div class="term" data-tid="${terms[0][0]}">${terms[0][1]}</div><div class="term-col"><div class="term" data-tid="${terms[1][0]}">${terms[1][1]}</div><div class="term" data-tid="${terms[2][0]}">${terms[2][1]}</div></div></div>`;
+    else if(layout==='3way-right') html += `<div class="layout-3way-right"><div class="term" data-tid="${terms[2][0]}">${terms[2][1]}</div><div class="term-col"><div class="term" data-tid="${terms[0][0]}">${terms[0][1]}</div><div class="term" data-tid="${terms[1][0]}">${terms[1][1]}</div></div></div>`;
+    d.innerHTML = html; el('board').appendChild(d);
 }
 
 function handleTerm(e) {
-    e.stopPropagation();
     const tid = e.target.dataset.tid;
     if(!selTerm) { selTerm = tid; e.target.classList.add('sel'); }
     else {
-        if(selTerm !== tid) { lines.push([selTerm, tid]); drawWires(); }
+        if(selTerm !== tid) lines.push([selTerm, tid]);
         document.querySelectorAll('.term').forEach(t => t.classList.remove('sel'));
-        selTerm = null;
+        selTerm = null; drawWires();
     }
 }
 
@@ -214,22 +191,15 @@ function drawWires() {
     lines.forEach(pair => {
         const t1 = document.querySelector(`[data-tid="${pair[0]}"]`);
         const t2 = document.querySelector(`[data-tid="${pair[1]}"]`);
-        if(!t1 || !t2) return;
         const r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect();
-        const x1 = r1.left - b.left + 14, y1 = r1.top - b.top + 14;
-        const x2 = r2.left - b.left + 14, y2 = r2.top - b.top + 14;
-        
-        // N端子が絡む線は「白」、それ以外は「黒」
+        const x1 = r1.left - b.left + 15, y1 = r1.top - b.top + 15;
+        const x2 = r2.left - b.left + 15, y2 = r2.top - b.top + 15;
         const isWhite = pair[0].includes('-N') || pair[1].includes('-N');
-        
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
         path.setAttribute("class", isWhite ? "wire-white" : "wire-black");
         svg.appendChild(path);
-
-        const glow = path.cloneNode();
-        glow.setAttribute("class", "wire-glow");
-        svg.appendChild(glow);
+        const glow = path.cloneNode(); glow.setAttribute("class", "wire-glow"); svg.appendChild(glow);
     });
 }
 
@@ -237,90 +207,84 @@ function resetWires() { lines = []; drawWires(); }
 
 function checkCircuit() {
     const adj = {};
-    const addEdge = (u, v) => {
-        if(!adj[u]) adj[u] = []; if(!adj[v]) adj[v] = [];
-        adj[u].push(v); adj[v].push(u);
-    };
-    lines.forEach(l => addEdge(l[0], l[1]));
-
-    // スイッチの内部結線
-    if(world === 1 && swStates.sw1) addEdge('s1-0', 's1-1');
+    const addE = (u,v) => { if(!adj[u])adj[u]=[]; if(!adj[v])adj[v]=[]; adj[u].push(v); adj[v].push(u); };
+    lines.forEach(l => addE(l[0], l[1]));
+    if(world === 1 && swStates.sw1) addE('s1-0', 's1-1');
     if(world === 2) {
-        const aT = swStates.swA ? 'a-3' : 'a-1'; addEdge('a-0', aT);
-        const bT = swStates.swB ? 'b-3' : 'b-1'; addEdge('b-0', bT);
+        addE('a-0', swStates.swA ? 'a-3' : 'a-1');
+        addE('b-0', swStates.swB ? 'b-3' : 'b-1');
     }
-
-    const getNet = (start) => {
-        const seen = new Set(), q = [start];
-        while(q.length){
-            const v = q.shift();
-            if(!seen.has(v)){ seen.add(v); (adj[v]||[]).forEach(n=>q.push(n)); }
-        }
+    const getNet = (s) => {
+        const seen = new Set(), q = [s];
+        while(q.length){ const v = q.shift(); if(!seen.has(v)){ seen.add(v); (adj[v]||[]).forEach(n=>q.push(n)); } }
         return seen;
     };
-
     const netL = getNet('p-L'), netN = getNet('p-N');
-    if(netL.has('p-N')) { alert("ショート！汚ねえ火花が散ったぞ！"); resetWires(); return; }
-
-    let count = 0;
-    for(let i=0; i<phase; i++){
-        if(netL.has(`l${i}-L`) && netN.has(`l${i}-N`)) {
-            count++; document.querySelector(`[data-devid="l${i}"]`).classList.add('on');
-        }
+    if(netL.has('p-N')) { alert("短絡(ショート)！貴電のブレーカーが落ちたぞ！"); return; }
+    
+    let okCount = 0;
+    for(let i=0; i<phase; i++) if(netL.has(`l${i}-L`) && netN.has(`l${i}-N`)) {
+        okCount++; el('board').querySelector(`[data-devid="l${i}"]`).classList.add('on');
     }
 
-    if(count === phase) {
-        document.querySelectorAll('.wire-glow').forEach(w => w.style.display='block');
-        setTimeout(bossBattle, 1000);
-    } else {
-        alert("不点灯。配線を見直せ。");
-    }
+    if(okCount === phase) triggerVictory();
 }
 
-function bossBattle() {
-    el('gameScreen').classList.add('hidden');
-    el('bossScreen').classList.remove('hidden');
-    const hp = Math.floor(((4-phase)/3)*100);
-    el('hpFill').style.width = hp + '%';
+// ド派手演出
+function triggerVictory() {
+    document.querySelectorAll('.wire-glow').forEach(w => w.style.display='block');
+    const gs = el('gameScreen');
+    
+    // 1. 連続フラッシュ
+    gs.classList.add('flashing');
     
     setTimeout(() => {
-        el('hpFill').style.width = (hp-33) + '%';
-        el('bossEmoji').style.animation = 'shake 0.5s infinite';
+        // 2. フラッシュ停止 & モノクロフリーズ
+        gs.classList.remove('flashing');
+        gs.classList.add('grayscale');
+        
         setTimeout(() => {
-            if(phase < 3) {
-                phase++; el('bossScreen').classList.add('hidden');
-                el('gameScreen').classList.remove('hidden');
-                initBoard();
-            } else {
-                puchunEffect();
-            }
+            // 3. プチュン演出
+            const overlay = el('puchunOverlay');
+            overlay.style.display = 'flex';
+            const line = el('pLine');
+            line.style.transition = "transform 0.4s ease-in";
+            line.style.transform = "scaleX(1)";
+            
+            setTimeout(() => {
+                line.style.transition = "transform 0.1s linear";
+                line.style.transform = "scaleX(0) scaleY(0)"; // プチュン
+                
+                // 4. 撃破降臨
+                setTimeout(() => {
+                    const txt = el('gekihaText');
+                    txt.style.opacity = 1;
+                    txt.style.transform = "scale(1)";
+                    
+                    setTimeout(() => {
+                        if(phase < 3) {
+                            phase++;
+                            gs.classList.remove('grayscale');
+                            overlay.style.display = 'none';
+                            txt.style.opacity = 0; txt.style.transform = "scale(2)";
+                            initBoard();
+                        } else {
+                            if(world === 1) { 
+                                world = 2; phase = 1; 
+                                gs.classList.remove('grayscale');
+                                overlay.style.display = 'none';
+                                txt.style.opacity = 0;
+                                startWorldQuiz(); 
+                            } else {
+                                alert("【貴電】全工程、無事完了。神施工でした！");
+                                location.reload();
+                            }
+                        }
+                    }, 2000);
+                }, 500);
+            }, 600);
         }, 1000);
-    }, 800);
-}
-
-function puchunEffect() {
-    el('bossScreen').classList.add('hidden');
-    const ps = el('puchunScreen');
-    ps.classList.remove('hidden');
-    el('pLine').style.animation = 'puchun 0.5s forwards';
-    setTimeout(() => {
-        el('resText').style.opacity = 1;
-        ps.style.background = 'radial-gradient(circle, #444 0%, #000 100%)';
-        el('nextBtn').classList.remove('hidden');
-    }, 600);
-}
-
-function advanceWorld() {
-    if(world === 1) {
-        world = 2; phase = 1;
-        el('puchunScreen').classList.add('hidden');
-        el('puchunScreen').style.background = '#000';
-        el('resText').style.opacity = 0;
-        startWorldQuiz();
-    } else {
-        alert("全現場、施工完了！お疲れ様でした！");
-        location.reload();
-    }
+    }, 1000);
 }
 </script>
 </body>
