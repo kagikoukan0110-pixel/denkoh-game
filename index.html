@@ -18,8 +18,8 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 #quizScreen { position: fixed; inset: 0; background: #111; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
 .quiz-mark { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 250px; font-weight: bold; pointer-events: none; opacity: 0; z-index: 9500; }
 
-/* ゲームボード */
-#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 100; }
+/* ゲーム画面 */
+#gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 100; transition: filter 0.1s; }
 #statusHeader { height: 50px; border-bottom: 2px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; }
 #board { flex: 1; position: relative; background: #0a0a0a; overflow: hidden; }
 
@@ -32,7 +32,7 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 .term { width: 34px; height: 34px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 2px solid #000; position: relative; z-index: 60; }
 .term.sel { background: #ffd000 !important; color: #000; box-shadow: 0 0 15px #ffd000; }
 
-/* 3路レイアウト */
+/* 3路レイアウト (指示通り) */
 .layout-3way-left { display: flex; align-items: center; gap: 15px; }
 .layout-3way-right { display: flex; align-items: center; flex-direction: row-reverse; gap: 15px; }
 .term-col { display: flex; flex-direction: column; gap: 10px; }
@@ -49,23 +49,28 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 #controls { height: 100px; background: #111; display: flex; justify-content: center; align-items: center; gap: 20px; border-top: 2px solid #333; z-index: 1000; position: relative; }
 .btn-set { padding: 15px 50px; background: #ffd000; border: none; border-radius: 8px; font-size: 22px; font-weight: bold; cursor: pointer; color: #000; }
 
-/* ボスバトル（最重要） */
+/* ボスバトル演出画面 */
 #bossBattleOverlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
 .boss-img-container { position: relative; width: 280px; height: 280px; }
 .boss-img { width: 100%; height: 100%; object-fit: contain; }
-#bossHpBar { width: 80%; height: 20px; background: #333; border: 2px solid #fff; margin-top: 20px; position: relative; }
-#bossHpFill { width: 100%; height: 100%; background: linear-gradient(to bottom, #f00, #900); transition: width 0.8s ease-out; }
+#bossHpBar { width: 80%; height: 24px; background: #333; border: 2px solid #fff; margin-top: 20px; position: relative; }
+#bossHpFill { width: 100%; height: 100%; background: linear-gradient(to right, #f00, #ff6a00); transition: width 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
 
-/* 演出用 */
-#puchunOverlay { position: fixed; inset: 0; background: #000; z-index: 30000; display: none; align-items: center; justify-content: center; }
+/* 最終演出レイヤー */
+#finalEffectLayer { position: fixed; inset: 0; background: #fff; z-index: 30000; display: none; }
+#puchunOverlay { position: fixed; inset: 0; background: #000; z-index: 31000; display: none; align-items: center; justify-content: center; }
 #pLine { width: 100%; height: 4px; background: #fff; transform: scaleX(0); }
-#gekihaText { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(4); color: #ffd000; font-size: 90px; font-weight: 900; text-shadow: 0 0 40px #f00; opacity: 0; z-index: 40000; pointer-events: none; }
+#gekihaScreen { position: fixed; inset: 0; background: radial-gradient(circle, #444 0%, #000 100%); z-index: 40000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+#gekihaText { color: #ffd000; font-size: 100px; font-weight: 900; text-shadow: 0 0 50px #f00; transform: scale(5); opacity: 0; transition: 0.4s; }
 
-@keyframes flashEffect { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-.v-flash { animation: flashEffect 0.05s infinite; }
-.v-mono { filter: grayscale(100%) contrast(2); }
+/* アニメーション */
+@keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.v-flash { animation: flash 0.05s infinite; }
+.v-mono { filter: grayscale(100%) contrast(2) brightness(0.7); }
 .shake { animation: shake 0.1s infinite; }
-@keyframes shake { 0% { transform: translate(0,0); } 50% { transform: translate(5px, 5px); } 100% { transform: translate(-5px, -5px); } }
+@keyframes shake { 0% { transform: translate(0,0); } 25% { transform: translate(8px, 8px); } 75% { transform: translate(-8px, -8px); } }
+@keyframes explode { 0% { background: #fff; } 20% { background: #ffaa00; } 40% { background: #ff0000; } 100% { background: #000; } }
+.v-explode { animation: explode 0.5s steps(5) infinite; }
 </style>
 </head>
 <body>
@@ -73,7 +78,7 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 <div id="titleScreen">
     <div class="title-logo">俺らの電工</div>
     <div class="subtitle">presents by 貴電</div>
-    <button style="margin-top:50px; padding:20px 60px; background:#ffd000; border:none; border-radius:40px; font-weight:bold; font-size:20px; cursor:pointer;" onclick="startFlow()">現場へ急行</button>
+    <button style="margin-top:50px; padding:20px 60px; background:#ffd000; border:none; border-radius:40px; font-weight:bold; font-size:20px; cursor:pointer;" onclick="startFlow()">現場へ入場</button>
 </div>
 
 <div id="quizScreen" class="hidden">
@@ -85,32 +90,34 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 <div id="gameScreen" class="hidden">
     <div id="statusHeader">
         <div id="dispWorld" style="color:#ffd000"></div>
-        <div id="dispPhase"></div>
-        <div id="dispRank" style="color:#0f0">貴電・一級技能士</div>
+        <div id="dispPhase" style="color:#ff4444">BOSS HP: <span id="hpText">100</span></div>
+        <div id="dispRank" style="color:#0f0">貴電・統括工区長</div>
     </div>
     <div id="board"><svg id="wireLayer"></svg></div>
     <div id="controls">
-        <button onclick="resetWires()" style="padding:10px 20px; background:#444; color:#fff; border:none; border-radius:5px;">解線</button>
+        <button onclick="resetWires()" style="padding:10px 20px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer;">解線</button>
         <button class="btn-set" onclick="checkCircuit()">点灯試験 (SET)</button>
     </div>
 </div>
 
 <div id="bossBattleOverlay">
-    <div style="color:red; font-size:24px; font-weight:bold; margin-bottom:10px; text-shadow: 0 0 10px #f00;">WARNING: BOSS APPEARED</div>
+    <div id="bossMsg" style="color:red; font-size:24px; font-weight:bold; margin-bottom:10px;">ボスに電撃ダメージ！！</div>
     <div class="boss-img-container" id="bossContainer">
-        <img src="boss.png" class="boss-img" alt="BOSS" onerror="this.src='https://via.placeholder.com/280/FF0000/FFFFFF?text=汚ねえ大工'">
+        <img src="boss.png" class="boss-img" alt="BOSS" onerror="this.src='https://via.placeholder.com/280/FF0000/FFFFFF?text=BOSS'">
     </div>
     <div id="bossHpBar"><div id="bossHpFill"></div></div>
 </div>
 
-<div id="puchunOverlay">
-    <div id="pLine"></div>
+<div id="finalEffectLayer"></div>
+<div id="puchunOverlay"><div id="pLine"></div></div>
+<div id="gekihaScreen">
+    <div id="gekihaText">撃破降臨</div>
+    <button id="nextBtn" class="hidden" style="margin-top:40px; padding:15px 40px; background:#ffd000; border:none; font-weight:bold;" onclick="advanceGame()">次へ</button>
 </div>
-<div id="gekihaText">撃破降臨</div>
 
 <script>
 const el = id => document.getElementById(id);
-let world = 1, phase = 1, qIdx = 0, lines = [], selTerm = null;
+let world = 1, phase = 1, bossHp = 100, qIdx = 0, lines = [], selTerm = null;
 let swStates = { sw1:false, swA:false, swB:false };
 
 function startFlow() {
@@ -120,9 +127,9 @@ function startFlow() {
 }
 
 const quizData = [
-    {q:"接地側電線の色は？", a:["黒","白","赤","青"], c:1},
-    {q:"3路スイッチの共通端子は？", a:["0","1","3","E"], c:0},
-    {q:"この現場の提供は？", a:["汚ねえ大工","貴電","そこらの工務店","不明"], c:1}
+    {q:"接地側（N）の色は？", a:["黒","白","赤","青"], c:1},
+    {q:"3路スイッチの共通端子番号は？", a:["0","1","3","E"], c:0},
+    {q:"この現場を提供しているのは？", a:["汚ねえ大工","貴電","そこらの人","不明"], c:1}
 ];
 
 function loadQuiz() {
@@ -132,7 +139,7 @@ function loadQuiz() {
     el('ansBox').innerHTML = '';
     q.a.forEach((t, i) => {
         const b = document.createElement('button');
-        b.style = "width:85%; padding:18px; background:#222; color:#fff; border:1px solid #555; border-radius:12px; font-size:18px;";
+        b.style = "width:85%; padding:18px; background:#222; color:#fff; border:1px solid #555; border-radius:12px; font-size:18px; cursor:pointer;";
         b.innerText = t;
         b.onclick = () => {
             const ok = (i === q.c);
@@ -146,8 +153,8 @@ function loadQuiz() {
 }
 
 function initBoard() {
+    el('hpText').innerText = bossHp;
     el('dispWorld').innerText = `WORLD ${world}`;
-    el('dispPhase').innerText = `PHASE ${phase}/3`;
     el('board').querySelectorAll('.device').forEach(d => d.remove());
     lines = []; drawWires();
 
@@ -228,86 +235,113 @@ function checkCircuit() {
         return seen;
     };
     const netL = getNet('p-L'), netN = getNet('p-N');
-    if(netL.has('p-N')) { alert("短絡(ショート)！！貴電の工具が吹き飛んだぞ！"); resetWires(); return; }
+    if(netL.has('p-N')) { alert("短絡！貴電の現場では許されないミスだ！"); resetWires(); return; }
     
     let ok = 0;
     for(let i=0; i<phase; i++) if(netL.has(`l${i}-L`) && netN.has(`l${i}-N`)) {
         ok++; el('board').querySelector(`[data-devid="l${i}"]`).classList.add('on');
     }
 
-    if(ok === phase) triggerUltimateProduction();
-    else alert("不点灯... 回路を見直せ。");
+    if(ok === phase) {
+        document.querySelectorAll('.wire-glow').forEach(w => w.style.display='block');
+        setTimeout(showBossDamage, 800);
+    } else {
+        alert("不点灯... 配線または0番端子のコモンを確認しろ！");
+    }
 }
 
-/* 脳汁全開演出シーケンス */
-function triggerUltimateProduction() {
-    document.querySelectorAll('.wire-glow').forEach(w => w.style.display='block');
-    const board = el('board');
-    
-    // 1. 連続フラッシュ
-    board.classList.add('v-flash');
-    
-    setTimeout(() => {
-        board.classList.remove('v-flash');
-        // 2. モノクロフリーズ
-        board.classList.add('v-mono');
-        
-        setTimeout(() => {
-            // 3. プチュン
-            const ov = el('puchunOverlay');
-            ov.style.display = 'flex';
-            const line = el('pLine');
-            line.style.transition = "transform 0.5s ease-in";
-            line.style.transform = "scaleX(1)";
-            
-            setTimeout(() => {
-                line.style.transition = "transform 0.1s linear";
-                line.style.transform = "scaleX(0) scaleY(0)"; // プチュン！
-                
-                // 4. ボスバトル開始
-                setTimeout(() => {
-                    ov.style.display = 'none';
-                    showBossDamage();
-                }, 600);
-            }, 700);
-        }, 1200);
-    }, 1000);
-}
-
+/* 1. ボスダメージ演出（SET押した後すぐ） */
 function showBossDamage() {
     const bossScr = el('bossBattleOverlay');
-    const hp = el('bossHpFill');
+    const hpFill = el('bossHpFill');
     const container = el('bossContainer');
     
     bossScr.style.display = 'flex';
-    hp.style.width = '100%';
+    hpFill.style.width = bossHp + '%';
     
     setTimeout(() => {
-        // ダメージ演出
+        bossHp -= 34;
+        if(bossHp < 0) bossHp = 0;
+        hpFill.style.width = bossHp + '%';
         container.classList.add('shake');
-        hp.style.width = '0%'; // HP激減
         
         setTimeout(() => {
             container.classList.remove('shake');
-            // 5. 撃破降臨
-            const gText = el('gekihaText');
-            gText.style.opacity = 1;
-            gText.style.transition = "0.5s cubic-bezier(0.1, 0.7, 1.0, 0.1)";
-            gText.style.transform = "translate(-50%, -50%) scale(1)";
+            bossScr.style.display = 'none';
+            
+            if(bossHp <= 0) {
+                // ボスHPが0になった時の「トドメ演出」開始
+                triggerFinalFatality();
+            } else {
+                // 次のフェーズへ
+                phase++;
+                initBoard();
+            }
+        }, 1000);
+    }, 500);
+}
+
+/* 2. 最終撃破演出 (爆発 -> フラッシュ -> モノクロ -> プチュン -> 撃破降臨) */
+function triggerFinalFatality() {
+    const gs = el('gameScreen');
+    const effect = el('finalEffectLayer');
+    const puchun = el('puchunOverlay');
+    const line = el('pLine');
+    const gekihaScr = el('gekihaScreen');
+    const gekihaTxt = el('gekihaText');
+
+    // 爆発とフラッシュ
+    effect.style.display = 'block';
+    effect.classList.add('v-explode');
+    
+    setTimeout(() => {
+        effect.classList.remove('v-explode');
+        effect.classList.add('v-flash');
+        
+        setTimeout(() => {
+            // モノクロフリーズ
+            effect.style.display = 'none';
+            gs.classList.add('v-mono');
             
             setTimeout(() => {
-                // 終了・次へ
-                bossScr.style.display = 'none';
-                gText.style.opacity = 0;
-                gText.style.transform = "translate(-50%, -50%) scale(4)";
-                el('board').classList.remove('v-mono');
+                // プチュン
+                puchun.style.display = 'flex';
+                line.style.transition = "transform 0.5s ease-in";
+                line.style.transform = "scaleX(1)";
                 
-                if(phase < 3) { phase++; initBoard(); }
-                else if(world === 1) { world = 2; phase = 1; startFlow(); }
-                else { alert("伝説の電気工事士【貴電】完。"); location.reload(); }
-            }, 2500);
-        }, 1200);
+                setTimeout(() => {
+                    line.style.transition = "transform 0.1s linear";
+                    line.style.transform = "scaleX(0) scaleY(0)"; // プチュン！
+                    
+                    // 撃破降臨
+                    setTimeout(() => {
+                        gekihaScr.style.display = 'flex';
+                        setTimeout(() => {
+                            gekihaTxt.style.opacity = 1;
+                            gekihaTxt.style.transform = "scale(1)";
+                            el('nextBtn').classList.remove('hidden');
+                        }, 100);
+                    }, 600);
+                }, 700);
+            }, 1000);
+        }, 1500);
     }, 1000);
+}
+
+function advanceGame() {
+    if(world === 1) {
+        world = 2; phase = 1; bossHp = 100;
+        el('gekihaScreen').style.display = 'none';
+        el('puchunOverlay').style.display = 'none';
+        el('gameScreen').classList.remove('v-mono');
+        el('gekihaText').style.opacity = 0;
+        el('gekihaText').style.transform = "scale(5)";
+        el('nextBtn').classList.add('hidden');
+        startFlow();
+    } else {
+        alert("貴電の全現場、完全勝利で施工完了！お疲れ様でした！");
+        location.reload();
+    }
 }
 </script>
 </body>
