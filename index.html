@@ -22,7 +22,6 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 #gameScreen { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 100; transition: filter 0.1s; }
 #statusHeader { height: 70px; border-bottom: 3px solid #ffd000; display: flex; justify-content: space-around; align-items: center; background: #111; padding: 0 10px; }
 
-/* HPゲージ用スタイル */
 .hp-container { display: flex; flex-direction: column; width: 35%; min-width: 100px; }
 .hp-label { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
 .hp-bar-bg { width: 100%; height: 12px; background: #333; border: 1px solid #777; border-radius: 6px; overflow: hidden; position: relative; }
@@ -42,7 +41,6 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 .term { width: 28px; height: 28px; background: #222; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 2px solid #000; position: relative; z-index: 60; }
 .term.sel { background: #ffd000 !important; color: #000; box-shadow: 0 0 15px #ffd000; }
 
-/* 3路スイッチ配置（貴電厳守） */
 .layout-3way-left { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .layout-3way-right { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-direction: row; }
 .term-col { display: flex; flex-direction: column; gap: 8px; }
@@ -85,6 +83,8 @@ body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Arial
 </style>
 </head>
 <body>
+
+<audio id="bgm" src="sanjinooyatsu.mp3" loop></audio>
 
 <div id="titleScreen">
     <div class="title-logo">俺らの電工</div>
@@ -202,6 +202,9 @@ function shuffle(array) {
 }
 
 function startFlow() {
+    // BGM再生開始
+    el('bgm').play().catch(e => console.log("BGM playback blocked by browser."));
+    
     el('titleScreen').classList.add('hidden');
     el('quizScreen').classList.remove('hidden');
     qIdx = 0;
@@ -211,12 +214,10 @@ function startFlow() {
 }
 
 function updateHpUI() {
-    // プレイヤーHP更新
     const pPercent = Math.max(0, playerHp);
     el('playerHpFill').style.width = pPercent + '%';
     el('playerHpText').innerText = pPercent;
     
-    // ボスHP更新
     const bPercent = Math.max(0, bossHp);
     el('bossHpFillMini').style.width = bPercent + '%';
     el('bossHpFill').style.width = bPercent + '%';
